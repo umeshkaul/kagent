@@ -1,0 +1,97 @@
+version: "1.0"
+metadata:
+  description: "VirtualService Test Cases"
+
+test_cases:
+  - name: route_1
+    input: "Route all HTTP traffic to the v1 subset of the reviews service"
+    category: VirtualService
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: VirtualService
+      metadata:
+        name: virtualservice
+      spec:
+        hosts:
+        - reviews.default.svc.cluster.local
+        http:
+        - route:
+          - destination:
+              host: reviews.default.svc.cluster.local
+              subset: v1
+
+  - name: route_2
+    input: "route all traffic starting with /api/v1 to v2 subset of the customers service"
+    category: VirtualService
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: VirtualService
+      metadata:
+        name: virtualservice
+      spec:
+        hosts:
+        - customers.default.svc.cluster.local
+        http:
+        - match:
+          - uri:
+              prefix: "/api/v1"
+          route:
+          - destination:
+              host: customers.default.svc.cluster.local
+              subset: v2
+
+  - name: timeout_1
+    input: "configure 5 second timeout for all calls to the invoices service"
+    category: VirtualService
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: VirtualService
+      metadata:
+        name: virtualservice
+      spec:
+        hosts:
+        - invoices.default.svc.cluster.local
+        http:
+        - timeout: 5s
+          route:
+          - destination:
+              host: invoices.default.svc.cluster.local
+
+  - name: timeout_2
+    input: "configure 2 second timeout to calls to the customers service in the prod namespace"
+    category: VirtualService
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: VirtualService
+      metadata:
+        name: virtualservice
+      spec:
+        hosts:
+        - customers.prod.svc.cluster.local
+        http:
+        - timeout: 2s
+          route:
+          - destination:
+              host: customers.prod.svc.cluster.local
+
+  - name: weightsplit_1
+    input: "split traffic 30/70 between v1 and v2 subsets of the orders service"
+    category: VirtualService
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: VirtualService
+      metadata:
+        name: virtualservice
+      spec:
+        hosts:
+        - orders.default.svc.cluster.local
+        http:
+        - route:
+          - destination:
+              host: orders.default.svc.cluster.local
+              subset: v1
+            weight: 30
+          - destination:
+              host: orders.default.svc.cluster.local
+              subset: v2
+            weight: 70

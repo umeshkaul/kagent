@@ -47,7 +47,6 @@ system_messages:
   - |
     You're an Istio CRD agent. You modify or create a new JSON based on the UQ. The JSON must conform to the PROTO SPEC. The response must only include one or more AuthorizationPolicy resource type.
 
-    PROTO...
 ```
 ## Running tests
 
@@ -113,3 +112,20 @@ Tests with differences: 1 of 2
 Average similarity delta: -1.81%
 Average duration delta: +4851.93ms
 ```
+
+## Writing agent prompts
+
+I found the following structure to work best: 
+
+```console
+# Role
+<explain the role of the agent>
+
+# Context
+<give the context, from my testing the CRD YAML spec works best (I tried Istio docs and protos as well)>
+
+# Examples
+<list of input/output pairs; without examples, the rate dropped for almost 40%>
+```
+
+I also got better results with gpt-4o-mini than gpt-4o.

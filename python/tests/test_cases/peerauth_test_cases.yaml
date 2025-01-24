@@ -1,0 +1,260 @@
+version: "1.0"
+metadata:
+  description: "PeerAuthentication Policy Test Cases"
+
+test_cases:
+  - name: require_mtls_1
+    input: "Enable strict mTLS for workloads in 'hello' namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: hello
+      spec:
+        mtls:
+          mode: STRICT
+
+  - name: require_mtls_2
+    input: "Enable strict mTLS for customers"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: customers
+        mtls:
+          mode: STRICT
+
+  - name: permissive_1
+    input: "Allow permissive mode for all workloads in the bookinfo namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: bookinfo
+      spec:
+        mtls:
+          mode: PERMISSIVE
+
+  - name: combined_1
+    input: "Enable strict mutual TLS for all orders, but leave the port 3000 plaintext"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: orders
+        mtls:
+          mode: STRICT
+        portLevelMtls:
+          3000:
+            mode: DISABLE
+
+  - name: inherit
+    input: "for finance pods, inherit the mtls settings from the namespace and disable mTLS for port 5000"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: finance
+        mtls:
+          mode: UNSET
+        portLevelMtls:
+          5000:
+            mode: DISABLE
+
+  - name: require_mtls_1_var1
+    input: "Configure strict mutual TLS for all workloads in namespace 'hello'"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: hello
+      spec:
+        mtls:
+          mode: STRICT
+
+  - name: require_mtls_1_var2
+    input: "Set up mandatory mTLS authentication in the hello namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: hello
+      spec:
+        mtls:
+          mode: STRICT
+
+  # Variations for require_mtls_2
+  - name: require_mtls_2_var1
+    input: "Make mTLS mandatory for the customers application"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: customers
+        mtls:
+          mode: STRICT
+
+  - name: require_mtls_2_var2
+    input: "Configure customers service to require mutual TLS"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: customers
+        mtls:
+          mode: STRICT
+
+  # Variations for permissive_1
+  - name: permissive_1_var1
+    input: "Configure bookinfo namespace to accept both mTLS and plain traffic"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: bookinfo
+      spec:
+        mtls:
+          mode: PERMISSIVE
+
+  - name: permissive_1_var2
+    input: "Set up flexible authentication in bookinfo namespace allowing both TLS and non-TLS traffic"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: bookinfo
+      spec:
+        mtls:
+          mode: PERMISSIVE
+
+  # Variations for combined_1
+  - name: combined_1_var1
+    input: "Configure orders service to require mTLS except for port 3000 which should allow plain traffic"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: orders
+        mtls:
+          mode: STRICT
+        portLevelMtls:
+          3000:
+            mode: DISABLE
+
+  - name: combined_1_var2
+    input: "Set up strict mTLS for orders workload but keep port 3000 without TLS"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: orders
+        mtls:
+          mode: STRICT
+        portLevelMtls:
+          3000:
+            mode: DISABLE
+
+  # Variations for inherit
+  - name: inherit_var1
+    input: "configure finance application to use namespace-level mTLS settings but disable TLS on port 5000"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: finance
+        mtls:
+          mode: UNSET
+        portLevelMtls:
+          5000:
+            mode: DISABLE
+
+  - name: inherit_var2
+    input: "keep default mTLS configuration for finance workloads except port 5000 which should be plaintext"
+    category: PeerAuthentication
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: PeerAuthentication
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: finance
+        mtls:
+          mode: UNSET
+        portLevelMtls:
+          5000:
+            mode: DISABLE
+
+  - name: irrelevant_input
+    input: "route the traffic from A to B"
+    category: PeerAuthentication
+    expected_output:
+      error: Request is out of scope
+
+  - name: irrelevant_input_1
+    input: "create a virtualservice with the gateway and configure mTLS"
+    category: PeerAuthentication
+    expected_output:
+      error: Request is out of scope

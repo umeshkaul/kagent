@@ -10,7 +10,7 @@ test_cases:
       apiVersion: security.istio.io/v1
       kind: AuthorizationPolicy
       metadata:
-        name: httpbin
+        name: policy
         namespace: foo
       spec:
         action: DENY
@@ -29,10 +29,13 @@ test_cases:
       apiVersion: security.istio.io/v1
       kind: AuthorizationPolicy
       metadata:
-        name: service-a
+        name: policy
         namespace: bar
       spec:
         action: ALLOW
+        selector:
+          matchLabels:
+            app: service-a
         rules:
           - to:
               - operation:
@@ -47,19 +50,20 @@ test_cases:
       apiVersion: security.istio.io/v1
       kind: AuthorizationPolicy
       metadata:
-      name: allow-nothing
-      namespace: foo
+        name: policy
+        namespace: foo
       spec:
         {}
+
   - name: allow_nothing_1
-    input: "Deny all requests between the workloads in the foo namespace"
+    input: "Deny all requests in the foo namespace"
     category: AuthorizationPolicy
     expected_output:
       apiVersion: security.istio.io/v1
       kind: AuthorizationPolicy
       metadata:
-      name: allow-nothing
-      namespace: foo
+        name: policy
+        namespace: foo
       spec:
         {}
 
@@ -70,8 +74,250 @@ test_cases:
       apiVersion: security.istio.io/v1
       kind: AuthorizationPolicy
       metadata:
-      name: allow-all
-      namespace: foo
+        name: policy
+        namespace: default
       spec:
-      rules:
-      - {}
+        rules:
+        - {}
+
+  - name: allow_traffic_0
+    input: "Allow traffic from the workloads in the same namespace (bar) and from the workloads with the service account 'blah' in the 'foo' namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: bar
+      spec:
+        action: ALLOW
+        rules:
+        - from:
+          - source:
+              namespaces: ["bar"]
+          - source:
+              principals: ["cluster.local/ns/foo/sa/blah"]
+
+  - name: deny_request_empty_principal
+    input: "Deny the requests in the foo namespace from workloads that don't have the principal"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+
+  - name: deny_request_empty_principal_1
+    input: "Deny the requests in foo namespace if plain text is used"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+  - name: deny_request_empty_principal_1
+    input: "Deny the requests in foo namespace if plain text is used"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+  - name: deny_request_empty_principal_2
+    input: "Enforce mTLS in foo namespace by denying non-mTLS traffic"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+  - name: deny_request_empty_principal_3
+    input: "Block plaintext communications in foo namespace for security"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+  - name: deny_request_empty_principal_4
+    input: "Only allow mTLS communication in foo namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notPrincipals: ["*"]
+
+  - name: deny_request_jwt_1
+    input: "Deny ingress gateway requests without valid JWT tokens"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: istio-system
+      spec:
+        selector:
+          matchLabels:
+            istio: ingressgateway
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notRequestPrincipals: ["*"]
+
+  - name: deny_request_jwt_2
+    input: "Enforce mandatory JWT validation at ingress gateway"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: istio-system
+      spec:
+        selector:
+          matchLabels:
+            istio: ingressgateway
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notRequestPrincipals: ["*"]
+
+  - name: namespace_isolation_1
+    input: "Enforce namespace isolation for foo namespace while allowing ingress gateway access"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notNamespaces: ["foo"]
+              notPrincipals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+
+  - name: namespace_isolation_2
+    input: "Restrict access to namespace 'foo' except for ingress gateway service account (istio-ingressgateway-service-account) in the istio-system namespace"
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: foo
+      spec:
+        action: DENY
+        rules:
+        - from:
+          - source:
+              notNamespaces: ["foo"]
+              notPrincipals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
+
+  - name: allow_policy
+    input: Allow traffic to the app:db pods from the migration service account in the default namespace
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: db
+        action: ALLOW
+        rules:
+          - from:
+              - source:
+                  principals: ["cluster.local/ns/default/sa/migration"]
+
+  - name: deny_policy_1
+    input: Deny traffic to all version:v1 pods from the upgrade service account in the foo namespace
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            version: v1
+        action: DENY
+        rules:
+          - from:
+              - source:
+                  serviceAcounts: ["foo/upgrade"]
+
+  - name: operation_path_method
+    input: Deny POST requests to the path with the prefix /delete sent to all pods in default namespace
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        namespace: default
+        name: policy
+      spec:
+        action: DENY
+        rules:
+        - to:
+          - operation:
+              methods: ["POST"]
+              paths: ["/delete/*"]

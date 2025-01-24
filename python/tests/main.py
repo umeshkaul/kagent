@@ -1,6 +1,7 @@
 import argparse
 import asyncio
-import logging
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 
 from agent_tester import AgentTester
@@ -15,6 +16,7 @@ load_dotenv()
 async def run_test_command(test_cases_file: Path, agent_def_file: Path, model: str, results_dir: str = "test_results"):
     test_suite = load_test_cases(test_cases_file)
     agent_def = load_agent_definition(agent_def_file)
+
 
     model_client = OpenAIChatCompletionClient(
         model=model,

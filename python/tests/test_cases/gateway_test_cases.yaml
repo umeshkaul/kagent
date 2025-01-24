@@ -1,0 +1,183 @@
+version: "1.0"
+metadata:
+  description: "Gateway Policy Test Cases"
+
+test_cases:
+  - name: gateway_http
+    input: "configure ingress gateway for all hosts on port 80"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+        namespace: istio-system
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 80
+            name: http-80
+            protocol: HTTP
+          hosts:
+          - "*"
+
+  - name: gateway_http_1
+    input: "expose host 'hello.com' through ingress on port 80"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+        namespace: istio-system
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 80
+            name: http-80
+            protocol: HTTP
+          hosts:
+          - "hello.com"
+
+  - name: passthrough_1
+    input: "expose the example.com host with the passthrough mode"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 443
+            name: https-443
+            protocol: HTTPS
+          tls:
+            mode: PASSTHROUGH
+          hosts:
+          - example.com
+
+  - name: passthrough_2
+    input: "pass the traffic as is for the hello.com host"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 443
+            name: https-443
+            protocol: HTTPS
+          tls:
+            mode: PASSTHROUGH
+          hosts:
+          - hello.com
+
+  - name: https_redirect
+    input: "expose uk.bookinfo.com through the gateway and send 301 for all HTTP requests"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 80
+            name: http-80
+            protocol: HTTP
+          hosts:
+          - uk.bookinfo.com
+          tls:
+            httpsRedirect: true
+
+  - name: simple_mode
+    input: "enable HTTPs on port 9443 with the bookinfo-secret credential and expose all *.bookinfo.com hosts from the bookinfo namespace"
+    category: Gateway
+    expected_output:
+      apiVersion: networking.istio.io/v1
+      kind: Gateway
+      metadata:
+        name: gateway
+      spec:
+        selector:
+          istio: ingressgateway
+        servers:
+        - port:
+            number: 9443
+            name: https-9443
+            protocol: HTTPS
+          hosts:
+          - "bookinfo/*.bookinfo.com"
+          tls:
+            mode: SIMPLE
+            credentialName: bookinfo-secret
+
+  # - name: complex_1
+  #   input: ""
+  #   category: Gateway
+  #   expected_output:
+  #     apiVersion: networking.istio.io/v1
+  #     kind: Gateway
+  #     metadata:
+  #       name: gateway
+  #     spec:
+  #       selector:
+  #         istio: ingressgateway
+  #       servers:
+  #       - port:
+  #           number: 80
+  #           name: http
+  #           protocol: HTTP
+  #         hosts:
+  #         - uk.bookinfo.com
+  #         - eu.bookinfo.com
+  #         tls:
+  #           httpsRedirect: true
+  #       - port:
+  #           number: 443
+  #           name: https-443
+  #           protocol: HTTPS
+  #         hosts:
+  #         - uk.bookinfo.com
+  #         - eu.bookinfo.com
+  #         tls:
+  #           mode: SIMPLE # enables HTTPS on this port
+  #           serverCertificate: /etc/certs/servercert.pem
+  #           privateKey: /etc/certs/privatekey.pem
+  #       - port:
+  #           number: 9443
+  #           name: https-9443
+  #           protocol: HTTPS
+  #         hosts:
+  #         - "bookinfo-namespace/*.bookinfo.com"
+  #         tls:
+  #           mode: SIMPLE # enables HTTPS on this port
+  #           credentialName: bookinfo-secret # fetches certs from Kubernetes secret
+  #       - port:
+  #           number: 9080
+  #           name: http-wildcard
+  #           protocol: HTTP
+  #         hosts:
+  #         - "*"
+  #       - port:
+  #           number: 2379 # to expose internal service via external port 2379
+  #           name: mongo
+  #           protocol: MONGO
+  #         hosts:
+  #         - "*"
