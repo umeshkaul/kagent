@@ -7,6 +7,7 @@ class AgentMetadata:
     description: str
     version: str
 
+
 @dataclass
 class AgentDefinition:
     name: str
@@ -14,9 +15,11 @@ class AgentDefinition:
     metadata: AgentMetadata
     tools: Optional[list[str]] = None
 
+
 @dataclass
 class TestMetadata:
     description: str
+
 
 @dataclass
 class TestCase:
@@ -25,11 +28,13 @@ class TestCase:
     input: str
     expected_output: dict[str, Any]
 
+
 @dataclass
 class TestSuite:
     version: str
     metadata: TestMetadata
     test_cases: list[TestCase]
+
 
 @dataclass
 class TestResult:
@@ -39,6 +44,7 @@ class TestResult:
     category: str
     duration_ms: float
     similarity: float
+
 
 @dataclass
 class TestRunResult:

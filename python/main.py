@@ -9,6 +9,7 @@ from orchestrator.orchestrator import AutogenOrchestrator
 
 load_dotenv()
 
+
 async def main():
     parser = argparse.ArgumentParser(description="AutoGen Team Orchestrator")
     parser.add_argument("--config", required=True, help="Path to YAML configuration file")
@@ -20,7 +21,7 @@ async def main():
     orchestrator = AutogenOrchestrator(args.config)
 
     model_client = OpenAIChatCompletionClient(
-        model="gpt-4o",
+        model="gpt-4o-mini",
     )
 
     # Execute prompt

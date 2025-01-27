@@ -18,9 +18,9 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
     total_duration = 0
     similarity_ranges = {
         "excellent": 0,  # 90-100%
-        "good": 0,      # 75-90%
-        "fair": 0,      # 50-75%
-        "poor": 0       # <50%
+        "good": 0,  # 75-90%
+        "fair": 0,  # 50-75%
+        "poor": 0,  # <50%
     }
 
     for test in run["results"]:
@@ -50,7 +50,7 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
                 json.dumps(test["actual_output"], indent=2).splitlines(),
                 fromfile="expected",
                 tofile="actual",
-                lineterm=""
+                lineterm="",
             )
             differences = list(diff)
 
@@ -59,7 +59,7 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
             "input": test["input"],
             "similarity": similarity,
             "duration_ms": test["duration_ms"],
-            "differences": differences
+            "differences": differences,
         }
         test_analyses.append(analysis)
 
@@ -73,8 +73,8 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
             "avg_similarity": total_similarity / num_tests if num_tests > 0 else 0,
             "avg_duration": total_duration / num_tests if num_tests > 0 else 0,
             "similarity_distribution": similarity_ranges,
-            "similarity_by_category": {}
-        }
+            "similarity_by_category": {},
+        },
     }
 
     # Calculate average similarity by category
@@ -91,7 +91,7 @@ def analyze_results_command(results_file: Path) -> dict[str, Any]:
     for cat in category_totals:
         analysis_results["summary"]["similarity_by_category"][cat] = {
             "avg_similarity": category_totals[cat] / category_counts[cat],
-            "test_count": category_counts[cat]
+            "test_count": category_counts[cat],
         }
 
     # Print analysis results
@@ -172,7 +172,7 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
             "duration_delta": test2.get("duration_ms", 0) - test1.get("duration_ms", 0),
             "similarity_old": similarity1,
             "similarity_new": similarity2,
-            "similarity_delta": similarity2 - similarity1
+            "similarity_delta": similarity2 - similarity1,
         }
 
         # Compare outputs
@@ -182,7 +182,7 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
                 json.dumps(test2["actual_output"], indent=2).splitlines(),
                 fromfile=f"{results_file1.name} (Test {idx})",
                 tofile=f"{results_file2.name} (Test {idx})",
-                lineterm=""
+                lineterm="",
             )
             comparison["differences"] = list(diff)
 
@@ -204,14 +204,14 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
         "run1_stats": {
             "model": run1["config"]["model"],
             "avg_similarity": avg_similarity_run1,
-            "better_tests_count": better_similarity_count_run1
+            "better_tests_count": better_similarity_count_run1,
         },
         "run2_stats": {
             "model": run2["config"]["model"],
             "avg_similarity": avg_similarity_run2,
-            "better_tests_count": better_similarity_count_run2
+            "better_tests_count": better_similarity_count_run2,
         },
-        "equal_tests_count": equal_similarity_count
+        "equal_tests_count": equal_similarity_count,
     }
 
     # Print detailed comparison results
@@ -224,8 +224,10 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
         logging.info(f"\n=== Test {test['test_number']} ===")
         logging.info(f"Input: {test['input']}")
         logging.info(f"Duration delta: {test['duration_delta']:.2f}ms")
-        logging.info(f"Similarity: {test['similarity_old']:.2f}% → {test['similarity_new']:.2f}% "
-              f"(Δ: {test['similarity_delta']:+.2f}%)")
+        logging.info(
+            f"Similarity: {test['similarity_old']:.2f}% → {test['similarity_new']:.2f}% "
+            f"(Δ: {test['similarity_delta']:+.2f}%)"
+        )
 
         if test["differences"]:
             logging.info("Output differences:")
@@ -240,7 +242,9 @@ def compare_results_command(results_file1: Path, results_file2: Path) -> dict[st
         avg_duration_delta = sum(t["duration_delta"] for t in test_comparisons) / num_tests
 
         logging.info("\n=== Summary Statistics ===")
-        logging.info(f"Tests with differences: {comparison_results['tests_with_differences']} of {comparison_results['total_tests']}")
+        logging.info(
+            f"Tests with differences: {comparison_results['tests_with_differences']} of {comparison_results['total_tests']}"
+        )
 
         # Print overall performance comparison
         logging.info("\nOverall Performance Comparison:")

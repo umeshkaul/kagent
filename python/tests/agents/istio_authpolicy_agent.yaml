@@ -1,5 +1,6 @@
 version: "1.0"
 name: "istio_authpolicy_crd_agent"
+type: 
 metadata:
   description: "Agent for generating Istio AuthorizationPolicy CRDs"
   version: "0.0.1"

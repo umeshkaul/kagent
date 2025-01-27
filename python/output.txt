@@ -1,0 +1,8 @@
+Sending messages to llm model: [SystemMessage(content='You are a planning agent.\nYour job is to break down complex tasks into smaller, manageable subtasks.\nYour team members are:\n    istio_authpolicy_agent: Knows how to create Istio AuthorizationPolicy resources.\n    istio_gateway_agent: Knows how to create Istio Gateway resources.\n\nYou only plan and delegate tasks - you do not execute them yourself.\n\nWhen assigning tasks, use this format:\n1. <agent> : <task>\n\nOnly send the contents of the task to the agent, without any other context.\n\nAfter all tasks are complete, summarize the findings and end with "TERMINATE".\n', type='SystemMessage'), UserMessage(content='Expose the productpage through ingress gateway and create an auth policy that denies requests to productpage', source='user', type='UserMessage')]
+---------- user ----------
+Expose the productpage through ingress gateway and create an auth policy that denies requests to productpage
+---------- task_planner ----------
+1. istio_gateway_agent : Create an Istio Gateway resource to expose the productpage service.
+2. istio_authpolicy_agent : Create an Istio AuthorizationPolicy resource that denies all requests to the productpage service. 
+
+TERMINATE

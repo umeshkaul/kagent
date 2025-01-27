@@ -7,11 +7,4 @@ from ._kubectl import (
     get_services,
 )
 
-__all__ = [
-    "get_pods",
-    "get_services",
-    "get_pod",
-    "apply_manifest",
-    "get_resources",
-    "get_pod_logs"
-]
+__all__ = ["get_pods", "get_services", "get_pod", "apply_manifest", "get_resources", "get_pod_logs"]

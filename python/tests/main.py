@@ -10,13 +10,14 @@ from autogen_ext.models.openai.config import ResponseFormat
 from comparator import analyze_results_command, compare_results_command
 from dotenv import load_dotenv
 from loader import create_agent, load_agent_definition, load_test_cases
+import logging
 
 load_dotenv()
+
 
 async def run_test_command(test_cases_file: Path, agent_def_file: Path, model: str, results_dir: str = "test_results"):
     test_suite = load_test_cases(test_cases_file)
     agent_def = load_agent_definition(agent_def_file)
-
 
     model_client = OpenAIChatCompletionClient(
         model=model,
@@ -31,6 +32,7 @@ async def run_test_command(test_cases_file: Path, agent_def_file: Path, model: s
     results = await tester.run_tests()
     return results
 
+
 def main():
     parser = argparse.ArgumentParser(description="Test runner for agents")
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
@@ -39,8 +41,12 @@ def main():
     run_parser = subparsers.add_parser("run", help="Run tests from a YAML file")
     run_parser.add_argument("test_file", type=Path, help="Path to the YAML file containing test cases")
     run_parser.add_argument("agent_file", type=Path, help="Path to the agent definition YAML file")
-    run_parser.add_argument("--results-dir", type=str, default="test_results",
-                           help="Directory to store test results (default: test_results)")
+    run_parser.add_argument(
+        "--results-dir",
+        type=str,
+        default="test_results",
+        help="Directory to store test results (default: test_results)",
+    )
     run_parser.add_argument("--model", type=str, help="OpenAI model to use for testing", required=True)
 
     # Compare results command
@@ -62,6 +68,7 @@ def main():
         analyze_results_command(args.file)
     else:
         parser.print_help()
+
 
 if __name__ == "__main__":
     main()

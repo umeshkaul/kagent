@@ -55,16 +55,12 @@ class AgentTester:
                 expected_output=test_case.expected_output,
                 actual_output=json.loads(output),
                 duration_ms=duration_ms,
-                similarity=similarity
+                similarity=similarity,
             )
             results.append(result)
 
         # Create the test run result that combines config and individual results
-        test_run_result = TestRunResult(
-            timestamp=timestamp,
-            config=config,
-            results=results
-        )
+        test_run_result = TestRunResult(timestamp=timestamp, config=config, results=results)
 
         # Save results
         self._save_results(test_run_result)
@@ -83,11 +79,13 @@ class AgentTester:
         results_dict = {
             "timestamp": test_run_result.timestamp,
             "config": test_run_result.config,
-            "results": [asdict(result) for result in test_run_result.results]
+            "results": [asdict(result) for result in test_run_result.results],
         }
 
         # Save to JSON file
-        results_file = self.results_dir / f"results_{test_run_result.timestamp}_{test_run_result.config.get('model')}.json"
+        results_file = (
+            self.results_dir / f"results_{test_run_result.timestamp}_{test_run_result.config.get('model')}.json"
+        )
         with open(results_file, "w") as f:
             json.dump(results_dict, f, indent=2)
 

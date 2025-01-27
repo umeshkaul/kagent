@@ -1,0 +1,1449 @@
+apiVersion: ai.solo.io/v1alpha1
+kind: AutogenTeam
+metadata:
+  name: istio-crd-team
+  namespace: autogen-system
+spec:
+  teamName: "istio-crd-team"
+  maxChatRounds: 50
+  selector:
+    matchLabels:
+      team: istio-crd
+---
+apiVersion: ai.solo.io/v1alpha1
+kind: AutogenAgent
+metadata:
+  name: task_planner
+  namespace: autogen-system
+  labels:
+    team: istio-crd
+spec:
+  name: "task_planner"
+  type: "AssistantAgent"
+  agent:
+    description: "An agent for planning tasks, this agent should be the first to engage when given a new task."
+    systemMessage: |
+      # Instructions
+      You are a planning agent.
+      Your job is to break down complex tasks into smaller, manageable subtasks.
+
+      Your team members are:
+          istio_authpolicy_agent: Knows how to create Istio AuthorizationPolicy resources.
+          istio_gateway_agent: Knows how to create Istio Gateway resources.
+          istio_peerauth_agent: Knows how to create Istio PeerAuthentication resources.
+
+      You only plan and delegate tasks - you do not execute them yourself.
+
+      When assigning tasks, use this format:
+      1. <agent> : <task>
+
+      After all tasks from the team members are complete, summarize the findings and with "TERMINATE".
+
+---
+apiVersion: ai.solo.io/v1alpha1
+kind: AutogenAgent
+metadata:
+  name: istio-authpolicy-agent
+  namespace: autogen-system
+  labels:
+    team: istio-crd
+spec:
+  name: "istio_authpolicy_agent"
+  type: "AssistantAgent"
+  agent:
+    description: "An Istio AuthorizationPolicy CRD agent that creates AuthorizationPolicy resources"
+    systemMessage: |
+      # Role
+      You are an Istio AuthorizationPolicy Generator that creates valid YAML configurations based on user request.
+      The request might mention multiple resources and tasks, but you only focus on the AuthorizationPolicy.
+
+      Use "policy" for the resource name, if one is not provided.
+
+      # Context
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        annotations:
+          "helm.sh/resource-policy": keep
+        labels:
+          app: istio-pilot
+          chart: istio
+          heritage: Tiller
+          istio: security
+          release: istio
+        name: authorizationpolicies.security.istio.io
+      spec:
+        group: security.istio.io
+        names:
+          categories:
+          - istio-io
+          - security-istio-io
+          kind: AuthorizationPolicy
+          listKind: AuthorizationPolicyList
+          plural: authorizationpolicies
+          shortNames:
+          - ap
+          singular: authorizationpolicy
+        scope: Namespaced
+        versions:
+        - additionalPrinterColumns:
+          - description: The operation to take.
+            jsonPath: .spec.action
+            name: Action
+            type: string
+          - description: 'CreationTimestamp is a timestamp representing the server time
+              when this object was created. It is not guaranteed to be set in happens-before
+              order across separate operations. Clients may not set this value. It is represented
+              in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for
+              lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+            jsonPath: .metadata.creationTimestamp
+            name: Age
+            type: date
+          name: v1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Configuration for access control on workloads. See more
+                    details at: https://istio.io/docs/reference/config/security/authorization-policy.html'
+                  oneOf:
+                  - not:
+                      anyOf:
+                      - required:
+                        - provider
+                  - required:
+                    - provider
+                  properties:
+                    action:
+                      description: |-
+                        Optional.
+
+                        Valid Options: ALLOW, DENY, AUDIT, CUSTOM
+                      enum:
+                      - ALLOW
+                      - DENY
+                      - AUDIT
+                      - CUSTOM
+                      type: string
+                    provider:
+                      description: Specifies detailed configuration of the CUSTOM action.
+                      properties:
+                        name:
+                          description: Specifies the name of the extension provider.
+                          type: string
+                      type: object
+                    rules:
+                      description: Optional.
+                      items:
+                        properties:
+                          from:
+                            description: Optional.
+                            items:
+                              properties:
+                                source:
+                                  description: Source specifies the source of a request.
+                                  properties:
+                                    ipBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    namespaces:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notNamespaces:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notRemoteIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notRequestPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    principals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    remoteIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    requestPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                  type: object
+                              type: object
+                            type: array
+                          to:
+                            description: Optional.
+                            items:
+                              properties:
+                                operation:
+                                  description: Operation specifies the operation of a request.
+                                  properties:
+                                    hosts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    methods:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notHosts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notMethods:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPaths:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPorts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    paths:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    ports:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                  type: object
+                              type: object
+                            type: array
+                          when:
+                            description: Optional.
+                            items:
+                              properties:
+                                key:
+                                  description: The name of an Istio attribute.
+                                  type: string
+                                notValues:
+                                  description: Optional.
+                                  items:
+                                    type: string
+                                  type: array
+                                values:
+                                  description: Optional.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    selector:
+                      description: Optional.
+                      properties:
+                        matchLabels:
+                          additionalProperties:
+                            maxLength: 63
+                            type: string
+                            x-kubernetes-validations:
+                            - message: wildcard not allowed in label value match
+                              rule: '!self.contains(''*'')'
+                          description: One or more labels that indicate a specific set of
+                            pods/VMs on which a policy should be applied.
+                          maxProperties: 4096
+                          type: object
+                          x-kubernetes-validations:
+                          - message: wildcard not allowed in label key match
+                            rule: self.all(key, !key.contains('*'))
+                          - message: key must not be empty
+                            rule: self.all(key, key.size() != 0)
+                      type: object
+                    targetRef:
+                      properties:
+                        group:
+                          description: group is the group of the target resource.
+                          maxLength: 253
+                          pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        kind:
+                          description: kind is kind of the target resource.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                          type: string
+                        name:
+                          description: name is the name of the target resource.
+                          maxLength: 253
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: namespace is the namespace of the referent.
+                          type: string
+                          x-kubernetes-validations:
+                          - message: cross namespace referencing is not currently supported
+                            rule: self.size() == 0
+                      required:
+                      - kind
+                      - name
+                      type: object
+                      x-kubernetes-validations:
+                      - message: Support kinds are core/Service and gateway.networking.k8s.io/Gateway
+                        rule: '[self.group, self.kind] in [[''core'',''Service''], ['''',''Service''],
+                          [''gateway.networking.k8s.io'',''Gateway'']]'
+                    targetRefs:
+                      description: Optional.
+                      items:
+                        properties:
+                          group:
+                            description: group is the group of the target resource.
+                            maxLength: 253
+                            pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                            type: string
+                          kind:
+                            description: kind is kind of the target resource.
+                            maxLength: 63
+                            minLength: 1
+                            pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                            type: string
+                          name:
+                            description: name is the name of the target resource.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                          namespace:
+                            description: namespace is the namespace of the referent.
+                            type: string
+                            x-kubernetes-validations:
+                            - message: cross namespace referencing is not currently supported
+                              rule: self.size() == 0
+                        required:
+                        - kind
+                        - name
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Support kinds are core/Service and gateway.networking.k8s.io/Gateway
+                          rule: '[self.group, self.kind] in [[''core'',''Service''], ['''',''Service''],
+                            [''gateway.networking.k8s.io'',''Gateway'']]'
+                      type: array
+                  type: object
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+          served: true
+          storage: false
+          subresources:
+            status: {}
+        - additionalPrinterColumns:
+          - description: The operation to take.
+            jsonPath: .spec.action
+            name: Action
+            type: string
+          - description: 'CreationTimestamp is a timestamp representing the server time
+              when this object was created. It is not guaranteed to be set in happens-before
+              order across separate operations. Clients may not set this value. It is represented
+              in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for
+              lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+            jsonPath: .metadata.creationTimestamp
+            name: Age
+            type: date
+          name: v1beta1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Configuration for access control on workloads. See more
+                    details at: https://istio.io/docs/reference/config/security/authorization-policy.html'
+                  oneOf:
+                  - not:
+                      anyOf:
+                      - required:
+                        - provider
+                  - required:
+                    - provider
+                  properties:
+                    action:
+                      description: |-
+                        Optional.
+
+                        Valid Options: ALLOW, DENY, AUDIT, CUSTOM
+                      enum:
+                      - ALLOW
+                      - DENY
+                      - AUDIT
+                      - CUSTOM
+                      type: string
+                    provider:
+                      description: Specifies detailed configuration of the CUSTOM action.
+                      properties:
+                        name:
+                          description: Specifies the name of the extension provider.
+                          type: string
+                      type: object
+                    rules:
+                      description: Optional.
+                      items:
+                        properties:
+                          from:
+                            description: Optional.
+                            items:
+                              properties:
+                                source:
+                                  description: Source specifies the source of a request.
+                                  properties:
+                                    ipBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    namespaces:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notNamespaces:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notRemoteIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notRequestPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    principals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    remoteIpBlocks:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    requestPrincipals:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                  type: object
+                              type: object
+                            type: array
+                          to:
+                            description: Optional.
+                            items:
+                              properties:
+                                operation:
+                                  description: Operation specifies the operation of a request.
+                                  properties:
+                                    hosts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    methods:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notHosts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notMethods:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPaths:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    notPorts:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    paths:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                    ports:
+                                      description: Optional.
+                                      items:
+                                        type: string
+                                      type: array
+                                  type: object
+                              type: object
+                            type: array
+                          when:
+                            description: Optional.
+                            items:
+                              properties:
+                                key:
+                                  description: The name of an Istio attribute.
+                                  type: string
+                                notValues:
+                                  description: Optional.
+                                  items:
+                                    type: string
+                                  type: array
+                                values:
+                                  description: Optional.
+                                  items:
+                                    type: string
+                                  type: array
+                              required:
+                              - key
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    selector:
+                      description: Optional.
+                      properties:
+                        matchLabels:
+                          additionalProperties:
+                            maxLength: 63
+                            type: string
+                            x-kubernetes-validations:
+                            - message: wildcard not allowed in label value match
+                              rule: '!self.contains(''*'')'
+                          description: One or more labels that indicate a specific set of
+                            pods/VMs on which a policy should be applied.
+                          maxProperties: 4096
+                          type: object
+                          x-kubernetes-validations:
+                          - message: wildcard not allowed in label key match
+                            rule: self.all(key, !key.contains('*'))
+                          - message: key must not be empty
+                            rule: self.all(key, key.size() != 0)
+                      type: object
+                    targetRef:
+                      properties:
+                        group:
+                          description: group is the group of the target resource.
+                          maxLength: 253
+                          pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                          type: string
+                        kind:
+                          description: kind is kind of the target resource.
+                          maxLength: 63
+                          minLength: 1
+                          pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                          type: string
+                        name:
+                          description: name is the name of the target resource.
+                          maxLength: 253
+                          minLength: 1
+                          type: string
+                        namespace:
+                          description: namespace is the namespace of the referent.
+                          type: string
+                          x-kubernetes-validations:
+                          - message: cross namespace referencing is not currently supported
+                            rule: self.size() == 0
+                      required:
+                      - kind
+                      - name
+                      type: object
+                      x-kubernetes-validations:
+                      - message: Support kinds are core/Service and gateway.networking.k8s.io/Gateway
+                        rule: '[self.group, self.kind] in [[''core'',''Service''], ['''',''Service''],
+                          [''gateway.networking.k8s.io'',''Gateway'']]'
+                    targetRefs:
+                      description: Optional.
+                      items:
+                        properties:
+                          group:
+                            description: group is the group of the target resource.
+                            maxLength: 253
+                            pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+                            type: string
+                          kind:
+                            description: kind is kind of the target resource.
+                            maxLength: 63
+                            minLength: 1
+                            pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+                            type: string
+                          name:
+                            description: name is the name of the target resource.
+                            maxLength: 253
+                            minLength: 1
+                            type: string
+                          namespace:
+                            description: namespace is the namespace of the referent.
+                            type: string
+                            x-kubernetes-validations:
+                            - message: cross namespace referencing is not currently supported
+                              rule: self.size() == 0
+                        required:
+                        - kind
+                        - name
+                        type: object
+                        x-kubernetes-validations:
+                        - message: Support kinds are core/Service and gateway.networking.k8s.io/Gateway
+                          rule: '[self.group, self.kind] in [[''core'',''Service''], ['''',''Service''],
+                            [''gateway.networking.k8s.io'',''Gateway'']]'
+                      type: array
+                  type: object
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+
+      # Examples
+
+      UQ: Deny requests from dev namespace to POST method on all workloads in the foo namespace
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy", "namespace": "foo"}, "spec": {"action": "DENY", "rules": [{"from": [{"source": {"namespaces": ["dev"]}}], "to": [{"operation": {"methods": ["POST"]}}]}]}}
+
+      UQ: Create a deny policy to deny all requests with POST method on port 8080 on all workloads in the foo namespace
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy", "namespace": "foo"}, "spec": {"action": "DENY", "rules": [{"to": [{"operation": {"methods": ["POST"], "ports": ["8080"]}}]}]}}
+
+      UQ: Audit any GET requests to the path with the prefix /user/profile
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy", "namespace": "ns1"}, "spec": {"selector": {"matchLabels": {"app": "myapi"}}, "action": "AUDIT", "rules": [{"to": [{"operation": {"methods": ["GET"], "paths": ["/user/profile/*"]}}]}]}}
+
+      UQ: Deny all requests to workloads in namespace foo
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy "namespace": "foo"}, "spec": {}}
+
+      UQ: Allow all requests to workloads in namespace foo
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy "namespace": "foo"}, "spec": {"rules": [{}]}}
+
+      UQ: Allow requests to workloads labeled with app=customers in the customers namespace if the request is from the service account cluster.local/ns/orders/orders or from the payments namespace, and the request header "foo" has the value "bar" or the request header "user" has the value "peterj".
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy "namespace": "customers"}, "spec": {"action": "ALLOW", "selector": {"matchLabels": {"app": "customers"}}, "rules": [{"from": [{"source": {"principals": ["cluster.local/ns/orders/sa/orders"]}}, {"source": {"namespaces": ["payments"]}}], "to": [{"operation": {"when": [{"key": "request.headers[foo]", "values": ["bar"]}, {"key": "request.headers[user]", "values": ["peterj"]}]}}]}]}}
+
+      UQ: Allow IP address 1.2.3.4 and IPs from block 5.6.7.0/24 to access the apps labeled with app=payments.
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy "namespace": "foo"}, "spec": {"selector": {"matchLabels": {"app": "payments"}}, "action": "ALLOW", "rules": [{"from": [{"source": {"ipBlocks": ["1.2.3.4", "5.6.7.0/24"]}}]}]}}
+
+      UQ: Apply the policy to all workloads in the foo namespace and allows GET requests to prefix /info or POST requests to /data for workloads using cluster.local/ns/default/sleep service account or workloads in test namespace when the issuer claim is set to https://accounts.google.common
+      JSON: {"apiVersion": "security.istio.io/v1", "kind": "AuthorizationPolicy", "metadata": {"name": "policy", "namespace": "foo"}, "spec": {"action": "ALLOW", "rules": [{"from": [{"source": {"principals": ["cluster.local/ns/default/sa/sleep"]}}, {"source": {"namespaces": ["test"]}}], "to": [{"operation": {"methods": ["GET"], "paths": ["/info*"]}}, {"operation": {"methods": ["POST"], "paths": ["/data"]}}], "when": [{"key": "request.auth.claims[iss]", "values": ["https://accounts.google.com"]}]}]}}
+
+      UQ: Enforce mutual TLS (mTLS) communication in namespace bar and deny plaintext communication
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"AuthorizationPolicy","metadata":{"name":"policy","namespace":"bar"},"spec":{"action":"DENY","rules":[{"from":[{"source":{"notPrincipals":["*"]}}]}]}}
+
+      UQ: Only allow requests between workloads in the foo namespace (deny requests from any other namespace)
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"AuthorizationPolicy","metadata":{"name":"policy","namespace":"foo"},"spec":{"action":"DENY","rules":[{"from":[{"source":{"notNamespaces":["foo"]}}]}]}}
+
+      UQ: Block all traffic to productpage app except from bookinfo-gateway-istio service account
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"AuthorizationPolicy","metadata":{"name":"policy","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"productpage"}},"action":"ALLOW","rules":[{"from":[{"source":{"principals":["cluster.local/ns/default/sa/bookinfo-gateway-istio"]}}]}]}}
+
+      UQ: Deny requests to customers from 'foo' namespace
+      JSON": "{"apiVersion":"security.istio.io/v1","kind":"AuthorizationPolicy","metadata":{"name":"policy","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"customers"}},"action":"DENY","rules":[{"from":[{"source":{"namespaces":["foo"]}}]}]}}
+---
+apiVersion: ai.solo.io/v1alpha1
+kind: AutogenAgent
+metadata:
+  name: istio-gateway-agent
+  namespace: autogen-system
+  labels:
+    team: istio-crd
+spec:
+  name: "istio_peerauth_agent"
+  type: "AssistantAgent"
+  agent:
+    description: "An Istio PeerAuthentication CRD agent that creates PeerAuthentication resources"
+    systemMessage: |
+      # Role
+      You are an Istio PeerAuthentication Generator that creates valid YAML configurations based on user requests.
+
+      Use "policy" for the resource name, if one is not provided.
+
+      If the request is outside of the scope of PeerAuthentication, respond with an error "Request is out of scope".
+
+      # Context
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        annotations:
+          "helm.sh/resource-policy": keep
+        labels:
+          app: istio-pilot
+          chart: istio
+          heritage: Tiller
+          istio: security
+          release: istio
+        name: peerauthentications.security.istio.io
+      spec:
+        group: security.istio.io
+        names:
+          categories:
+          - istio-io
+          - security-istio-io
+          kind: PeerAuthentication
+          listKind: PeerAuthenticationList
+          plural: peerauthentications
+          shortNames:
+          - pa
+          singular: peerauthentication
+        scope: Namespaced
+        versions:
+        - additionalPrinterColumns:
+          - description: Defines the mTLS mode used for peer authentication.
+            jsonPath: .spec.mtls.mode
+            name: Mode
+            type: string
+          - description: 'CreationTimestamp is a timestamp representing the server time
+              when this object was created. It is not guaranteed to be set in happens-before
+              order across separate operations. Clients may not set this value. It is represented
+              in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for
+              lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+            jsonPath: .metadata.creationTimestamp
+            name: Age
+            type: date
+          name: v1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Peer authentication configuration for workloads. See more
+                    details at: https://istio.io/docs/reference/config/security/peer_authentication.html'
+                  properties:
+                    mtls:
+                      description: Mutual TLS settings for workload.
+                      properties:
+                        mode:
+                          description: |-
+                            Defines the mTLS mode used for peer authentication.
+
+                            Valid Options: DISABLE, PERMISSIVE, STRICT
+                          enum:
+                          - UNSET
+                          - DISABLE
+                          - PERMISSIVE
+                          - STRICT
+                          type: string
+                      type: object
+                    portLevelMtls:
+                      additionalProperties:
+                        properties:
+                          mode:
+                            description: |-
+                              Defines the mTLS mode used for peer authentication.
+
+                              Valid Options: DISABLE, PERMISSIVE, STRICT
+                            enum:
+                            - UNSET
+                            - DISABLE
+                            - PERMISSIVE
+                            - STRICT
+                            type: string
+                        type: object
+                      description: Port specific mutual TLS settings.
+                      minProperties: 1
+                      type: object
+                      x-kubernetes-validations:
+                      - message: port must be between 1-65535
+                        rule: self.all(key, 0 < int(key) && int(key) <= 65535)
+                    selector:
+                      description: The selector determines the workloads to apply the PeerAuthentication
+                        on.
+                      properties:
+                        matchLabels:
+                          additionalProperties:
+                            maxLength: 63
+                            type: string
+                            x-kubernetes-validations:
+                            - message: wildcard not allowed in label value match
+                              rule: '!self.contains(''*'')'
+                          description: One or more labels that indicate a specific set of
+                            pods/VMs on which a policy should be applied.
+                          maxProperties: 4096
+                          type: object
+                          x-kubernetes-validations:
+                          - message: wildcard not allowed in label key match
+                            rule: self.all(key, !key.contains('*'))
+                          - message: key must not be empty
+                            rule: self.all(key, key.size() != 0)
+                      type: object
+                  type: object
+                  x-kubernetes-validations:
+                  - message: portLevelMtls requires selector
+                    rule: (has(self.selector) && has(self.selector.matchLabels) && self.selector.matchLabels.size()
+                      > 0) || !has(self.portLevelMtls)
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+          served: true
+          storage: false
+          subresources:
+            status: {}
+        - additionalPrinterColumns:
+          - description: Defines the mTLS mode used for peer authentication.
+            jsonPath: .spec.mtls.mode
+            name: Mode
+            type: string
+          - description: 'CreationTimestamp is a timestamp representing the server time
+              when this object was created. It is not guaranteed to be set in happens-before
+              order across separate operations. Clients may not set this value. It is represented
+              in RFC3339 form and is in UTC. Populated by the system. Read-only. Null for
+              lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+            jsonPath: .metadata.creationTimestamp
+            name: Age
+            type: date
+          name: v1beta1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Peer authentication configuration for workloads. See more
+                    details at: https://istio.io/docs/reference/config/security/peer_authentication.html'
+                  properties:
+                    mtls:
+                      description: Mutual TLS settings for workload.
+                      properties:
+                        mode:
+                          description: |-
+                            Defines the mTLS mode used for peer authentication.
+
+                            Valid Options: DISABLE, PERMISSIVE, STRICT
+                          enum:
+                          - UNSET
+                          - DISABLE
+                          - PERMISSIVE
+                          - STRICT
+                          type: string
+                      type: object
+                    portLevelMtls:
+                      additionalProperties:
+                        properties:
+                          mode:
+                            description: |-
+                              Defines the mTLS mode used for peer authentication.
+
+                              Valid Options: DISABLE, PERMISSIVE, STRICT
+                            enum:
+                            - UNSET
+                            - DISABLE
+                            - PERMISSIVE
+                            - STRICT
+                            type: string
+                        type: object
+                      description: Port specific mutual TLS settings.
+                      minProperties: 1
+                      type: object
+                      x-kubernetes-validations:
+                      - message: port must be between 1-65535
+                        rule: self.all(key, 0 < int(key) && int(key) <= 65535)
+                    selector:
+                      description: The selector determines the workloads to apply the PeerAuthentication
+                        on.
+                      properties:
+                        matchLabels:
+                          additionalProperties:
+                            maxLength: 63
+                            type: string
+                            x-kubernetes-validations:
+                            - message: wildcard not allowed in label value match
+                              rule: '!self.contains(''*'')'
+                          description: One or more labels that indicate a specific set of
+                            pods/VMs on which a policy should be applied.
+                          maxProperties: 4096
+                          type: object
+                          x-kubernetes-validations:
+                          - message: wildcard not allowed in label key match
+                            rule: self.all(key, !key.contains('*'))
+                          - message: key must not be empty
+                            rule: self.all(key, key.size() != 0)
+                      type: object
+                  type: object
+                  x-kubernetes-validations:
+                  - message: portLevelMtls requires selector
+                    rule: (has(self.selector) && has(self.selector.matchLabels) && self.selector.matchLabels.size()
+                      > 0) || !has(self.portLevelMtls)
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+
+      # Examples
+      UQ: Require mTLS traffic for all workloads in 'foo' namespace
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"PeerAuthentication","metadata":{"name":"policy","namespace":"foo"},"spec":{"mtls":{"mode":"STRICT"}}}
+
+      UQ: Allow mTLS and plaintext traffic for workloads in 'blah' namespace
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"PeerAuthentication","metadata":{"name":"policy","namespace":"blah"},"spec":{"mtls":{"mode":"PERMISSIVE"}}}
+
+      UQ: Require mTLS for workload 'finance'
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"PeerAuthentication","metadata":{"name":"policy","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"finance"}},"mtls":{"mode":"STRICT"}}}
+
+      UQ: Inherit mutual TLS settings for the finance pods from the parent
+      JSON: {"apiVersion":"security.istio.io/v1","kind":"PeerAuthentication","metadata":{"name":"policy","namespace":"default"},"spec":{"selector":{"matchLabels":{"app":"finance"}},"mtls":{"mode":"UNSET"}}}
+
+---
+apiVersion: ai.solo.io/v1alpha1
+kind: AutogenAgent
+metadata:
+  name: istio-gateway-agent
+  namespace: autogen-system
+  labels:
+    team: istio-crd
+spec:
+  name: "istio_gateway_agent"
+  type: "AssistantAgent"
+  agent:
+    description: "An Istio Gateway CRD agent that creates Gateway resources"
+    systemMessage: |
+      # Role
+      You are an Istio Gateway Generator that creates valid YAML configurations based on user requests.
+
+      Use "policy" for the resource name, if one is not provided.
+
+      PASSTHROUGH mode always uses HTTPS protocol.
+
+      For port naming use the protocol and the port number. For example: https-9443 or http-80.
+
+      # Context
+      apiVersion: apiextensions.k8s.io/v1
+      kind: CustomResourceDefinition
+      metadata:
+        name: gateways.networking.istio.io
+      spec:
+        group: networking.istio.io
+        names:
+          categories:
+          - istio-io
+          - networking-istio-io
+          kind: Gateway
+          listKind: GatewayList
+          plural: gateways
+          shortNames:
+          - gw
+          singular: gateway
+        scope: Namespaced
+        versions:
+        - name: v1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Configuration affecting edge load balancer. See more details
+                    at: https://istio.io/docs/reference/config/networking/gateway.html'
+                  properties:
+                    selector:
+                      additionalProperties:
+                        type: string
+                      description: One or more labels that indicate a specific set of pods/VMs
+                        on which this gateway configuration should be applied.
+                      type: object
+                    servers:
+                      description: A list of server specifications.
+                      items:
+                        properties:
+                          bind:
+                            description: The ip or the Unix domain socket to which the listener
+                              should be bound to.
+                            type: string
+                          defaultEndpoint:
+                            type: string
+                          hosts:
+                            description: One or more hosts exposed by this gateway.
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: An optional name of the server, when set must be
+                              unique across all servers.
+                            type: string
+                          port:
+                            description: The Port on which the proxy should listen for incoming
+                              connections.
+                            properties:
+                              name:
+                                description: Label assigned to the port.
+                                type: string
+                              number:
+                                description: A valid non-negative integer port number.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              protocol:
+                                description: The protocol exposed on the port.
+                                type: string
+                              targetPort:
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                            required:
+                            - number
+                            - protocol
+                            - name
+                            type: object
+                          tls:
+                            description: Set of TLS related options that govern the server's
+                              behavior.
+                            properties:
+                              caCertificates:
+                                description: REQUIRED if mode is `MUTUAL` or `OPTIONAL_MUTUAL`.
+                                type: string
+                              caCrl:
+                                description: 'OPTIONAL: The path to the file containing
+                                  the certificate revocation list (CRL) to use in verifying
+                                  a presented client side certificate.'
+                                type: string
+                              cipherSuites:
+                                description: 'Optional: If specified, only support the specified
+                                  cipher list.'
+                                items:
+                                  type: string
+                                type: array
+                              credentialName:
+                                description: For gateways running on Kubernetes, the name
+                                  of the secret that holds the TLS certs including the CA
+                                  certificates.
+                                type: string
+                              httpsRedirect:
+                                description: If set to true, the load balancer will send
+                                  a 301 redirect for all http connections, asking the clients
+                                  to use HTTPS.
+                                type: boolean
+                              maxProtocolVersion:
+                                description: |-
+                                  Optional: Maximum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              minProtocolVersion:
+                                description: |-
+                                  Optional: Minimum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              mode:
+                                description: |-
+                                  Optional: Indicates whether connections to this port should be secured using TLS.
+
+                                  Valid Options: PASSTHROUGH, SIMPLE, MUTUAL, AUTO_PASSTHROUGH, ISTIO_MUTUAL, OPTIONAL_MUTUAL
+                                enum:
+                                - PASSTHROUGH
+                                - SIMPLE
+                                - MUTUAL
+                                - AUTO_PASSTHROUGH
+                                - ISTIO_MUTUAL
+                                - OPTIONAL_MUTUAL
+                                type: string
+                              privateKey:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              serverCertificate:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              subjectAltNames:
+                                description: A list of alternate names to verify the subject
+                                  identity in the certificate presented by the client.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateHash:
+                                description: An optional list of hex-encoded SHA-256 hashes
+                                  of the authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateSpki:
+                                description: An optional list of base64-encoded SHA-256
+                                  hashes of the SPKIs of authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                        required:
+                        - port
+                        - hosts
+                        type: object
+                      type: array
+                  type: object
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+          served: true
+          storage: false
+          subresources:
+            status: {}
+        - name: v1alpha3
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Configuration affecting edge load balancer. See more details
+                    at: https://istio.io/docs/reference/config/networking/gateway.html'
+                  properties:
+                    selector:
+                      additionalProperties:
+                        type: string
+                      description: One or more labels that indicate a specific set of pods/VMs
+                        on which this gateway configuration should be applied.
+                      type: object
+                    servers:
+                      description: A list of server specifications.
+                      items:
+                        properties:
+                          bind:
+                            description: The ip or the Unix domain socket to which the listener
+                              should be bound to.
+                            type: string
+                          defaultEndpoint:
+                            type: string
+                          hosts:
+                            description: One or more hosts exposed by this gateway.
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: An optional name of the server, when set must be
+                              unique across all servers.
+                            type: string
+                          port:
+                            description: The Port on which the proxy should listen for incoming
+                              connections.
+                            properties:
+                              name:
+                                description: Label assigned to the port.
+                                type: string
+                              number:
+                                description: A valid non-negative integer port number.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              protocol:
+                                description: The protocol exposed on the port.
+                                type: string
+                              targetPort:
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                            required:
+                            - number
+                            - protocol
+                            - name
+                            type: object
+                          tls:
+                            description: Set of TLS related options that govern the server's
+                              behavior.
+                            properties:
+                              caCertificates:
+                                description: REQUIRED if mode is `MUTUAL` or `OPTIONAL_MUTUAL`.
+                                type: string
+                              caCrl:
+                                description: 'OPTIONAL: The path to the file containing
+                                  the certificate revocation list (CRL) to use in verifying
+                                  a presented client side certificate.'
+                                type: string
+                              cipherSuites:
+                                description: 'Optional: If specified, only support the specified
+                                  cipher list.'
+                                items:
+                                  type: string
+                                type: array
+                              credentialName:
+                                description: For gateways running on Kubernetes, the name
+                                  of the secret that holds the TLS certs including the CA
+                                  certificates.
+                                type: string
+                              httpsRedirect:
+                                description: If set to true, the load balancer will send
+                                  a 301 redirect for all http connections, asking the clients
+                                  to use HTTPS.
+                                type: boolean
+                              maxProtocolVersion:
+                                description: |-
+                                  Optional: Maximum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              minProtocolVersion:
+                                description: |-
+                                  Optional: Minimum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              mode:
+                                description: |-
+                                  Optional: Indicates whether connections to this port should be secured using TLS.
+
+                                  Valid Options: PASSTHROUGH, SIMPLE, MUTUAL, AUTO_PASSTHROUGH, ISTIO_MUTUAL, OPTIONAL_MUTUAL
+                                enum:
+                                - PASSTHROUGH
+                                - SIMPLE
+                                - MUTUAL
+                                - AUTO_PASSTHROUGH
+                                - ISTIO_MUTUAL
+                                - OPTIONAL_MUTUAL
+                                type: string
+                              privateKey:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              serverCertificate:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              subjectAltNames:
+                                description: A list of alternate names to verify the subject
+                                  identity in the certificate presented by the client.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateHash:
+                                description: An optional list of hex-encoded SHA-256 hashes
+                                  of the authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateSpki:
+                                description: An optional list of base64-encoded SHA-256
+                                  hashes of the SPKIs of authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                        required:
+                        - port
+                        - hosts
+                        type: object
+                      type: array
+                  type: object
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+          served: true
+          storage: false
+          subresources:
+            status: {}
+        - name: v1beta1
+          schema:
+            openAPIV3Schema:
+              properties:
+                spec:
+                  description: 'Configuration affecting edge load balancer. See more details
+                    at: https://istio.io/docs/reference/config/networking/gateway.html'
+                  properties:
+                    selector:
+                      additionalProperties:
+                        type: string
+                      description: One or more labels that indicate a specific set of pods/VMs
+                        on which this gateway configuration should be applied.
+                      type: object
+                    servers:
+                      description: A list of server specifications.
+                      items:
+                        properties:
+                          bind:
+                            description: The ip or the Unix domain socket to which the listener
+                              should be bound to.
+                            type: string
+                          defaultEndpoint:
+                            type: string
+                          hosts:
+                            description: One or more hosts exposed by this gateway.
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: An optional name of the server, when set must be
+                              unique across all servers.
+                            type: string
+                          port:
+                            description: The Port on which the proxy should listen for incoming
+                              connections.
+                            properties:
+                              name:
+                                description: Label assigned to the port.
+                                type: string
+                              number:
+                                description: A valid non-negative integer port number.
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                              protocol:
+                                description: The protocol exposed on the port.
+                                type: string
+                              targetPort:
+                                maximum: 4294967295
+                                minimum: 0
+                                type: integer
+                            required:
+                            - number
+                            - protocol
+                            - name
+                            type: object
+                          tls:
+                            description: Set of TLS related options that govern the server's
+                              behavior.
+                            properties:
+                              caCertificates:
+                                description: REQUIRED if mode is `MUTUAL` or `OPTIONAL_MUTUAL`.
+                                type: string
+                              caCrl:
+                                description: 'OPTIONAL: The path to the file containing
+                                  the certificate revocation list (CRL) to use in verifying
+                                  a presented client side certificate.'
+                                type: string
+                              cipherSuites:
+                                description: 'Optional: If specified, only support the specified
+                                  cipher list.'
+                                items:
+                                  type: string
+                                type: array
+                              credentialName:
+                                description: For gateways running on Kubernetes, the name
+                                  of the secret that holds the TLS certs including the CA
+                                  certificates.
+                                type: string
+                              httpsRedirect:
+                                description: If set to true, the load balancer will send
+                                  a 301 redirect for all http connections, asking the clients
+                                  to use HTTPS.
+                                type: boolean
+                              maxProtocolVersion:
+                                description: |-
+                                  Optional: Maximum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              minProtocolVersion:
+                                description: |-
+                                  Optional: Minimum TLS protocol version.
+
+                                  Valid Options: TLS_AUTO, TLSV1_0, TLSV1_1, TLSV1_2, TLSV1_3
+                                enum:
+                                - TLS_AUTO
+                                - TLSV1_0
+                                - TLSV1_1
+                                - TLSV1_2
+                                - TLSV1_3
+                                type: string
+                              mode:
+                                description: |-
+                                  Optional: Indicates whether connections to this port should be secured using TLS.
+
+                                  Valid Options: PASSTHROUGH, SIMPLE, MUTUAL, AUTO_PASSTHROUGH, ISTIO_MUTUAL, OPTIONAL_MUTUAL
+                                enum:
+                                - PASSTHROUGH
+                                - SIMPLE
+                                - MUTUAL
+                                - AUTO_PASSTHROUGH
+                                - ISTIO_MUTUAL
+                                - OPTIONAL_MUTUAL
+                                type: string
+                              privateKey:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              serverCertificate:
+                                description: REQUIRED if mode is `SIMPLE` or `MUTUAL`.
+                                type: string
+                              subjectAltNames:
+                                description: A list of alternate names to verify the subject
+                                  identity in the certificate presented by the client.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateHash:
+                                description: An optional list of hex-encoded SHA-256 hashes
+                                  of the authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                              verifyCertificateSpki:
+                                description: An optional list of base64-encoded SHA-256
+                                  hashes of the SPKIs of authorized client certificates.
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                        required:
+                        - port
+                        - hosts
+                        type: object
+                      type: array
+                  type: object
+                status:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
+          served: true
+          storage: true
+          subresources:
+            status: {}
+
+      # Examples
+      UQ: configure ingress for HTTP traffic on port 80 for example.com host
+      JSON: {"apiVersion":"networking.istio.io/v1","kind":"Gateway","metadata":{"name":"gateway"},"spec":{"selector":{"istio":"ingressgateway"},"servers":[{"port":{"number":80,"name":"http","protocol":"HTTP"},"hosts":["example.com"]}]}}

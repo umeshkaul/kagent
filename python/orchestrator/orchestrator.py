@@ -9,6 +9,7 @@ from autogen_agentchat.messages import AgentEvent, ChatMessage
 from autogen_agentchat.teams import SelectorGroupChat
 from autogen_core.models import ChatCompletionClient
 from autogen_core.tools import FunctionTool
+from autogen_agentchat.teams import MagenticOneGroupChat
 
 from .model import Agent, Team, Tool
 

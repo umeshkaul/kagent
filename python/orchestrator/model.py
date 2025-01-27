@@ -11,7 +11,6 @@ from pydantic_core import CoreSchema, core_schema
 from mcp import ClientSession, StdioServerParameters
 
 
-
 class ModelError(Exception):
     """Base class for all orchestrator errors"""
 
@@ -29,6 +28,7 @@ class ToolBuilder(ABC):
     """
     Builds a tool from a tool name
     """
+
     @abstractmethod
     def build(self, tool_name: str) -> list[BaseTool]:
         pass
@@ -42,10 +42,9 @@ class BuiltInTool(ToolBuilder, str):
     """
     https://docs.pydantic.dev/latest/concepts/types/#as-a-method-on-a-custom-type
     """
+
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
     def build(self, tool_name: str) -> list[BaseTool]:
@@ -63,6 +62,7 @@ class BuiltInTool(ToolBuilder, str):
         assert isinstance(tool, FunctionTool)
         return [tool]
 
+
 # class McpTool(ToolBuilder, BaseModel):
 #     name: str
 
@@ -77,10 +77,12 @@ class Tool(BaseModel):
     def build(self) -> list[BaseTool]:
         return self.tool.build(self.tool)
 
+
 class AgentBuilder(ABC):
     @abstractmethod
     def build(self, name: str, model_client: ChatCompletionClient) -> BaseChatAgent:
         pass
+
 
 class AgentType(Enum):
     AssistantAgent = "AssistantAgent"

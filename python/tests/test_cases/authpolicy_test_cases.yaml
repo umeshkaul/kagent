@@ -321,3 +321,17 @@ test_cases:
           - operation:
               methods: ["POST"]
               paths: ["/delete/*"]
+
+  - name: test_deny
+    input: "Create an Istio AuthorizationPolicy resource that denies all direct requests to the `productpage` service."
+    category: AuthorizationPolicy
+    expected_output:
+      apiVersion: security.istio.io/v1
+      kind: AuthorizationPolicy
+      metadata:
+        name: policy
+        namespace: default
+      spec:
+        selector:
+          matchLabels:
+            app: productpage
