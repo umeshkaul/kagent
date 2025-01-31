@@ -45,22 +45,26 @@ def _get_services(
 def _get_resources(
     name: Annotated[str, "The name of the resource to get information about"],
     resource_type: Annotated[str, "The type of resource to get information about"],
-    all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
     ns: Annotated[Optional[str], "The namespace of the resource to get information about"],
     output: Annotated[Optional[str], "The output format of the resource information"],
+    all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"] = False,
 ) -> str:
-    if name and all_namespaces:
-        raise ValueError("Cannot specify both name and all_namespaces=True")
+    if all_namespaces:
+        return _run_kubectl_command(f"get {resource_type} {'-o' + output if output else ''} -A")
 
     return _run_kubectl_command(
-        f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
+        f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''}"
     )
 
 
 def _apply_manifest(
-    manifest: Annotated[str, "The path to the manifest file to apply"],
+    manifest: Annotated[str, "The path or URL to the manifest file to apply"],
 ) -> str:
+
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=True) as tmp_file:
+        # Download the manifest if it's coming from a URL
+        if manifest.startswith("http"):
+            manifest = run_command("curl", [manifest])
         tmp_file.write(manifest)
         tmp_file.flush()  # Ensure the content is written to disk
         return _run_kubectl_command(f"apply -f {tmp_file.name}")
