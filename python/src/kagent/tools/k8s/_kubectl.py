@@ -1,6 +1,7 @@
 import tempfile
 from typing import Annotated, Optional
 
+import aiohttp
 from autogen_core.tools import FunctionTool
 
 from ..common.shell import run_command
@@ -57,16 +58,20 @@ def _get_resources(
     )
 
 
-def _apply_manifest(
+async def _apply_manifest(
     manifest: Annotated[str, "The path or URL to the manifest file to apply"],
 ) -> str:
 
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=True) as tmp_file:
-        # Download the manifest if it's coming from a URL
+        # Download the manifest if it's coming from a URL using aiohttp
         if manifest.startswith("http"):
-            manifest = run_command("curl", [manifest])
-        tmp_file.write(manifest)
-        tmp_file.flush()  # Ensure the content is written to disk
+            session = aiohttp.ClientSession()
+            with session.get(manifest) as response:
+                response.raise_for_status()
+                tmp_file.write(await response.text())
+        else:
+            tmp_file.write(manifest)
+            tmp_file.flush()  # Ensure the content is written to disk
         return _run_kubectl_command(f"apply -f {tmp_file.name}")
 
 
