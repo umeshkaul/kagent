@@ -6,13 +6,7 @@ from ..common.shell import run_command
 
 
 async def _verify_install() -> str:
-    output = _run_istioctl_command("verify-install")
-
-    if "0 Istio control planes detected" in output:
-        return "Istio is not installed"
-
-    version = _run_istioctl_command("version")
-    return f"Istio is installed: {version}"
+    return _run_istioctl_command("verify-install")
 
 async def _install(
     profile: Annotated[Optional[str], "The Istio profile to install (e.g. default, ambient)"] = "ambient",
