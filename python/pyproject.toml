@@ -19,7 +19,7 @@ dependencies = [
   "python-dotenv>=1.0.1",
   "pyyaml>=6.0.2",
   "mcp>=1.2.0",
-  "aiohttp>=3.11.11",
+  "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]
@@ -29,9 +29,9 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
-autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
-autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "b2800d729b289bcac614bd918e4fffd8f094d104" }
+autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "5df5bde12770a581398a2974397d24bce417536a" }
+autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "5df5bde12770a581398a2974397d24bce417536a" }
+autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "5df5bde12770a581398a2974397d24bce417536a" }
 kagent = { workspace = true }
 
 [tool.ruff]

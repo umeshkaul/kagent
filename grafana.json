@@ -1,0 +1,56 @@
+{ "dashboard": {
+    "id": null,
+    "uid": null,
+    "title": "NEW RED Metrics for Productpage",
+    "tags": [],
+    "timezone": "browser",
+    "panels": [
+      {
+        "type": "grafana.SimpleGraph",
+        "title": "Request Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_requests_total{job=\"productpage\"}[5m]))",
+            "format": "time_series"
+          }
+        ],
+        "datasource": null,
+        "renderer": "flot"
+      },
+      {
+        "type": "grafana.SimpleGraph",
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_requests_total{job=\"productpage\", code!~\"2..\"}[5m]))",
+            "format": "time_series"
+          }
+        ],
+        "datasource": null,
+        "renderer": "flot"
+      },
+      {
+        "type": "grafana.SimpleGraph",
+        "title": "Request Duration",
+        "targets": [
+          {
+            "expr": "sum(rate(istio_request_duration_seconds_sum{job=\"productpage\"}[5m])) / sum(rate(istio_request_duration_seconds_count{job=\"productpage\"}[5m]))",
+            "format": "time_series"
+          }
+        ],
+        "datasource": null,
+        "renderer": "flot"
+      }
+    ],
+    "schemaVersion": 26,
+    "version": 1,
+    "links": [],
+    "refresh": "5s",
+    "style": "dark",
+    "hideControls": false,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

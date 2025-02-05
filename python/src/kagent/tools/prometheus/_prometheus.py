@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 from autogen_core.tools import FunctionTool
 from typing_extensions import Annotated
 
-from ._client import PrometheusClient
+from ..common.client import HttpClient
 
 
 class QueryResponseFormat(str, Enum):
@@ -22,15 +22,14 @@ class TargetState(str, Enum):
 
 async def _query(
     query: Annotated[str, "Prometheus expression query string"],
-    time: Annotated[Optional[Union[datetime, float]], "Evaluation timestamp"],
-    timeout: Annotated[Optional[str], "Evaluation timeout"],
 ) -> Dict[str, Any]:
     """Executes an instant query at a single point in time."""
-    async with PrometheusClient() as client:
+    base_url = "http://localhost:9090/api/v1"
+    c = HttpClient(base_url=base_url)
+
+    async with c as client:
         params = {
             "query": query,
-            "time": client._format_time(time) if time else None,
-            "timeout": timeout,
         }
         return await client._make_request("GET", "query", params=params)
 
@@ -43,7 +42,7 @@ async def _query_range(
     timeout: Annotated[Optional[str], "Evaluation timeout"],
 ) -> Dict[str, Any]:
     """Evaluates an expression query over a range of time."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "query": query,
             "start": client._format_time(start),
@@ -61,7 +60,7 @@ async def _get_series(
     limit: Annotated[Optional[int], "Maximum number of returned series"],
 ) -> List[Dict[str, str]]:
     """Returns the list of time series that match a certain label set."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "match[]": match,
             "start": client._format_time(start) if start else None,
@@ -79,7 +78,7 @@ async def _get_label_names(
     limit: Annotated[Optional[int], "Maximum number of returned items"],
 ) -> List[str]:
     """Returns a list of label names."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "start": client._format_time(start) if start else None,
             "end": client._format_time(end) if end else None,
@@ -98,7 +97,7 @@ async def _get_label_values(
     limit: Annotated[Optional[int], "Maximum number of returned items"],
 ) -> List[str]:
     """Returns a list of label values for a provided label name."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         # URL encode the label name for safety
         encoded_label = urllib.parse.quote(label_name)
         params = {
@@ -116,7 +115,7 @@ async def _get_targets(
     scrape_pool: Annotated[Optional[str], "Scrape pool name"],
 ) -> Dict[str, Any]:
     """Returns an overview of the current state of the Prometheus target discovery."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "state": state.value if state else None,
             "scrape_pool": scrape_pool,
@@ -135,7 +134,7 @@ async def _get_rules(
     group_next_token: Annotated[Optional[str], "Pagination token"],
 ) -> Dict[str, Any]:
     """Returns a list of alerting and recording rules."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "type": type,
             "rule_name[]": rule_name,
@@ -151,7 +150,7 @@ async def _get_rules(
 
 async def _get_alerts() -> Dict[str, Any]:
     """Returns a list of all active alerts."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "alerts")
 
 
@@ -161,7 +160,7 @@ async def _get_target_metadata(
     limit: Annotated[Optional[int], "Maximum number of targets"],
 ) -> List[Dict[str, Any]]:
     """Returns metadata about metrics currently scraped from targets."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "match_target": match_target,
             "metric": metric,
@@ -173,7 +172,7 @@ async def _get_target_metadata(
 
 async def _get_alertmanagers() -> Dict[str, Any]:
     """Returns an overview of the current state of the Prometheus alertmanager discovery."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "alertmanagers")
 
 
@@ -183,7 +182,7 @@ async def _get_metadata(
     limit_per_metric: Annotated[Optional[int], "Maximum entries per metric"],
 ) -> Dict[str, List[Dict[str, Any]]]:
     """Returns metadata about metrics currently scraped from targets."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "metric": metric,
             "limit": limit,
@@ -195,25 +194,25 @@ async def _get_metadata(
 
 async def _get_status_config() -> Dict[str, str]:
     """Returns currently loaded configuration file."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "status/config")
 
 
 async def _get_status_flags() -> Dict[str, str]:
     """Returns flag values that Prometheus was configured with."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "status/flags")
 
 
 async def _get_status_runtime_info() -> Dict[str, Any]:
     """Returns various runtime information properties about the Prometheus server."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "status/runtimeinfo")
 
 
 async def _get_status_build_info() -> Dict[str, str]:
     """Returns various build information properties about the Prometheus server."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "status/buildinfo")
 
 
@@ -221,7 +220,7 @@ async def _get_status_tsdb(
     limit: Annotated[Optional[int], "Number of items limit"],
 ) -> Dict[str, Any]:
     """Returns various cardinality statistics about the Prometheus TSDB."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {"limit": limit} if limit is not None else None
         return await client._make_request("GET", "status/tsdb", params=params)
 
@@ -230,7 +229,7 @@ async def _create_snapshot(
     skip_head: Annotated[Optional[bool], "Skip head block flag"],
 ) -> Dict[str, str]:
     """Creates a snapshot of all current data."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {"skip_head": "true" if skip_head else None}
         return await client._make_request("POST", "admin/tsdb/snapshot", params=params)
 
@@ -241,7 +240,7 @@ async def _delete_series(
     end: Annotated[Optional[Union[datetime, float]], "End timestamp"],
 ) -> None:
     """Deletes data for a selection of series in a time range."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         params = {
             "match[]": match,
             "start": client._format_time(start) if start else None,
@@ -252,19 +251,19 @@ async def _delete_series(
 
 async def _clean_tombstones() -> None:
     """Removes the deleted data from disk and cleans up the existing tombstones."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         await client._make_request("POST", "admin/tsdb/clean_tombstones")
 
 
 async def _get_status_wal_replay() -> Dict[str, Any]:
     """Returns information about the WAL replay."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "status/walreplay")
 
 
 async def _get_notifications() -> Dict[str, Any]:
     """Returns a list of all currently active notifications."""
-    async with PrometheusClient() as client:
+    async with HttpClient(base_url="http://localhost:9090/api/v1/") as client:
         return await client._make_request("GET", "notifications")
 
 

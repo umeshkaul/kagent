@@ -1,0 +1,278 @@
+{
+    "user_id": "guestuser@gmail.com",
+    "version": "0.0.1",
+    "label": "grafana-team",
+  "component": {
+    "provider": "autogen_agentchat.teams.SelectorGroupChat",
+    "component_type": "team",
+    "version": 1,
+    "component_version": 1,
+    "description": "A group chat team that have participants takes turn to publish a message\n    to all, using a ChatCompletion model to select the next speaker after each message.",
+    "label": "SelectorGroupChat",
+    "config": {
+      "participants": [
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that provides assistance with tool use.",
+          "label": "AssistantAgent",
+          "config": {
+            "name": "PlanningAgent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "description": "Chat completion client for OpenAI hosted models.",
+              "label": "OpenAIChatCompletionClient",
+              "config": {
+                "model": "o3-mini"
+              }
+            },
+            "tools": [],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+              "label": "UnboundedChatCompletionContext",
+              "config": {}
+            },
+            "description": "An agent for planning tasks, this agent should be the first to engage when given a new task.",
+            "system_message": "\n    You are a planning agent. Current date and time is: 2025-02-04 10:50:33\n    Your job is to break down complex tasks into smaller, manageable subtasks that can be executed by the team members. If one task depends on another, make sure to assign the tasks in the correct order.\n\n    DO NOT MAKE UP ADDITIONAL AND UNNECESSARY SUBTASKS.\n\n    Your team members are:\n        k8s_agent: KNows how to interact with a Kubernetes cluster using the kubectl CLI. It can only run kubectl commands.\n        prometheus_agent: Knows how to query and retrieve metrics for services in the cluster.\n        grafana_agent: Knows how to generate Grafana dashboards from user input and Prometheus queries.\n\n    You only plan and delegate tasks - you do not execute them yourself. Always assign the task to the most appropriate team member.\n\n    Tasks that explicitly require a specific tool or agent should be assigned to the agent with that tool. For example:\n    - if the task requires querying for metrics, it should be assigned to the Prometheus agent. Make sure the metric name is correct, for example \"http_requests_total\" instead of \"http_requests\".\n    - if the task requires to install Istio, it should be assigned to the Istio agent.\n    - if the task requires to generate a Grafana dashboard, it should be assigned to the Grafana agent.\n    - if the previous task fails and needs to be re-executed, it should be assigned to the same agent. If the task fails more than 5 times, respond with \"TERMINATE\".\n\n    When tasked to generate Grafana dashboards or Prometheus queries make sure you confirm the pods/services are available and running in the cluster.\n    The input for the grafana_agent should include the Prometheus query from the prometheus_agent as well as the description of the dashboard to create.\n\n    For example:\n    - if users asks for metrics from \"customers\" app, you will use the kubernetes agent to check for any services, deployments or pods that match the provided name. Then you'll use the fully qualified service or workload names when creating queries or dashboards.\n\n    Make sure you evaluate the tasks first before assigning them to the team members. For example, if the task requires querying metrics, you should first gather the information about the pods, services or namespaces that need to be queried.\n\n    When assigning tasks, use this format:\n    1. <agent>: <task>\n\n    After all tasks assigned to agents are complete, summarize the findings and end with \"TERMINATE\". DO NOT END THE CONVERSATION BEFORE ALL TASKS ARE COMPLETE.\n    ",
+            "model_client_stream": false,
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}"
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that provides assistance with tool use.",
+          "label": "AssistantAgent",
+          "config": {
+            "name": "k8s_agent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "description": "Chat completion client for OpenAI hosted models.",
+              "label": "OpenAIChatCompletionClient",
+              "config": {
+                "model": "o3-mini"
+              }
+            },
+            "tools": [
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "k8s.get_resources"
+                }
+              }
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+              "label": "UnboundedChatCompletionContext",
+              "config": {}
+            },
+            "description": "An agent for k8s operations",
+            "system_message": "\n    You are a Kubernetes agent. You know how to interact with a Kubernetes cluster.\n\n    # Tips\n    - when asked to get the pods, make sure you check the deployment first and then get the pods that belong to that deployment.\n    ",
+            "model_client_stream": false,
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}"
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that provides assistance with tool use.",
+          "label": "AssistantAgent",
+          "config": {
+            "name": "prometheus_agent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "description": "Chat completion client for OpenAI hosted models.",
+              "label": "OpenAIChatCompletionClient",
+              "config": {
+                "model": "o3-mini"
+              }
+            },
+            "tools": [
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "prometheus.query"
+                }
+              },
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "prometheus.get_series"
+                }
+              },
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "prometheus.get_label_names"
+                }
+              },
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "prometheus.get_label_values"
+                }
+              }
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+              "label": "UnboundedChatCompletionContext",
+              "config": {}
+            },
+            "description": "An agent for Prometheus operations",
+            "system_message": "\n    You are a Prometheus agent. You know how to query metrics from Prometheus. Current date and time is: 2025-02-04 10:50:33.\n    For any time related queries, always use the current time as the reference. If the time range is not provided in the task, use the past 24 hours as time range.\n\n    # Input\n    You'll receive the user query describing which metrics to retrieve or queries to generate. Make sure you validate the metric names before creating a query.\n\n    # Tips\n    Always check all relevant metrics (error rate, latency, responses). If Istio is installed, check metrics with the following prefixes:\n    - envoy_\n    - istio_requests_total\n    - istio_request_duration_milliseconds\n\n    # Output\n    The output should contain ALL information necessary to construct dashboards:\n    - full query\n    - metric names\n    - metric values\n    ",
+            "model_client_stream": false,
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}"
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "description": "An agent that provides assistance with tool use.",
+          "label": "AssistantAgent",
+          "config": {
+            "name": "grafana_agent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "description": "Chat completion client for OpenAI hosted models.",
+              "label": "OpenAIChatCompletionClient",
+              "config": {
+                "model": "o3-mini"
+              }
+            },
+            "tools": [
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "label": "BuiltInTool",
+                "config": {
+                  "fn_name": "grafana.generate_dashboard_json"
+                }
+              }
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "description": "An unbounded chat completion context that keeps a view of the all the messages.",
+              "label": "UnboundedChatCompletionContext",
+              "config": {}
+            },
+            "description": "An agent for Grafana operations",
+            "system_message": "You are a Grafana agent. You know how to interact with Grafana.\n    Current date and time is: 2025-02-04 10:50:33.\n\n    The user input will contain the explanation of the dashboards to create and the Prometheus queries to use. Make sure you understand the requirements before creating the dashboard.\n    ",
+            "model_client_stream": false,
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}"
+          }
+        }
+      ],
+      "model_client": {
+        "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+        "component_type": "model",
+        "version": 1,
+        "component_version": 1,
+        "description": "Chat completion client for OpenAI hosted models.",
+        "label": "OpenAIChatCompletionClient",
+        "config": {
+          "model": "o3-mini"
+        }
+      },
+      "termination_condition": {
+        "provider": "autogen_agentchat.base.OrTerminationCondition",
+        "component_type": "termination",
+        "version": 1,
+        "component_version": 1,
+        "label": "OrTerminationCondition",
+        "config": {
+          "conditions": [
+            {
+              "provider": "autogen_agentchat.conditions.TextMentionTermination",
+              "component_type": "termination",
+              "version": 1,
+              "component_version": 1,
+              "description": "Terminate the conversation if a specific text is mentioned.",
+              "label": "TextMentionTermination",
+              "config": {
+                "text": "TERMINATE"
+              }
+            },
+            {
+              "provider": "autogen_agentchat.conditions.MaxMessageTermination",
+              "component_type": "termination",
+              "version": 1,
+              "component_version": 1,
+              "description": "Terminate the conversation after a maximum number of messages have been exchanged.",
+              "label": "MaxMessageTermination",
+              "config": {
+                "max_messages": 20
+              }
+            }
+          ]
+        }
+      },
+      "selector_prompt": "You are in a role play game. The following roles are available:\n{roles}.\nRead the following conversation. Then select the next role from {participants} to play. Only return the role.\n\n{history}\n\nRead the above conversation. Then select the next role from {participants} to play. Only return the role.\n",
+      "allow_repeated_speaker": true
+    }
+  }
+}
