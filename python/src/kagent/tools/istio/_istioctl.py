@@ -16,7 +16,7 @@ verify_install = FunctionTool(
     name="verify_install",
 )
 
-VerifyInstall, VerifyInstallToolConfig = create_typed_fn_tool(verify_install, "kagent.tools.istio.VerifyInstallTool", "VerifyInstallTool")
+VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(verify_install, "kagent.tools.istio.VerifyInstall", "VerifyInstall")
 
 
 async def _proxy_config(
@@ -34,7 +34,7 @@ proxy_config = FunctionTool(
     name="proxy_config",
 )
 
-ProxyConfig, ProxyConfigToolConfig = create_typed_fn_tool(proxy_config, "kagent.tools.istio.ProxyConfigTool", "ProxyConfigTool")
+ProxyConfig, ProxyConfigConfig = create_typed_fn_tool(proxy_config, "kagent.tools.istio.ProxyConfig", "ProxyConfig")
 
 
 # Function that runs the istioctl command in the shell

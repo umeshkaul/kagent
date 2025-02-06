@@ -9,16 +9,6 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-def _get_pod(
-    pod_name: Annotated[str, "The name of the pod to get information about"],
-    ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
-    output: Annotated[Optional[str], "The output format of the pod information"],
-) -> str:
-    return _run_kubectl_command(
-        f"get pod {pod_name + ' ' if pod_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''}"
-    )
-
-
 def _get_pods(
     ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
     all_namespaces: Annotated[Optional[bool], "Whether to get pods from all namespaces"],
@@ -82,7 +72,7 @@ get_pods = FunctionTool(
     name="get_pods",
 )
 
-GetPods, GetPodsToolConfig = create_typed_fn_tool(get_pods, "kagent.tools.k8s.GetPodsTool", "GetPodsTool")
+GetPods, GetPodsConfig = create_typed_fn_tool(get_pods, "kagent.tools.k8s.GetPods", "GetPods")
 
 get_services = FunctionTool(
     _get_services,
@@ -90,7 +80,7 @@ get_services = FunctionTool(
     name="get_services",
 )
 
-GetServices, GetServicesToolConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServicesTool", "GetServicesTool")
+GetServices, GetServicesConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServices", "GetServices")
 
 
 apply_manifest = FunctionTool(
@@ -99,7 +89,7 @@ apply_manifest = FunctionTool(
     name="_apply_manifest",
 )
 
-ApplyManifest, ApplyManifestToolConfig = create_typed_fn_tool(apply_manifest, "kagent.tools.k8s.ApplyManifestTool", "ApplyManifestTool")
+ApplyManifest, ApplyManifestConfig = create_typed_fn_tool(apply_manifest, "kagent.tools.k8s.ApplyManifest", "ApplyManifest")
 
 
 get_resources = FunctionTool(
@@ -108,7 +98,7 @@ get_resources = FunctionTool(
     name="get_resources",
 )
 
-GetResources, GetResourcesToolConfig = create_typed_fn_tool(get_resources, "kagent.tools.k8s.GetResourcesTool", "GetResourcesTool")
+GetResources, GetResourcesConfig = create_typed_fn_tool(get_resources, "kagent.tools.k8s.GetResources", "GetResources")
 
 
 get_pod_logs = FunctionTool(
@@ -117,7 +107,7 @@ get_pod_logs = FunctionTool(
     name="get_pod_logs",
 )
 
-GetPodLogs, GetPodLogsToolConfig = create_typed_fn_tool(get_pod_logs, "kagent.tools.k8s.GetPodLogsTool", "GetPodLogsTool")
+GetPodLogs, GetPodLogsConfig = create_typed_fn_tool(get_pod_logs, "kagent.tools.k8s.GetPodLogs", "GetPodLogs")
 
 
 def _run_kubectl_command(command: str) -> str:
