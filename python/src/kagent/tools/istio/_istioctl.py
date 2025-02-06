@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
+from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
@@ -14,6 +15,8 @@ verify_install = FunctionTool(
     description="Verify Istio installation status",
     name="verify_install",
 )
+
+VerifyInstall, VerifyInstallToolConfig = create_typed_fn_tool(verify_install, "kagent.tools.istio.VerifyInstallTool", "VerifyInstallTool")
 
 
 async def _proxy_config(
@@ -30,6 +33,8 @@ proxy_config = FunctionTool(
     description="Get proxy configuration for 1 pod",
     name="proxy_config",
 )
+
+ProxyConfig, ProxyConfigToolConfig = create_typed_fn_tool(proxy_config, "kagent.tools.istio.ProxyConfigTool", "ProxyConfigTool")
 
 
 # Function that runs the istioctl command in the shell

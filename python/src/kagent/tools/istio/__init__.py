@@ -1,4 +1,7 @@
 from ._istio_crds import generate_resource
-from ._istioctl import proxy_config, verify_install
+from ._istioctl import (
+    ProxyConfig,
+    VerifyInstall,
+)
 
-__all__ = ["verify_install", "proxy_config", "generate_resource"]
+__all__ = ["ProxyConfig", "VerifyInstall", "generate_resource"]

@@ -1,8 +1,11 @@
 import tempfile
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
-from autogen_core.tools import FunctionTool
+from autogen_core import CancellationToken, Component
+from autogen_core.tools import BaseTool, FunctionTool
+from pydantic import BaseModel
 
+from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
@@ -79,11 +82,7 @@ get_pods = FunctionTool(
     name="get_pods",
 )
 
-get_pod = FunctionTool(
-    _get_pod,
-    description="Gets a single pod in Kubernetes. Always prefer output type `wide` unless otherwise specified.",
-    name="get_pod",
-)
+GetPods, GetPodsToolConfig = create_typed_fn_tool(get_pods, "kagent.tools.k8s.GetPodsTool", "GetPodsTool")
 
 get_services = FunctionTool(
     _get_services,
@@ -91,11 +90,17 @@ get_services = FunctionTool(
     name="get_services",
 )
 
+GetServices, GetServicesToolConfig = create_typed_fn_tool(get_services, "kagent.tools.k8s.GetServicesTool", "GetServicesTool")
+
+
 apply_manifest = FunctionTool(
     _apply_manifest,
     description="Apply a manifest file to the Kubernetes cluster.",
     name="_apply_manifest",
 )
+
+ApplyManifest, ApplyManifestToolConfig = create_typed_fn_tool(apply_manifest, "kagent.tools.k8s.ApplyManifestTool", "ApplyManifestTool")
+
 
 get_resources = FunctionTool(
     _get_resources,
@@ -103,11 +108,16 @@ get_resources = FunctionTool(
     name="get_resources",
 )
 
+GetResources, GetResourcesToolConfig = create_typed_fn_tool(get_resources, "kagent.tools.k8s.GetResourcesTool", "GetResourcesTool")
+
+
 get_pod_logs = FunctionTool(
     _get_pod_logs,
     description="Get logs from a specific pod in Kubernetes.",
     name="get_pod_logs",
 )
+
+GetPodLogs, GetPodLogsToolConfig = create_typed_fn_tool(get_pod_logs, "kagent.tools.k8s.GetPodLogsTool", "GetPodLogsTool")
 
 
 def _run_kubectl_command(command: str) -> str:
