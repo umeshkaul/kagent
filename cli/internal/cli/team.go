@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/kagent-dev/kagent/cli/internal/api"
@@ -16,17 +17,22 @@ func newTeamCmd() *cobra.Command {
 		Short: "Manage teams",
 	}
 
+	createCmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a new team",
+		RunE:  runTeamCreate,
+	}
+
+	createCmd.Flags().StringP("file", "f", "", "Team configuration file")
+	createCmd.MarkFlagRequired("file")
+
 	cmd.AddCommand(
 		&cobra.Command{
 			Use:   "list",
 			Short: "List all teams",
 			RunE:  runTeamList,
 		},
-		&cobra.Command{
-			Use:   "create",
-			Short: "Create a new team",
-			RunE:  runTeamCreate,
-		},
+		createCmd,
 		&cobra.Command{
 			Use:   "get [name]",
 			Short: "Get team details",
@@ -66,7 +72,7 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 	for i, team := range teams {
 		rows[i] = []string{
 			fmt.Sprintf("%d", team.ID),
-			team.Component.Label,
+			*team.Component.Label,
 			team.CreatedAt,
 		}
 	}
@@ -75,7 +81,33 @@ func runTeamList(cmd *cobra.Command, args []string) error {
 }
 
 func runTeamCreate(cmd *cobra.Command, args []string) error {
-	return fmt.Errorf("not implemented")
+	filePath, err := cmd.Flags().GetString("file")
+	if err != nil {
+		return fmt.Errorf("error getting file flag: %w", err)
+	}
+
+	jsonFile, err := os.ReadFile(filePath)
+	if err != nil {
+		return fmt.Errorf("error reading file %s: %w", filePath, err)
+	}
+
+	var team api.CreateTeamRequest
+	if err := json.Unmarshal(jsonFile, &team); err != nil {
+		return fmt.Errorf("error parsing YAML: %w", err)
+	}
+
+	cfg, err := config.Get()
+	if err != nil {
+		return err
+	}
+
+	client := api.NewClient(cfg.APIURL, cfg.WSURL)
+	if err = client.CreateTeam(&team); err != nil {
+		return fmt.Errorf("error creating team: %w", err)
+	}
+
+	fmt.Println("Team created successfully")
+	return nil
 }
 
 func runTeamGet(cmd *cobra.Command, args []string) error {

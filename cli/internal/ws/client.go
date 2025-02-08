@@ -57,7 +57,7 @@ func NewClient(wsURL string, runID string, config Config) (*Client, error) {
 }
 
 // StartInteractive initiates the interactive session with the server
-func (c *Client) StartInteractive(teamConfig api.TeamComponent, task string) error {
+func (c *Client) StartInteractive(team api.Team, task string) error {
 	defer c.conn.Close()
 
 	interrupt := make(chan os.Signal, 1)
@@ -68,12 +68,8 @@ func (c *Client) StartInteractive(teamConfig api.TeamComponent, task string) err
 	startMsg := StartMessage{
 		Type:       MessageTypeStart,
 		Task:       task,
-		TeamConfig: teamConfig,
+		TeamConfig: team.Component,
 	}
-
-	// type: "start",
-	// task: query,
-	// team_config: teamConfig,
 
 	if err := c.conn.WriteJSON(startMsg); err != nil {
 		return fmt.Errorf("failed to send start message: %v", err)
@@ -106,51 +102,85 @@ func (c *Client) StartInteractive(teamConfig api.TeamComponent, task string) err
 	}
 }
 
+func getMessageContentType(data json.RawMessage) (ContentType, error) {
+	mapStructure := &map[string]string{}
+	if err := json.Unmarshal(data, mapStructure); err != nil {
+		return "", fmt.Errorf("error parsing message data: %v", err)
+	}
+
+	typeStr := (*mapStructure)["type"]
+	return ContentType(typeStr), nil
+}
+
 func (c *Client) handleMessages(inputTimeout chan struct{}) {
 	defer close(c.done)
 
 	for {
-		var msg WebSocketMessage
+		var msg BaseWebSocketMessage
 		err := c.conn.ReadJSON(&msg)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading message: %v\n", err)
 			return
 		}
-
 		switch msg.Type {
 		case MessageTypeError:
 			fmt.Fprintf(os.Stderr, "Error: %s\n", msg.Error)
 			return
 
 		case MessageTypeMessage:
-			var taskMessage api.TaskMessage
-			if err := json.Unmarshal(msg.Data, &taskMessage); err != nil {
-				fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
-				continue
+			mapStructure := &map[string]string{}
+			_ = json.Unmarshal(msg.Data, mapStructure)
+			typeStr := (*mapStructure)["type"]
+			contentType := ContentType(typeStr)
+
+			switch contentType {
+			case ContentTypeText:
+				var textMessage TextMessage
+				if err := json.Unmarshal(msg.Data, &textMessage); err != nil {
+					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					continue
+				}
+				fmt.Printf("%s: %s\n", textMessage.Source, textMessage.Content)
+			case ContentTypeToolCallRequest:
+				var toolCallRequest ToolCallRequest
+				if err := json.Unmarshal(msg.Data, &toolCallRequest); err != nil {
+					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					continue
+				}
+				fmt.Printf("%s (function call request) \n", toolCallRequest.Source)
+				for _, functionCall := range toolCallRequest.Content {
+					fmt.Printf("  %s(%s)\n", functionCall.Name, functionCall.Arguments)
+				}
+
+			case ContentTypeToolCallExecution:
+				var toolCallExecution ToolCallExecution
+				if err := json.Unmarshal(msg.Data, &toolCallExecution); err != nil {
+					fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+					continue
+				}
+				fmt.Printf("%s (function call execution)\n", toolCallExecution.Source)
+				for _, functionExecution := range toolCallExecution.Content {
+					fmt.Printf("%s\n", functionExecution.Content)
+				}
 			}
-			fmt.Printf("%s: %s\n", taskMessage.Source, taskMessage.Content)
 
 		case MessageTypeInputRequest:
 			go c.handleInputTimeout(inputTimeout)
-			if err := c.handleUserInput(); err != nil {
+			if err := c.handleUserInput(msg.Data); err != nil {
 				fmt.Fprintf(os.Stderr, "Error handling input: %v\n", err)
 				return
 			}
 
 		case MessageTypeResult, MessageTypeCompletion:
-			if msg.Status == "complete" {
-				if msg.Result != nil {
-					// Handle any specific TeamResult processing if needed
-					fmt.Printf("\nTask completed! Duration: %.2f seconds\n", msg.Result.Duration)
-				} else {
-					fmt.Println("\nTask completed successfully!")
-				}
-				return
-			} else if msg.Status == "error" {
-				fmt.Fprintf(os.Stderr, "\nTask failed: %s\n", msg.Error)
-				return
+			var msgResult CompletionMessage
+			if err := json.Unmarshal(msg.Data, &msgResult); err != nil {
+				fmt.Fprintf(os.Stderr, "Error parsing message data: %v\n", err)
+				continue
 			}
+
+			fmt.Printf("\n(%s) Task completed:\n%s", msgResult.Status, msgResult.Data)
 		}
+
 	}
 }
 
@@ -162,7 +192,7 @@ func (c *Client) handleInputTimeout(inputTimeout chan struct{}) {
 		stopMsg := StopMessage{
 			Type:   MessageTypeStop,
 			Reason: "Input timeout",
-			Code:   "TIMEOUT",
+			Code:   4000,
 		}
 		c.conn.WriteJSON(stopMsg)
 	case <-c.done:
@@ -170,8 +200,12 @@ func (c *Client) handleInputTimeout(inputTimeout chan struct{}) {
 	}
 }
 
-func (c *Client) handleUserInput() error {
-	fmt.Print("\nInput required > ")
+func (c *Client) handleUserInput(msg json.RawMessage) error {
+	var inputRequest InputRequestMessage
+	if err := json.Unmarshal(msg, &inputRequest); err != nil {
+		return fmt.Errorf("error parsing input request: %v", err)
+	}
+	fmt.Printf("%s: %s\n", inputRequest.Source, inputRequest.Content)
 	scanner := bufio.NewScanner(os.Stdin)
 	if scanner.Scan() {
 		response := scanner.Text()

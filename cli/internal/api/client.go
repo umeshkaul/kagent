@@ -102,12 +102,7 @@ func (c *Client) doRequest(method, path string, body interface{}, result interfa
 
 	// If caller wants the result, marshal the Data field into their result type
 	if result != nil {
-		dataBytes, err := json.Marshal(apiResp.Data)
-		if err != nil {
-			return fmt.Errorf("error re-marshaling data: %w", err)
-		}
-
-		if err := json.Unmarshal(dataBytes, result); err != nil {
+		if err := json.Unmarshal(apiResp.Data, result); err != nil {
 			return fmt.Errorf("error unmarshaling into result: %w", err)
 		}
 	}

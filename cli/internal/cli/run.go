@@ -111,7 +111,6 @@ func runRunCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Retrieved team %s with ID %d\n", team.Component.Label, team.ID)
 
 	// Create a random session name
 	sessionName, err := generateRandomString("session-", 5)
@@ -130,8 +129,6 @@ func runRunCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Created session %s with ID %d\n", session.Name, session.ID)
-
 	run, err := client.CreateRun(&api.CreateRunRequest{
 		SessionID: session.ID,
 		UserID:    session.UserID,
@@ -147,7 +144,7 @@ func runRunCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	// Starting interactive mode by default
-	return wsClient.StartInteractive(team.Component, args[1])
+	return wsClient.StartInteractive(*team, args[1])
 }
 
 func runRunGet(cmd *cobra.Command, args []string) error {

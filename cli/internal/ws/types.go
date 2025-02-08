@@ -12,7 +12,7 @@ const (
 	InputTimeoutDuration = 5 * time.Minute
 )
 
-// MessageType represents the type of WebSocket message
+// WebSocketMessageType represents the type of WebSocket message
 type MessageType string
 
 const (
@@ -26,14 +26,22 @@ const (
 	MessageTypeInputResponse MessageType = "input_response"
 )
 
-// WebSocketMessage represents the structure of messages received from the server
-type WebSocketMessage struct {
-	Type    MessageType     `json:"type"`
-	Data    json.RawMessage `json:"data,omitempty"`
-	Status  string          `json:"status,omitempty"`
-	Error   string          `json:"error,omitempty"`
-	Message string          `json:"message,omitempty"`
-	Result  *api.TeamResult `json:"result,omitempty"`
+// MessageType represents the type of message within the WebSocket message/event
+type ContentType string
+
+const (
+	ContentTypeText              ContentType = "TextMessage"
+	ContentTypeToolCallRequest   ContentType = "ToolCallRequestEvent"
+	ContentTypeToolCallExecution ContentType = "ToolCallExecutionEvent"
+	ContentTypeStop              ContentType = "StopMessage"
+	ContentTypeHandoff           ContentType = "HandoffMessage"
+)
+
+type BaseWebSocketMessage struct {
+	Type   MessageType     `json:"type"`
+	Data   json.RawMessage `json:"data,omitempty"`
+	Status string          `json:"status,omitempty"`
+	Error  string          `json:"error,omitempty"`
 }
 
 // StartMessage represents the initial message sent to start a task
@@ -43,15 +51,56 @@ type StartMessage struct {
 	TeamConfig api.TeamComponent `json:"team_config"`
 }
 
-// StopMessage represents the message sent to stop a task
+type TextMessage struct {
+	Type    MessageType `json:"type"`
+	Content string      `json:"content"`
+	Source  string      `json:"source"`
+}
+
+type ToolCallRequest struct {
+	Type        MessageType     `json:"type"`
+	Content     []FunctionCall  `json:"content"`
+	Source      string          `json:"source"`
+	ModelsUsage api.ModelsUsage `json:"models_usage"`
+}
+
+type ToolCallExecution struct {
+	Type        MessageType               `json:"type"`
+	Content     []FunctionExecutionResult `json:"content"`
+	Source      string                    `json:"source"`
+	ModelsUsage api.ModelsUsage           `json:"models_usage"`
+}
+
+type FunctionExecutionResult struct {
+	CallID  string `json:"call_id"`
+	Content string `json:"content"`
+}
+
+type FunctionCall struct {
+	ID        string `json:"id"`
+	Arguments string `json:"arguments"`
+	Name      string `json:"name"`
+}
+
+// CompletionMessage represents the message sent to stop a task
+type CompletionMessage struct {
+	Type   MessageType `json:"type"`
+	Status string      `json:"status"`
+	Data   string      `json:"data"`
+}
+
 type StopMessage struct {
 	Type   MessageType `json:"type"`
 	Reason string      `json:"reason"`
-	Code   string      `json:"code,omitempty"`
+	Code   int         `json:"code"`
 }
 
 // InputResponseMessage represents the message sent in response to an input request
 type InputResponseMessage struct {
 	Type     MessageType `json:"type"`
 	Response string      `json:"response"`
+}
+type InputRequestMessage struct {
+	Content string `json:"content"`
+	Source  string `json:"source"`
 }

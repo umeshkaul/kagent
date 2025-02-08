@@ -10,8 +10,8 @@ from .prompts import (
     GATEWAY_PROMPT,
     PEER_AUTHENTICATION_PROMPT,
     VIRTUAL_SERVICE_PROMPT,
-    IstioResources,
 )
+from .prompts.base import IstioResources
 
 
 def get_model_client():

@@ -1,0 +1,120 @@
+{
+  "user_id": "guestuser@gmail.com",
+  "version": "0.0.1",
+  "component": {
+    "provider": "autogen_agentchat.teams.RoundRobinGroupChat",
+    "component_type": "team",
+    "version": 1,
+    "component_version": 1,
+    "description": null,
+    "config": {
+      "participants": [
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "config": {
+            "name": "PlanningAgent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "config": {
+                "model": "gpt-4o"
+              }
+            },
+            "tools": [],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "config": {}
+            },
+            "description": "An agent for planning tasks, this agent should be the first to engage when given a new task.",
+            "system_message": "\n    You are a planning agent.\n    Your job is to break down complex tasks into smaller, manageable subtasks that can be executed by the team members. DO NOT MAKE UP ADDITIONAL AND UNNECESSARY SUBTASKS.\n    Your team members are:\n        istio_agent: Performs Istio resource generation tasks.\n        k8s_agent: Performs Kubernetes tasks.\n\n    You only plan and delegate tasks - you do not execute them yourself.\n\n    When assigning tasks, use this format:\n    1. <agent> : <task>\n\n    After all tasks are complete, summarize the findings and end with \"TERMINATE\".\n    ",
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}",
+            "model_client_stream": false
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.AssistantAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "config": {
+            "name": "k8s_agent",
+            "model_client": {
+              "provider": "autogen_ext.models.openai.OpenAIChatCompletionClient",
+              "component_type": "model",
+              "version": 1,
+              "component_version": 1,
+              "config": {
+                "model": "gpt-4o"
+              }
+            },
+            "tools": [
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "config": {
+                  "fn_name": "k8s.apply_manifest"
+                }
+              },
+              {
+                "provider": "kagent.tools.BuiltInTool",
+                "component_type": "tool",
+                "version": 1,
+                "component_version": 1,
+                "config": {
+                  "fn_name": "k8s.get_pods"
+                }
+              }
+            ],
+            "handoffs": [],
+            "model_context": {
+              "provider": "autogen_core.model_context.UnboundedChatCompletionContext",
+              "component_type": "chat_completion_context",
+              "version": 1,
+              "component_version": 1,
+              "config": {}
+            },
+            "description": "An agent for k8s operations",
+            "system_message": "\n    You are a k8s agent. You know how to interact with a Kubernetes cluster.\n    ",
+            "reflect_on_tool_use": false,
+            "tool_call_summary_format": "{result}",
+            "model_client_stream": false
+          }
+        },
+        {
+          "provider": "autogen_agentchat.agents.UserProxyAgent",
+          "component_type": "agent",
+          "version": 1,
+          "component_version": 1,
+          "config": {
+            "name": "user_proxy",
+            "description": "A human user"
+          }
+        }
+      ],
+      "termination_condition": {
+        "provider": "autogen_agentchat.conditions.MaxMessageTermination",
+        "component_type": "termination",
+        "version": 1,
+        "component_version": 1,
+        "description": null,
+        "config": {
+          "max_messages": 10
+        }
+      }
+    },
+    "label": "team-with-user"
+  }
+}
+

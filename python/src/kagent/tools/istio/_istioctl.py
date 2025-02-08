@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 
 from autogen_core.tools import FunctionTool
 
+from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
@@ -39,11 +40,15 @@ verify_install = FunctionTool(
     name="verify_install",
 )
 
+VerifyInstall, VerifyInstallConfig = create_typed_fn_tool(verify_install, "kagent.tools.istio.VerifyInstall", "VerifyInstall")
+
 install = FunctionTool(
     _install,
     description="Install Istio",
     name="install",
 )
+
+Install, InstallConfig = create_typed_fn_tool(install, "kagent.tools.istio.Install", "Install")
 
 uninstall = FunctionTool(
     _uninstall,
@@ -51,11 +56,15 @@ uninstall = FunctionTool(
     name="uninstall",
 )
 
+Uninstall, UninstallConfig = create_typed_fn_tool(uninstall, "kagent.tools.istio.Uninstall", "Uninstall")
+
 proxy_config = FunctionTool(
     _proxy_config,
     description="Get proxy configuration for 1 pod",
     name="proxy_config",
 )
+
+ProxyConfig, ProxyConfigConfig = create_typed_fn_tool(proxy_config, "kagent.tools.istio.ProxyConfig", "ProxyConfig")
 
 
 # Function that runs the istioctl command in the shell
