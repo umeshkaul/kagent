@@ -38,7 +38,7 @@
             "system_message": "\n    You are a planning agent.\n    Your job is to break down complex tasks into smaller, manageable subtasks that can be executed by the team members. DO NOT MAKE UP ADDITIONAL AND UNNECESSARY SUBTASKS.\n    Your team members are:\n        istio_agent: Performs Istio resource generation tasks.\n        k8s_agent: Performs Kubernetes tasks.\n\n    You only plan and delegate tasks - you do not execute them yourself.\n\n    When assigning tasks, use this format:\n    1. <agent> : <task>\n\n    After all tasks are complete, summarize the findings and end with \"TERMINATE\".\n    ",
             "reflect_on_tool_use": false,
             "tool_call_summary_format": "{result}",
-            "model_client_stream": false
+            "_model_client_stream": false
           }
         },
         {
@@ -62,18 +62,9 @@
                 "provider": "kagent.tools.BuiltInTool",
                 "component_type": "tool",
                 "version": 1,
-                "component_version": 1,
+                "component_version": 1, 
                 "config": {
                   "fn_name": "k8s.apply_manifest"
-                }
-              },
-              {
-                "provider": "kagent.tools.BuiltInTool",
-                "component_type": "tool",
-                "version": 1,
-                "component_version": 1,
-                "config": {
-                  "fn_name": "k8s.get_pods"
                 }
               }
             ],

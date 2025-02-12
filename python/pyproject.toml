@@ -29,9 +29,9 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "5df5bde12770a581398a2974397d24bce417536a" }
-autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "5df5bde12770a581398a2974397d24bce417536a" }
-autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "5df5bde12770a581398a2974397d24bce417536a" }
+autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
 kagent = { workspace = true }
 
 [tool.ruff]

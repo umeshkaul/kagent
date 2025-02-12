@@ -124,7 +124,7 @@ wheels = [
 [[package]]
 name = "autogen-agentchat"
 version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=5df5bde12770a581398a2974397d24bce417536a#5df5bde12770a581398a2974397d24bce417536a" }
+source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
 dependencies = [
     { name = "autogen-core" },
 ]
@@ -132,7 +132,7 @@ dependencies = [
 [[package]]
 name = "autogen-core"
 version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=5df5bde12770a581398a2974397d24bce417536a#5df5bde12770a581398a2974397d24bce417536a" }
+source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
 dependencies = [
     { name = "jsonref" },
     { name = "opentelemetry-api" },
@@ -145,7 +145,7 @@ dependencies = [
 [[package]]
 name = "autogen-ext"
 version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=5df5bde12770a581398a2974397d24bce417536a#5df5bde12770a581398a2974397d24bce417536a" }
+source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
 dependencies = [
     { name = "autogen-core" },
 ]
@@ -170,8 +170,8 @@ openai = [
 
 [[package]]
 name = "autogenstudio"
-version = "0.4.0"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=5df5bde12770a581398a2974397d24bce417536a#5df5bde12770a581398a2974397d24bce417536a" }
+version = "0.4.1"
+source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
 dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
@@ -180,6 +180,7 @@ dependencies = [
     { name = "autogen-ext", extra = ["azure", "magentic-one", "openai"] },
     { name = "azure-identity" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "html2text" },
     { name = "loguru" },
     { name = "numpy" },
     { name = "psycopg" },
@@ -680,6 +681,12 @@ wheels = [
 ]
 
 [[package]]
+name = "html2text"
+version = "2024.2.26"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/43/e1d53588561e533212117750ee79ad0ba02a41f52a08c1df3396bd466c05/html2text-2024.2.26.tar.gz", hash = "sha256:05f8e367d15aaabc96415376776cdd11afd5127a77fce6e36afc60c563ca2c32", size = 56527 }
+
+[[package]]
 name = "httpcore"
 version = "1.0.7"
 source = { registry = "https://pypi.org/simple" }
@@ -1004,9 +1011,9 @@ jupyter-executor = [
 [package.metadata]
 requires-dist = [
     { name = "autogen-agentchat", specifier = ">=0.4.3" },
-    { name = "autogen-core", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=5df5bde12770a581398a2974397d24bce417536a" },
-    { name = "autogen-ext", extras = ["http"], git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=5df5bde12770a581398a2974397d24bce417536a" },
-    { name = "autogenstudio", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=5df5bde12770a581398a2974397d24bce417536a" },
+    { name = "autogen-core", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
+    { name = "autogen-ext", extras = ["http"], git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
+    { name = "autogenstudio", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ipykernel", marker = "extra == 'jupyter-executor'", specifier = ">=6.29.5" },
     { name = "mcp", specifier = ">=1.2.0" },

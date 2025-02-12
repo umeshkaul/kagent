@@ -1,3 +1,3 @@
-from ._grafana import create_dashboard, generate_dashboard_json, get_folders
+from ._grafana import create_dashboard, generate_dashboard_json
 
-__all__ = ["get_folders", "create_dashboard", "generate_dashboard_json"]
+__all__ = ["create_dashboard", "generate_dashboard_json"]
