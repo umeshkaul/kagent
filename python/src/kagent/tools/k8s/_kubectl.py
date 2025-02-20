@@ -13,17 +13,13 @@ def _get_pods(
     ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
     all_namespaces: Annotated[Optional[bool], "Whether to get pods from all namespaces"],
     output: Annotated[Optional[str], "The output format of the pod information"],
-    *,
     context: dict = {},
 ) -> str:
     if ns and all_namespaces:
         raise ValueError("Cannot specify both ns and all_namespaces=True")
     cmd = f"get pods {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    # if context has a user_id key
-    if "user_id" in context:
-        cmd = f"--as {context['user_id']} --as-group system:authenticated {cmd}"
 
-    return _run_kubectl_command(cmd)
+    return _run_kubectl_command(cmd, context=context)
 
 
 def _get_services(
@@ -31,13 +27,14 @@ def _get_services(
     all_namespaces: Annotated[Optional[bool], "Whether to get services from all namespaces"],
     ns: Annotated[Optional[str], "The namespace of the service to get information about"],
     output: Annotated[Optional[str], "The output format of the service information"],
+    context: dict = {},
 ) -> str:
     if service_name and all_namespaces:
         all_namespaces = False
 
     return _run_kubectl_command(
-        f"get services {service_name + ' ' if service_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
+        f"get services {service_name + ' ' if service_name else ''}{'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}",
+        context=context)
 
 
 def _get_resources(
@@ -46,30 +43,35 @@ def _get_resources(
     all_namespaces: Annotated[Optional[bool], "Whether to get resources from all namespaces"],
     ns: Annotated[Optional[str], "The namespace of the resource to get information about"],
     output: Annotated[Optional[str], "The output format of the resource information"],
+    context: dict = {},
 ) -> str:
     if name and all_namespaces:
         # only use the name if provided, and ignore all_namespaces
         all_namespaces = False
 
     return _run_kubectl_command(
-        f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
+        f"get {resource_type} {name if name else ''} {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}",
+        context=context)
 
 
 def _apply_manifest(
     manifest: Annotated[str, "The path to the manifest file to apply"],
+    context: dict = {},
 ) -> str:
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=True) as tmp_file:
         tmp_file.write(manifest)
         tmp_file.flush()  # Ensure the content is written to disk
-        return _run_kubectl_command(f"apply -f {tmp_file.name}")
+        return _run_kubectl_command(f"apply -f {tmp_file.name}",
+        context=context)
 
 
 def _get_pod_logs(
     pod_name: Annotated[str, "The name of the pod to get logs from"],
     ns: Annotated[str, "The namespace of the pod to get logs from"],
+    context: dict = {},
 ):
-    return _run_kubectl_command(f"logs {pod_name + ' ' if pod_name else ''}{'-n' + ns if ns else ''}")
+    return _run_kubectl_command(f"logs {pod_name + ' ' if pod_name else ''}{'-n' + ns if ns else ''}",
+        context=context)
 
 
 get_pods = FunctionTool(
@@ -117,8 +119,11 @@ get_pod_logs = FunctionTool(
 GetPodLogs, GetPodLogsConfig = create_typed_fn_tool(get_pod_logs, "kagent.tools.k8s.GetPodLogs", "GetPodLogs")
 
 
-def _run_kubectl_command(command: str) -> str:
+def _run_kubectl_command(command: str, context: dict = {}) -> str:
     # Split the command and remove empty strings
     cmd_parts = command.split(" ")
     cmd_parts = [part for part in cmd_parts if part]  # Remove empty strings from the list
+    # if context has a user_id key
+    if "user_id" in context:
+        cmd_parts = ["--as", context['user_id'], "--as-group", "system:authenticated"] + cmd_parts
     return run_command("kubectl", cmd_parts)
