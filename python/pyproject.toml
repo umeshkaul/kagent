@@ -29,15 +29,10 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-# autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-# autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-# autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-# autogen-agentchat = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-
-autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-agentchat = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
+autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "da97395dc02d3648edbe5479b8a6133143e87536" }
+autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "da97395dc02d3648edbe5479b8a6133143e87536" }
+autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "da97395dc02d3648edbe5479b8a6133143e87536" }
+autogen-agentchat = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "da97395dc02d3648edbe5479b8a6133143e87536" }
 
 kagent = { workspace = true }
 
