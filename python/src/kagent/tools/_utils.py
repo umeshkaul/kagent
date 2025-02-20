@@ -25,8 +25,8 @@ def create_typed_fn_tool(fn_tool: FunctionTool, override_provider: str, class_na
                 return_type=fn_tool.return_type(),
             )
 
-        async def run(self, args: ToolConfig, cancellation_token: CancellationToken) -> Any:
-            return await self.fn_tool.run(args, cancellation_token)
+        async def run(self, args: ToolConfig, context: dict, cancellation_token: CancellationToken) -> Any:
+            return await self.fn_tool.run(args, context, cancellation_token)
 
         def _to_config(self) -> ToolConfig:
             return ToolConfig()

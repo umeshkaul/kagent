@@ -13,12 +13,17 @@ def _get_pods(
     ns: Annotated[Optional[str], "The namespace of the pod to get information about"],
     all_namespaces: Annotated[Optional[bool], "Whether to get pods from all namespaces"],
     output: Annotated[Optional[str], "The output format of the pod information"],
+    *,
+    context: dict = {},
 ) -> str:
     if ns and all_namespaces:
         raise ValueError("Cannot specify both ns and all_namespaces=True")
-    return _run_kubectl_command(
-        f"get pods {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
-    )
+    cmd = f"get pods {'-n' + ns + ' ' if ns else ''}{'-o' + output if output else ''} {'-A' if all_namespaces else ''}"
+    # if context has a user_id key
+    if "user_id" in context:
+        cmd = f"--as {context['user_id']} --as-group system:authenticated {cmd}"
+
+    return _run_kubectl_command(cmd)
 
 
 def _get_services(

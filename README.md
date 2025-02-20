@@ -32,7 +32,7 @@ uv run autogenstudio ui
 
 2. Run the frontend from the `ui` folder:
 
-```bashG
+```bash
 npm install
 
 npm run dev

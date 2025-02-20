@@ -29,9 +29,16 @@ jupyter-executor = [
 ]
 
 [tool.uv.sources]
-autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
-autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+# autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+# autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+# autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+# autogen-agentchat = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
+
+autogenstudio = { git = "https://github.com/yuval-k/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "1394f5c86e27c28d3cc4a7935faa458e81e49583" }
+autogen-ext = { git = "https://github.com/yuval-k/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "1394f5c86e27c28d3cc4a7935faa458e81e49583" }
+autogen-core = { git = "https://github.com/yuval-k/autogen.git", subdirectory = "python/packages/autogen-core", rev = "1394f5c86e27c28d3cc4a7935faa458e81e49583" }
+autogen-agentchat = { git = "https://github.com/yuval-k/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "1394f5c86e27c28d3cc4a7935faa458e81e49583" }
+
 kagent = { workspace = true }
 
 [tool.ruff]

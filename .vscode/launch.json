@@ -10,6 +10,10 @@
       "request": "launch",
       "justMyCode": false,
       "program": "${workspaceFolder}/python/main.py",
+      "args": ["ui"],
+      "env": {
+        "OPENAI_API_KEY": "TODO"
+      },
       "python": "${workspaceFolder}/python/.venv/bin/python"
     }
   ]

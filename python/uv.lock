@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -123,16 +124,16 @@ wheels = [
 
 [[package]]
 name = "autogen-agentchat"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583#1394f5c86e27c28d3cc4a7935faa458e81e49583" }
 dependencies = [
     { name = "autogen-core" },
 ]
 
 [[package]]
 name = "autogen-core"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583#1394f5c86e27c28d3cc4a7935faa458e81e49583" }
 dependencies = [
     { name = "jsonref" },
     { name = "opentelemetry-api" },
@@ -144,8 +145,8 @@ dependencies = [
 
 [[package]]
 name = "autogen-ext"
-version = "0.4.5"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+version = "0.4.7"
+source = { git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583#1394f5c86e27c28d3cc4a7935faa458e81e49583" }
 dependencies = [
     { name = "autogen-core" },
 ]
@@ -175,7 +176,7 @@ openai = [
 [[package]]
 name = "autogenstudio"
 version = "0.4.1"
-source = { git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547#340a8e85872697f1aa524ef900c651eaf427d547" }
+source = { git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583#1394f5c86e27c28d3cc4a7935faa458e81e49583" }
 dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
@@ -1026,10 +1027,10 @@ jupyter-executor = [
 
 [package.metadata]
 requires-dist = [
-    { name = "autogen-agentchat", specifier = ">=0.4.3" },
-    { name = "autogen-core", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
-    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
-    { name = "autogenstudio", git = "https://github.com/microsoft/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=340a8e85872697f1aa524ef900c651eaf427d547" },
+    { name = "autogen-agentchat", git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583" },
+    { name = "autogen-core", git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-core&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583" },
+    { name = "autogen-ext", extras = ["mcp"], git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-ext&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583" },
+    { name = "autogenstudio", git = "https://github.com/yuval-k/autogen.git?subdirectory=python%2Fpackages%2Fautogen-studio&rev=1394f5c86e27c28d3cc4a7935faa458e81e49583" },
     { name = "ipykernel", marker = "extra == 'jupyter-executor'", specifier = ">=6.29.5" },
     { name = "mcp", specifier = ">=1.2.0" },
     { name = "nbclient", marker = "extra == 'jupyter-executor'", specifier = ">=0.10.2" },
@@ -1040,6 +1041,7 @@ requires-dist = [
     { name = "sqlite-vec", specifier = ">=0.1.0" },
     { name = "tiktoken", specifier = "==0.8.0" },
 ]
+provides-extras = ["jupyter-executor"]
 
 [[package]]
 name = "loguru"
