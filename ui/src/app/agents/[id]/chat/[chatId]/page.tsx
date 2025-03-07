@@ -1,66 +1,61 @@
 "use client";
-
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useUserStore } from "@/lib/userStore";
-import ChatInterface from "@/components/ChatInterface";
-import { ChatLayout } from "@/components/ChatLayout";
+import { use, useEffect, useState } from "react";
+import { getChatData } from "@/app/actions/chat";
 import { LoadingState } from "@/components/LoadingState";
-import { ErrorState } from "@/components/ErrorState";
-import { useChatData } from "@/lib/useChatData";
+import { Team, SessionWithRuns, Run, Session } from "@/types/datamodel";
+import { useRouter } from "next/navigation";
 import useChatStore from "@/lib/useChatStore";
+import ChatInterface from "@/components/chat/ChatInterface";
 
-export default function ChatDetailPage() {
-  const params = useParams();
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { userId } = useUserStore();
-  const agentId = params.id as string;
-  const chatId = params.chatId as string;
+  const { initializeNewChat } = useChatStore();
 
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const { id } = use(params);
+  const [chatData, setChatData] = useState<{
+    agent: Team;
+    sessions: SessionWithRuns[];
+    viewState: {
+      session: Session;
+      run: Run;
+    } | null;
+  }>();
 
-  // Get chat data and actions from custom hook
-  const [{ agent, sessions, viewState, isLoading, error }, { handleDeleteSession, handleViewRun }] = useChatData({
-    agentId,
-    chatId,
-    userId,
-  });
-
-  // Get chat store state and actions
-  const { loadExistingChat, cleanup } = useChatStore();
-
-  // Load existing chat on mount and cleanup on unmount
   useEffect(() => {
-    loadExistingChat(chatId, userId);
-    return () => cleanup();
-  }, [chatId, userId, loadExistingChat, cleanup]);
+    const fetchData = async () => {
+      const data = await getChatData(id, null);
+      if (data.agent) {
+        setChatData(
+          data as {
+            agent: Team;
+            sessions: SessionWithRuns[];
+            viewState: {
+              session: Session;
+              run: Run;
+            } | null;
+          }
+        );
+      }
+    };
+    fetchData();
+  }, [id]);
 
-  if (error) return <ErrorState message={error} />;
-
-  // Handle navigation to new chat
   const onNewSession = async () => {
-    router.push(`/agents/${agentId}/chat`);
+    try {
+      await initializeNewChat(parseInt(id));
+      const { session } = useChatStore.getState();
+
+      if (session?.id) {
+        router.push(`/agents/${id}/chat/${session.id}`);
+      }
+    } catch (error) {
+      console.error("Error creating new session:", error);
+    }
   };
 
-  return (
-    <>
-      {isLoading && <LoadingState />}
-      <ChatLayout
-        isLeftSidebarOpen={isLeftSidebarOpen}
-        isRightSidebarOpen={isRightSidebarOpen}
-        onLeftSidebarToggle={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-        onRightSidebarToggle={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-        selectedTeam={agent}
-        sidebarProps={{
-          selectedTeam: agent,
-          sessions,
-          onDeleteSession: handleDeleteSession,
-          onViewRun: handleViewRun,
-        }}
-      >
-        <ChatInterface selectedAgentTeam={agent} selectedRun={viewState?.run} selectedSession={viewState?.session} isReadOnly={true} onNewSession={onNewSession} />
-      </ChatLayout>
-    </>
-  );
+  if (!chatData) {
+    return <LoadingState />;
+  }
+
+  return <ChatInterface selectedAgentTeam={chatData.agent} onNewSession={onNewSession} selectedRun={chatData.viewState?.run} selectedSession={chatData.viewState?.session} />;
 }

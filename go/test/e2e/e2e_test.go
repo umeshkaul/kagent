@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"encoding/json"
 	"os"
 
 	"sigs.k8s.io/yaml"
@@ -8,7 +9,6 @@ import (
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -26,132 +26,106 @@ var _ = Describe("E2e", func() {
 		// add a team
 		namespace := "team-ns"
 
-		apikeySecret := &v1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-secret",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Secret",
-				APIVersion: "v1",
-			},
-			Data: map[string][]byte{
-				apikeySecretKey: []byte(openaiApiKey),
-			},
-		}
-
-		modelConfig := &v1alpha1.AutogenModelConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "test-model",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenModelConfig",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
-			},
-			Spec: v1alpha1.AutogenModelConfigSpec{
-				Model:            "gpt-4o",
-				APIKeySecretName: apikeySecret.Name,
-				APIKeySecretKey:  apikeySecretKey,
-			},
-		}
-
-		planningAgent := &v1alpha1.AutogenAgent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "planning-agent",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
-			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "planning_agent",
-				Description:   "The Planning Agent is responsible for planning and scheduling tasks. The planning agent is also responsible for deciding when the user task has been accomplished and terminating the conversation.",
-				SystemMessage: readFileAsString("systemprompts/planning-agent-system-prompt.txt"),
-			},
-		}
-
-		kubectlUser := &v1alpha1.AutogenAgent{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kubectl-user",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
-			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "kubectl_execution_agent",
-				Description:   "The Kubectl User is responsible for running kubectl commands corresponding to user requests.",
-				SystemMessage: readFileAsString("systemprompts/kubectl-user-system-prompt.txt"),
-				Tools: []string{
-					string(v1alpha1.BuiltinTool_KubectlGetPods),
-					string(v1alpha1.BuiltinTool_KubectlGetServices),
-					string(v1alpha1.BuiltinTool_KubectlApplyManifest),
-					string(v1alpha1.BuiltinTool_KubectlGetResources),
-					string(v1alpha1.BuiltinTool_KubectlGetPodLogs),
-				},
-			},
-		}
-
-		kubeExpert := &v1alpha1.AutogenAgent{
+		kubeExpert := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "kube-expert",
 				Namespace: namespace,
 			},
 			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenAgent",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
+				Kind:       "Agent",
+				APIVersion: "kagent.dev/v1alpha1",
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "kubernetes_expert_agent",
+			Spec: v1alpha1.AgentSpec{
 				Description:   "The Kubernetes Expert AI Agent specializing in cluster operations, troubleshooting, and maintenance.",
 				SystemMessage: readFileAsString("systemprompts/kube-expert-system-prompt.txt"),
-			},
-		}
-
-		apiTeam := &v1alpha1.AutogenTeam{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "kube-team",
-				Namespace: namespace,
-			},
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "AutogenTeam",
-				APIVersion: "agent.ai.solo.io/v1alpha1",
-			},
-			Spec: v1alpha1.AutogenTeamSpec{
-				Participants: []string{
-					planningAgent.Name,
-					kubectlUser.Name,
-					kubeExpert.Name,
+				Tools: []v1alpha1.Tool{
+					{
+						Provider: "kagent.tools.k8s.AnnotateResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.ApplyManifest",
+					},
+					{
+						Provider: "kagent.tools.k8s.CheckServiceConnectivity",
+					},
+					{
+						Provider: "kagent.tools.k8s.CreateResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.DeleteResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.DescribeResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.ExecuteCommand",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetAvailableAPIResources",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetClusterConfiguration",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetEvents",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetPodLogs",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetResources",
+					},
+					{
+						Provider: "kagent.tools.k8s.GetResourceYAML",
+					},
+					{
+						Provider: "kagent.tools.k8s.LabelResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.PatchResource",
+					},
+					{
+						Provider: "kagent.tools.k8s.RemoveAnnotation",
+					},
+					{
+						Provider: "kagent.tools.k8s.RemoveLabel",
+					},
+					{
+						Provider: "kagent.tools.k8s.Rollout",
+					},
+					{
+						Provider: "kagent.tools.k8s.Scale",
+					},
+					{
+						Provider: "kagent.tools.k8s.GenerateResourceTool",
+					},
+					{
+						Provider: "kagent.tools.k8s.GenerateResourceToolConfig",
+					},
+					{
+						Provider: "kagent.tools.docs.QueryTool",
+						Config: map[string]v1alpha1.AnyType{
+							"docs_download_url": {
+								RawMessage: makeRawMsg("https://doc-sqlite-db.s3.sa-east-1.amazonaws.com"),
+							},
+						},
+					},
 				},
-				Description: "A team that debugs kubernetes issues.",
-				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
-					ModelConfig:    modelConfig.Name,
-					SelectorPrompt: "Please select a team member to help you with your Kubernetes issue.",
-				},
-				TerminationCondition: v1alpha1.TerminationCondition{
-					MaxMessageTermination:  &v1alpha1.MaxMessageTermination{MaxMessages: 10},
-					TextMentionTermination: &v1alpha1.TextMentionTermination{Text: "TERMINATE"},
-				},
-				MaxTurns: 10,
 			},
 		}
 
 		writeKubeObjects(
 			"manifests/kubeobjects.yaml",
-			apikeySecret,
-			modelConfig,
-			planningAgent,
 			kubeExpert,
-			kubectlUser,
-			apiTeam,
 		)
-
-		Expect(true).To(BeTrue())
 	})
 })
+
+func makeRawMsg(v interface{}) json.RawMessage {
+	data, err := json.Marshal(v)
+	Expect(err).NotTo(HaveOccurred())
+	return data
+}
 
 func writeKubeObjects(file string, objects ...metav1.Object) {
 	var bytes []byte

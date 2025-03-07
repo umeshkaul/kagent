@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,9 +36,9 @@ type AutogenTeamReconciler struct {
 	Reconciler autogen.AutogenReconciler
 }
 
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenteams,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenteams/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=agent.ai.solo.io,resources=autogenteams/finalizers,verbs=update
+// +kubebuilder:rbac:groups=kagent.dev,resources=teams,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=kagent.dev,resources=teams/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=kagent.dev,resources=teams/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -57,7 +58,7 @@ func (r *AutogenTeamReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *AutogenTeamReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&agentv1alpha1.AutogenTeam{}).
+		For(&agentv1alpha1.Team{}).
 		Named("autogenteam").
 		Complete(r)
 }

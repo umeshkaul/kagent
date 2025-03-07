@@ -2,18 +2,20 @@ package autogen_test
 
 import (
 	"context"
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	"os"
+	"os/exec"
+	"time"
+
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"os"
-	"os/exec"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"time"
 )
 
 var (
@@ -28,15 +30,15 @@ var _ = Describe("AutogenClient", func() {
 	It("should interact with autogen server", func() {
 		ctx := context.Background()
 
-		go func() {
-			// start autogen server
-			startAutogenServer(ctx)
-		}()
+		// go func() {
+		// 	// start autogen server
+		// 	startAutogenServer(ctx)
+		// }()
 
 		// sleep for a while to allow autogen server to start
 		<-time.After(3 * time.Second)
 
-		client := api.NewClient("http://localhost:8081/api", "ws://localhost:8081/api/ws")
+		client := autogen_client.New("http://localhost:8081/api", "ws://localhost:8081/api/ws")
 
 		scheme := scheme.Scheme
 		err := v1alpha1.AddToScheme(scheme)
@@ -57,58 +59,55 @@ var _ = Describe("AutogenClient", func() {
 			},
 		}
 
-		modelConfig := &v1alpha1.AutogenModelConfig{
+		modelConfig := &v1alpha1.ModelConfig{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-model",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenModelConfigSpec{
+			Spec: v1alpha1.ModelConfigSpec{
 				Model:            "gpt-4o",
 				APIKeySecretName: apikeySecret.Name,
 				APIKeySecretKey:  apikeySecretKey,
 			},
 		}
 
-		participant1 := &v1alpha1.AutogenAgent{
+		participant1 := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-participant1",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "test-participant1",
+			Spec: v1alpha1.AgentSpec{
 				Description:   "a test participant",
 				SystemMessage: "You are a test participant",
 				Tools:         nil,
 			},
 		}
 
-		participant2 := &v1alpha1.AutogenAgent{
+		participant2 := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-participant2",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenAgentSpec{
-				Name:          "test-participant2",
+			Spec: v1alpha1.AgentSpec{
 				Description:   "a test participant",
 				SystemMessage: "You are a test participant",
 				Tools:         nil,
 			},
 		}
 
-		apiTeam := &v1alpha1.AutogenTeam{
+		apiTeam := &v1alpha1.Team{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-team",
 				Namespace: namespace,
 			},
-			Spec: v1alpha1.AutogenTeamSpec{
+			Spec: v1alpha1.TeamSpec{
 				Participants: []string{
 					participant1.Name,
 					participant2.Name,
 				},
-				Description: "a team that tests things",
-				SelectorTeamConfig: v1alpha1.SelectorTeamConfig{
-					ModelConfig: modelConfig.Name,
-				},
+				Description:        "a team that tests things",
+				ModelConfig:        modelConfig.Name,
+				SelectorTeamConfig: &v1alpha1.SelectorTeamConfig{},
 				TerminationCondition: v1alpha1.TerminationCondition{
 					MaxMessageTermination: &v1alpha1.MaxMessageTermination{MaxMessages: 10},
 				},
@@ -131,7 +130,10 @@ var _ = Describe("AutogenClient", func() {
 		err = kubeClient.Create(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 
-		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient).TranslateSelectorGroupChat(ctx, apiTeam)
+		autogenTeam, err := autogen.NewAutogenApiTranslator(kubeClient, types.NamespacedName{
+			Namespace: modelConfig.Namespace,
+			Name:      modelConfig.Name,
+		}).TranslateGroupChatForTeam(ctx, apiTeam)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(autogenTeam).NotTo(BeNil())
 
@@ -142,7 +144,7 @@ var _ = Describe("AutogenClient", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(list).NotTo(BeNil())
 		Expect(len(list)).To(Equal(1))
-		Expect(list[0].ID).To(Equal(autogenTeam.ID))
+		Expect(list[0].Id).To(Equal(autogenTeam.Id))
 	})
 })
 

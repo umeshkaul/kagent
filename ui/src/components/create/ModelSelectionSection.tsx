@@ -12,14 +12,14 @@ interface ModelSelectionSectionProps {
 export const ModelSelectionSection = ({ allModels, selectedModel, setSelectedModel, error, isSubmitting }: ModelSelectionSectionProps) => {
   return (
     <>
-      <label className="text-sm text-white/70 mb-2 block">Model</label>
+      <label className="text-sm mb-2 block">Model</label>
       <Select value={selectedModel.id} disabled={isSubmitting} onValueChange={(value) => setSelectedModel(allModels.find((m) => m.id === value) || allModels[0])}>
-        <SelectTrigger className={`bg-[#1A1A1A] border-[#3A3A3A] text-white ${error ? "border-red-500" : ""}`}>
+        <SelectTrigger className={`${error ? "border-red-500" : ""}`}>
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
-        <SelectContent className="bg-[#2A2A2A] border-[#3A3A3A]">
+        <SelectContent className="">
           {allModels.map((model) => (
-            <SelectItem key={model.id} value={model.id} className="text-white hover:bg-[#3A3A3A]">
+            <SelectItem key={model.id} value={model.id} >
               {model.name}
             </SelectItem>
           ))}

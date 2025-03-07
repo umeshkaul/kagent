@@ -1,7 +1,7 @@
 import subprocess
 
 
-# Function that runs the istioctl command in the shell
+# Function that runs the command in the shell
 def run_command(command: str, args: list[str]) -> str:
     """Run the given command and return the output."""
     try:

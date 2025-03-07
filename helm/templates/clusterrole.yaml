@@ -1,28 +1,26 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "autogenstudio.fullname" . }}-role
+  name: {{ include "kagent.fullname" . }}-role
   labels:
-    {{- include "autogenstudio.labels" . | nindent 4 }}
+    {{- include "kagent.labels" . | nindent 4 }}
 rules:
 - apiGroups:
-  - agent.ai.solo.io
+  - kagent.dev
   resources:
-  - autogenagents
-  - autogenmodelconfigs
-  - autogenteams
-  - autogentools
+  - agents
+  - modelconfigs
+  - teams
   verbs:
   - get
   - list
   - watch
 - apiGroups:
-  - agent.ai.solo.io
+  - kagent.dev
   resources:
-  - autogenagents/status
-  - autogenmodelconfigs/status
-  - autogenteams/status
-  - autogentools/status
+  - agents/status
+  - modelconfigs/status
+  - teams/status
   verbs:
   - get
   - patch

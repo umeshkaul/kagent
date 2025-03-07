@@ -20,6 +20,9 @@ dependencies = [
   "pyyaml>=6.0.2",
   "mcp>=1.2.0",
   "sqlite-vec>=0.1.0",
+  "typer",
+  "pytest>=8.3.5",
+  "pytest-asyncio>=0.25.3",
 ]
 
 [project.optional-dependencies]
@@ -28,24 +31,31 @@ jupyter-executor = [
     "nbclient>=0.10.2",
 ]
 
+[project.scripts]
+kagent = "kagent.cli:run"
+tool_gen = "kagent.tools.utils.tool_gen:main"
+
 [tool.uv.sources]
 # autogenstudio = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
 # autogen-ext = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
 # autogen-core = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-core", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
 # autogen-agentchat = { git = "https://github.com/microsoft/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "340a8e85872697f1aa524ef900c651eaf427d547" }
 
-autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
-autogen-agentchat = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "ae6e8848901fb33a7e0f6349c88545a9d53604db" }
+autogenstudio = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-studio", rev = "af152167c997e385a9d3d50d8e4327efbcf8ecf4" }
+autogen-ext = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-ext", rev = "af152167c997e385a9d3d50d8e4327efbcf8ecf4" }
+autogen-core = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-core", rev = "af152167c997e385a9d3d50d8e4327efbcf8ecf4" }
+autogen-agentchat = { git = "https://github.com/kagent-dev/autogen.git", subdirectory = "python/packages/autogen-agentchat", rev = "af152167c997e385a9d3d50d8e4327efbcf8ecf4" }
 
 kagent = { workspace = true }
 
 [tool.ruff]
 line-length = 120
 fix = true
+exclude = [
+  "notebooks/",
+]
 
-target-version = "py310"
+target-version = "py312"
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -56,3 +66,11 @@ ignore = ["F401", "E501"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kagent"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+python_files = "test_*.py"
+python_functions = "test_*"
+log_cli = true
+log_cli_level = "INFO"

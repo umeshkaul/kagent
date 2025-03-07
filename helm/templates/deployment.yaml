@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "autogenstudio.fullname" . }}
+  name: {{ include "kagent.fullname" . }}
   labels:
-    {{- include "autogenstudio.labels" . | nindent 4 }}
+    {{- include "kagent.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "autogenstudio.selectorLabels" . | nindent 6 }}
+      {{- include "kagent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "autogenstudio.selectorLabels" . | nindent 8 }}
+        {{- include "kagent.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -24,23 +24,46 @@ spec:
       {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      serviceAccountName: {{ include "autogenstudio.fullname" . }}
+      serviceAccountName: {{ include "kagent.fullname" . }}
       containers:
         - name: controller
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.controller.image.registry }}/{{ .Values.controller.image.repository }}:{{ .Values.controller.image.tag | default .Chart.Version }}"
+          image: "{{ .Values.controller.image.registry }}/{{ .Values.controller.image.repository }}:{{ coalesce .Values.global.tag .Values.controller.image.tag .Chart.Version }}"
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           resources:
             {{- toYaml .Values.controller.resources | nindent 12 }}
-        - name: web
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+        - name: app
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.web.image.registry }}/{{ .Values.web.image.repository }}:{{ .Values.web.image.tag | default .Chart.Version }}"
-          imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          image: "{{ .Values.app.image.registry }}/{{ .Values.app.image.repository }}:{{ coalesce .Values.global.tag .Values.app.image.tag .Chart.Version }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.openai.secretName }}
+                  key: {{ .Values.openai.secretKey }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.targetPort }}
+              containerPort: {{ .Values.service.ports.app.targetPort }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.web.resources | nindent 12 }}
+            {{- toYaml .Values.app.resources | nindent 12 }}
+        - name: ui
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.ui.image.registry }}/{{ .Values.ui.image.repository }}:{{ coalesce .Values.global.tag .Values.ui.image.tag .Chart.Version }}"
+          imagePullPolicy: {{ .Values.ui.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.ports.ui.targetPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.ui.resources | nindent 12 }}

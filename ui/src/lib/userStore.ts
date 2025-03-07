@@ -5,7 +5,7 @@ interface UserStore {
   setUserId: (userId: string) => void
 }
 
-const DEFAULT_USER_ID = 'admin@kagent.io'
+const DEFAULT_USER_ID = 'admin@kagent.dev'
 const USER_ID_KEY = 'kagent_user_id'
 
 // Get initial state from localStorage if available

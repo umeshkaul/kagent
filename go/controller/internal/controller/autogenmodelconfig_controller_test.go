@@ -41,13 +41,13 @@ var _ = Describe("AutogenModelConfig Controller", func() {
 			Name:      resourceName,
 			Namespace: "default", // TODO(user):Modify as needed
 		}
-		autogenmodelconfig := &agentv1alpha1.AutogenModelConfig{}
+		autogenmodelconfig := &agentv1alpha1.ModelConfig{}
 
 		BeforeEach(func() {
 			By("creating the custom resource for the Kind AutogenModelConfig")
 			err := k8sClient.Get(ctx, typeNamespacedName, autogenmodelconfig)
 			if err != nil && errors.IsNotFound(err) {
-				resource := &agentv1alpha1.AutogenModelConfig{
+				resource := &agentv1alpha1.ModelConfig{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resourceName,
 						Namespace: "default",
@@ -60,7 +60,7 @@ var _ = Describe("AutogenModelConfig Controller", func() {
 
 		AfterEach(func() {
 			// TODO(user): Cleanup logic after each test, like removing the resource instance.
-			resource := &agentv1alpha1.AutogenModelConfig{}
+			resource := &agentv1alpha1.ModelConfig{}
 			err := k8sClient.Get(ctx, typeNamespacedName, resource)
 			Expect(err).NotTo(HaveOccurred())
 

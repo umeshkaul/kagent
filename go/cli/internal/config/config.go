@@ -33,7 +33,8 @@ func Init() error {
 	// Set default values
 	viper.SetDefault("api_url", "http://localhost:8081/api")
 	viper.SetDefault("ws_url", "ws://localhost:8081/api/ws")
-	viper.SetDefault("user_id", "guestuser@gmail.com")
+	viper.SetDefault("user_id", "admin@kagent.dev")
+	viper.SetDefault("output_format", "table")
 
 	if err := viper.ReadInConfig(); err != nil {
 		// If config file doesn't exist, create it with defaults

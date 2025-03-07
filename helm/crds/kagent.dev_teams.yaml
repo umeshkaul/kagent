@@ -1,0 +1,140 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.17.1
+  name: teams.kagent.dev
+spec:
+  group: kagent.dev
+  names:
+    kind: Team
+    listKind: TeamList
+    plural: teams
+    singular: team
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Team is the Schema for the teams API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TeamSpec defines the desired state of Team.
+            properties:
+              description:
+                type: string
+              magenticOneTeamConfig:
+                properties:
+                  finalAnswerPrompt:
+                    type: string
+                  maxStalls:
+                    type: integer
+                required:
+                - finalAnswerPrompt
+                - maxStalls
+                type: object
+              maxTurns:
+                format: int64
+                type: integer
+              modelConfig:
+                type: string
+              participants:
+                items:
+                  type: string
+                type: array
+              roundRobinTeamConfig:
+                type: object
+              selectorTeamConfig:
+                properties:
+                  selectorPrompt:
+                    type: string
+                required:
+                - selectorPrompt
+                type: object
+              swarmTeamConfig:
+                type: object
+              terminationCondition:
+                properties:
+                  maxMessageTermination:
+                    description: 'ONEOF: maxMessageTermination, textMentionTermination,
+                      orTermination'
+                    properties:
+                      maxMessages:
+                        type: integer
+                    required:
+                    - maxMessages
+                    type: object
+                  orTermination:
+                    properties:
+                      conditions:
+                        items:
+                          properties:
+                            maxMessageTermination:
+                              properties:
+                                maxMessages:
+                                  type: integer
+                              required:
+                              - maxMessages
+                              type: object
+                            textMentionTermination:
+                              properties:
+                                text:
+                                  type: string
+                              required:
+                              - text
+                              type: object
+                          type: object
+                        type: array
+                    required:
+                    - conditions
+                    type: object
+                  stopMessageTermination:
+                    type: object
+                  textMentionTermination:
+                    properties:
+                      text:
+                        type: string
+                    required:
+                    - text
+                    type: object
+                  textMessageTermination:
+                    properties:
+                      source:
+                        type: string
+                    required:
+                    - source
+                    type: object
+                type: object
+            required:
+            - description
+            - maxTurns
+            - modelConfig
+            - participants
+            - terminationCondition
+            type: object
+          status:
+            description: TeamStatus defines the observed state of Team.
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

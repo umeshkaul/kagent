@@ -1,61 +1,73 @@
-import { AgentMessageConfig, InitialMessage, Message, Run, RunStatus, Session, Team, WebSocketMessage } from "@/types/datamodel";
 import { create } from "zustand";
-import { createMessage, createRunWithSession, setupWebSocket, WebSocketManager } from "./ws";
-import { fetchApi } from "./utils";
+import { ChatStatus, setupWebSocket, WebSocketManager } from "./ws";
+import { AgentMessageConfig, InitialMessage, Message, Run, Session, Team, WebSocketMessage, SessionWithRuns } from "@/types/datamodel";
+import { loadExistingChat, sendMessage, startNewChat } from "@/app/actions/chat";
+import { messageUtils } from "./utils";
 
 interface ChatState {
   session: Session | null;
+  sessions: SessionWithRuns[];
   run: Run | null;
   messages: Message[];
-  status: RunStatus | "ready";
+  status: ChatStatus;
   error: string | null;
   websocketManager: WebSocketManager | null;
   team: Team | null;
-  userId: string;
+  currentStreamingContent: string;
+  currentStreamingMessage: Message | null;
 
   // Actions
-  startNewChat: (agentId: number, userId: string) => Promise<void>;
-  sendMessage: (content: string, agentId: number, userId: string) => Promise<void>;
-  loadExistingChat: (chatId: string, userId: string) => Promise<void>;
+  initializeNewChat: (agentId: number) => Promise<void>;
+  sendUserMessage: (content: string, agentId: number) => Promise<void>;
+  loadChat: (chatId: string) => Promise<void>;
   cleanup: () => void;
   handleWebSocketMessage: (message: WebSocketMessage) => void;
+  setSessions: (sessions: SessionWithRuns[]) => void;
+  addSession: (session: Session, runs: Run[]) => void;
+  removeSession: (sessionId: number) => void;
 }
 
 const useChatStore = create<ChatState>((set, get) => ({
   session: null,
+  sessions: [],
   run: null,
   messages: [],
   status: "ready",
   error: null,
   websocketManager: null,
   team: null,
-  userId: "",
+  currentStreamingContent: "",
+  currentStreamingMessage: null,
 
-  startNewChat: async (agentId, userId) => {
-    set({ status: "created" });
+  setSessions: (sessions) => set({ sessions }),
+
+  addSession: (session, runs) =>
+    set((state) => ({
+      sessions: [{ session, runs }, ...state.sessions],
+    })),
+
+  removeSession: (sessionId) =>
+    set((state) => ({
+      sessions: state.sessions.filter((s) => s.session.id !== sessionId),
+    })),
+
+  initializeNewChat: async (agentId) => {
     try {
       // Clean up any existing websocket
-      const currentManager = get().websocketManager;
-      if (currentManager) {
-        currentManager.cleanup();
-      }
-
-      set({ userId });
-
-      // Fetch agent details if not already present
-      if (!get().team) {
-        const team = await fetchApi<Team>(`/teams/${agentId}`, userId);
-        set({ team });
-      }
-
-      const { session, run } = await createRunWithSession(agentId, userId);
+      get().cleanup();
+      const { team, session, run } = await startNewChat(agentId);
+      // Add the new session to sessions list
+      get().addSession(session, [run]);
       set({
+        team,
         session,
         run,
         messages: [],
-        status: "created",
+        status: "ready",
         error: null,
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     } catch (error) {
       set({
@@ -65,6 +77,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         run: null,
         messages: [],
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     }
   },
@@ -73,65 +87,175 @@ const useChatStore = create<ChatState>((set, get) => ({
     const state = get();
     const { run, session } = state;
 
-    if (!run) {
-      console.warn("Received WebSocket message but no current run exists");
+    if (!run || !session?.id || !message.data) {
+      console.warn("Invalid message or state", { run, session, message });
       return;
     }
 
-    if (!session?.id) {
-      console.warn("No session ID available");
+    const messageConfig = message.data as AgentMessageConfig;
+    if (messageUtils.isUserTextMessageContent(messageConfig)) {
       return;
     }
 
-    const newMessage = createMessage(
-      message.data as AgentMessageConfig,
-      run.id,
-      session.id,
-      get().userId
-    );
+    if (
+      messageUtils.isTeamResult(messageConfig) ||
+      messageUtils.isFunctionExecutionResult(messageConfig.content) ||
+      messageUtils.isToolCallContent(messageConfig.content) ||
+      messageUtils.isMultiModalContent(messageConfig.content) ||
+      messageUtils.isLlmCallEvent(messageConfig.content)
+    ) {
+      const systemMessage = {
+        config: messageConfig,
+        session_id: session.id!,
+        run_id: run.id,
+        message_meta: {},
+      };
 
-    // Check for duplicates
-    const isDuplicate = state.messages.some((existingMsg) => existingMsg.config.content === newMessage.config.content && existingMsg.config.source === newMessage.config.source);
+      set((state) => ({
+        messages: [...state.messages, systemMessage],
+        run: {
+          ...run,
+          messages: [...run.messages, systemMessage],
+        },
+      }));
+      return;
+    }
 
-    if (isDuplicate) return;
+    // Check if this is a streaming chunk or complete message
+    const isStreamingChunk = message.type === "message_chunk";
 
-    const newStatus = message.status || run.status;
+    if (isStreamingChunk) {
+      // If this is a new streaming message (different source)
+      if (!state.currentStreamingMessage || state.currentStreamingMessage.config.source !== messageConfig.source) {
+        // Create new streaming message
+        const newStreamingMessage = {
+          config: {
+            ...messageConfig,
+            content: [String(messageConfig.content)],
+          },
+          session_id: session.id,
+          run_id: run.id,
+          message_meta: {},
+        };
+        set({
+          currentStreamingMessage: newStreamingMessage,
+          currentStreamingContent: String(messageConfig.content),
+        });
+      } else {
+        // Append to existing streaming content
+        set((state) => {
+          const updatedContent = state.currentStreamingContent + String(messageConfig.content);
 
-    set({
-      messages: [...state.messages, newMessage],
-      run: {
-        ...run,
-        messages: [...run.messages, newMessage],
-        status: newStatus,
-      },
-      status: newStatus,
-    });
+          // Update the currentStreamingMessage's content
+          const updatedStreamingMessage = {
+            ...state.currentStreamingMessage!,
+            config: {
+              ...state.currentStreamingMessage!.config,
+              content: [updatedContent],
+            },
+          };
+
+          return {
+            currentStreamingContent: updatedContent,
+            currentStreamingMessage: updatedStreamingMessage,
+          };
+        });
+      }
+    } else {
+      // For non-streaming/complete messages
+      set((state) => {
+        // If there was a streaming message in progress, replace it with the complete message
+        const finalMessages = state.currentStreamingMessage
+          ? [
+              ...state.messages.filter((m) => m !== state.currentStreamingMessage),
+              {
+                config: messageConfig,
+                session_id: session.id!,
+                run_id: run.id,
+                message_meta: {},
+              },
+            ]
+          : [
+              ...state.messages,
+              {
+                config: messageConfig,
+                session_id: session.id!,
+                run_id: run.id,
+                message_meta: {},
+              },
+            ];
+
+        const updatedRun = {
+          ...run,
+          messages: finalMessages,
+          status: message.status || run.status,
+        };
+
+        const updatedSessions = state.sessions.map((s) =>
+          s.session.id === session.id
+            ? {
+                ...s,
+                runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)),
+              }
+            : s
+        );
+
+        return {
+          messages: finalMessages,
+          run: updatedRun,
+          sessions: updatedSessions,
+          currentStreamingContent: "",
+          currentStreamingMessage: null,
+        };
+      });
+    }
   },
 
-  sendMessage: async (content, agentId, userId) => {
+  sendUserMessage: async (content, agentId) => {
     const state = get();
+    set({ status: "thinking" });
 
     try {
       // If no session exists, create one
       if (!state.session || !state.run) {
-        await get().startNewChat(agentId, userId);
+        await get().initializeNewChat(agentId);
+        set({ status: "thinking" });
       }
 
       const currentState = get();
-      const session = currentState.session;
-      const run = currentState.run;
-      const team = currentState.team;
-
-      if (!session || !run) {
-        throw new Error("Failed to create session");
+      const { session, run, team } = currentState;
+      if (!session?.id || !run || !team) {
+        throw new Error("Failed to initialize chat session");
       }
 
+      // Send the message
+      const userMessage = await sendMessage(content, run.id, session.id);
+
+      // Update state with user message
+      set((state) => {
+        const updatedRun = {
+          ...run,
+          messages: [...run.messages, userMessage],
+        };
+
+        const updatedSessions = state.sessions.map((s) => (s.session.id === session.id ? { ...s, runs: s.runs.map((r) => (r.id === run.id ? updatedRun : r)) } : s));
+
+        return {
+          messages: [...state.messages, userMessage],
+          run: updatedRun,
+          sessions: updatedSessions,
+        };
+      });
+
+      // Check if we already have a websocket manager
       let manager = currentState.websocketManager;
+
       if (!manager) {
+        // First message - setup WebSocket
         const startMessage: InitialMessage = {
           type: "start",
           task: content,
-          team_config: team?.component,
+          team_config: team.component,
         };
 
         manager = setupWebSocket(
@@ -139,70 +263,62 @@ const useChatStore = create<ChatState>((set, get) => ({
           {
             onMessage: (message) => get().handleWebSocketMessage(message),
             onError: (error) => set({ error, status: "error" }),
-            onClose: () => set({ status: "complete" }),
-            onStatusChange: (status) => {
-              set({ status: status === "connected" ? "active" : "created" });
+            onClose: () => {
+              const currentStatus = get().status;
+              if (currentStatus !== "error") {
+                set({ status: "ready" });
+              }
             },
+            onStatusChange: (status) => set({ status }),
           },
-          // Initial config for new chats
           startMessage
         );
 
         set({ websocketManager: manager });
+      } else {
+        // Subsequent messages - send as input_response
+        manager.send(
+          JSON.stringify({
+            type: "input_response",
+            response: content,
+            runId: run.id,
+            sessionId: session.id,
+          })
+        );
       }
-
-      const userMessage = createMessage({ content, source: "user" }, run.id, session.id || -1, userId);
-      set({
-        messages: [...currentState.messages, userMessage],
-        run: {
-          ...run,
-          messages: [...run.messages, userMessage],
-        },
-      });
-
-      // Send message
-      manager.send(
-        JSON.stringify({
-          type: "message",
-          content,
-          runId: run.id,
-          sessionId: session.id,
-        })
-      );
     } catch (error) {
-      set({ error: `Failed to send message: ${error}`, status: "error" });
+      set({
+        error: `Failed to send message: ${error}`,
+        status: "error",
+      });
     }
   },
 
-  loadExistingChat: async (chatId, userId) => {
-    set({ status: "complete" });
+  loadChat: async (chatId) => {
+    set({ status: "ready" });
     try {
-      // Clean up any existing websocket
-      const currentManager = get().websocketManager;
-      if (currentManager) {
-        currentManager.cleanup();
+      // Clean up existing websocket
+      get().cleanup();
+
+      const { session, run, team, messages } = await loadExistingChat(chatId);
+
+      // Update sessions list
+      if (session && run) {
+        get().addSession(session, [run]);
       }
 
-      const session = await fetchApi<Session>(`/sessions/${chatId}`, userId);
-      const { runs } = await fetchApi<{ runs: Run[] }>(`/sessions/${chatId}/runs`, userId);
-
-      if (!runs || runs.length === 0) {
-        throw new Error("No runs found for this chat");
-      }
-
-      // Fetch agent details if not present
-      if (!get().team && session.team_id) {
-        const team = await fetchApi<Team>(`/teams/${session.team_id}`, userId);
-        set({ team });
-      }
+      const initialStatus: ChatStatus = run.status === "error" || run.status === "timeout" ? "error" : "ready";
 
       set({
         session,
-        run: runs[0],
-        messages: runs[0].messages || [],
-        status: runs[0].status,
-        error: null,
+        run,
+        team,
+        messages,
+        status: initialStatus,
+        error: run.error_message || null,
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     } catch (error) {
       set({
@@ -212,6 +328,8 @@ const useChatStore = create<ChatState>((set, get) => ({
         run: null,
         messages: [],
         websocketManager: null,
+        currentStreamingContent: "",
+        currentStreamingMessage: null,
       });
     }
   },
@@ -225,10 +343,12 @@ const useChatStore = create<ChatState>((set, get) => ({
       session: null,
       run: null,
       messages: [],
-      status: "stopped",
+      status: "ready",
       websocketManager: null,
       error: null,
       team: null,
+      currentStreamingContent: "",
+      currentStreamingMessage: null,
     });
   },
 }));

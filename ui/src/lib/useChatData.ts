@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Team, Session, Run, GetSessionRunsResponse, SessionWithRuns } from "@/types/datamodel";
-import { fetchApi } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { fetchApi } from "@/app/actions/utils";
 
 interface UseChatDataProps {
   agentId: string;
@@ -39,16 +39,16 @@ export function useChatData({ agentId, chatId, userId }: UseChatDataProps): [Cha
         setData((prev) => ({ ...prev, isLoading: true, error: null }));
 
         // Fetch agent details
-        const agentData = await fetchApi<Team>(`/teams/${agentId}`, userId);
+        const agentData = await fetchApi<Team>(`/teams/${agentId}`);
 
         // Always fetch sessions for this agent
-        const response = await fetchApi<Session[]>(`/sessions`, userId);
+        const response = await fetchApi<Session[]>(`/sessions`);
         const agentSessions = response.filter((session) => session.team_id === parseInt(agentId));
 
         // Fetch runs for each session
         const sessionsWithRuns = await Promise.all(
           agentSessions.map(async (session) => {
-            const { runs } = await fetchApi<GetSessionRunsResponse>(`/sessions/${session.id}/runs`, userId);
+            const { runs } = await fetchApi<GetSessionRunsResponse>(`/sessions/${session.id}/runs`);
             return { session, runs };
           })
         );
@@ -104,7 +104,7 @@ export function useChatData({ agentId, chatId, userId }: UseChatDataProps): [Cha
         setData((prev) => ({ ...prev, isLoading: true }));
 
         // Fetch the runs for the new session
-        const { runs } = await fetchApi<GetSessionRunsResponse>(`/sessions/${newSession.id}/runs`, userId);
+        const { runs } = await fetchApi<GetSessionRunsResponse>(`/sessions/${newSession.id}/runs`);
 
         setData((prev) => ({
           ...prev,
@@ -131,7 +131,7 @@ export function useChatData({ agentId, chatId, userId }: UseChatDataProps): [Cha
       try {
         setData((prev) => ({ ...prev, isLoading: true }));
 
-        await fetchApi(`/sessions/${sessionId}`, userId, {
+        await fetchApi(`/sessions/${sessionId}`, {
           method: "DELETE",
         });
 

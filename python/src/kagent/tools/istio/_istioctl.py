@@ -7,40 +7,12 @@ from .._utils import create_typed_fn_tool
 from ..common.shell import run_command
 
 
-class ConfigurationProfile(str, Enum):
-    ambient = "ambient"
-    default = "default"
-    demo = "demo"
-    minimal = "minimal"
-    empty = "empty"
-
-class ProxyConfigType(str, Enum):
-    all = "all"
-    bootstrap = "bootstrap"
-    cluster = "cluster"
-    ecds = "ecds"
-    listener = "listener"
-    log = "log"
-    route = "route"
-    secret = "secret"
-
-class ZTunnelConfigType(str, Enum):
-    all = "all"
-    certificate = "certificate"
-    log = "log"
-    policy = "policy"
-    service = "service"
-    workload = "workload"
-
-class WaypointTrafficType(str, Enum):
-    none = "none"
-    all = "all"
-    service = "service"
-    workload = "workload"
-
 async def _ztunnel_config(
     ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"],
-    config_type: Annotated[Optional[ZTunnelConfigType], "The type of configuration to get"] = "all",
+    config_type: Annotated[
+        Optional[str],
+        "The type of configuration to get, the allowed values are: all, bootstrap, cluster, ecds, listener, log, route, secret",
+    ] = "all",
 ) -> str:
     return _run_istioctl_command(f"ztunnel-config {config_type} {'-n ' + ns if ns else ''}")
 
@@ -51,37 +23,50 @@ async def _waypoint_status(
 ) -> str:
     return _run_istioctl_command(f"waypoint status {name if name else ''} {f'-n {ns} ' if ns else ''}")
 
+
 async def _list_waypoints(
     ns: Annotated[Optional[str], "Namespace to list waypoints for"],
     all_namespaces: Annotated[Optional[bool], "List waypoints for all namespaces"] = False,
 ) -> str:
     return _run_istioctl_command(f"waypoint list {f'-n {ns} ' if ns else ''} {'-A' if all_namespaces else ''}")
 
+
 async def _generate_waypoint(
     ns: Annotated[str, "Namespace to generate the waypoint for"],
     name: Annotated[Optional[str], "Name of the waypoint to generate"] = "waypoint",
     traffic_type: Annotated[str, "Traffic type for the waypoint"] = "all",
 ) -> str:
-    return _run_istioctl_command(f"waypoint generate {name if name else ''} {f'-n {ns} ' if ns else ''} {f'--for {traffic_type}' if traffic_type else ''}")
+    return _run_istioctl_command(
+        f"waypoint generate {name if name else ''} {f'-n {ns} ' if ns else ''} {f'--for {traffic_type}' if traffic_type else ''}"
+    )
+
 
 async def _delete_waypoint(
     name: Annotated[List[str], "Name of the waypoints to delete"],
     ns: Annotated[str, "Namespace to delete the waypoint from"],
     all: Annotated[bool, "Delete all waypoints in the namespace"],
 ) -> str:
-    return _run_istioctl_command(f"waypoint delete {' '.join(name)} {f'-n {ns} ' if ns else ''} {'--all' if all else ''}")
+    return _run_istioctl_command(
+        f"waypoint delete {' '.join(name)} {f'-n {ns} ' if ns else ''} {'--all' if all else ''}"
+    )
+
 
 async def _apply_waypoint(
     ns: Annotated[str, "Namespace to apply the waypoint to"],
     enroll_namespace: Annotated[bool, "If set, the namespace will be labeled with the waypoint name"],
 ) -> str:
-    return _run_istioctl_command(f"waypoint apply {'-n ' + ns if ns else ''} {'--enroll-namespace' if enroll_namespace else ''}")
+    return _run_istioctl_command(
+        f"waypoint apply {'-n ' + ns if ns else ''} {'--enroll-namespace' if enroll_namespace else ''}"
+    )
+
 
 async def _remote_clusters() -> str:
     return _run_istioctl_command("remote-clusters")
 
+
 async def _analyze_cluster_configuration() -> str:
     return _run_istioctl_command("analyze")
+
 
 async def _proxy_status(
     pod_name: Annotated[Optional[str], "The name of the pod to get Envoy proxy status for"],
@@ -89,19 +74,31 @@ async def _proxy_status(
 ) -> str:
     return _run_istioctl_command(f"proxy-status {'-n ' + ns if ns else ''} {pod_name if pod_name else ''}")
 
+
 async def _install_istio(
-    profile: Annotated[ConfigurationProfile, "Istio configuration profile to install"]) -> str:
+    profile: Annotated[
+        str, "Istio configuration profile to install, the allowed values are: ambient, default, demo, minimal, empty"
+    ],
+) -> str:
     return _run_istioctl_command(f"install {profile} -y")
+
 
 async def _proxy_config(
     pod_name: Annotated[str, "The name of the pod to get proxy configuration for"],
     ns: Annotated[Optional[str], "The namespace of the pod to get proxy configuration for"],
-    config_type: Annotated[Optional[ProxyConfigType], "The type of configuration to get"] = "all",
+    config_type: Annotated[
+        Optional[str],
+        "The type of configuration to get, the allowed values are: all, bootstrap, cluster, ecds, listener, log, route, secret",
+    ] = "all",
 ) -> str:
-    return _run_istioctl_command(f"proxy-config {config_type} {'-n ' + ns if ns else ''} {pod_name}")
+    return _run_istioctl_command(f"proxy-config {config_type} {pod_name}{'.' + ns if ns else ''}")
+
 
 async def _generate_manifest(
-    profile: Annotated[ConfigurationProfile, "Istio configuration profile to generate manifest for"],
+    profile: Annotated[
+        str,
+        "Istio configuration profile to generate manifest for, the allowed values are: ambient, default, demo, minimal, empty",
+    ],
 ) -> str:
     return _run_istioctl_command(f"manifest generate --set profile={profile}")
 
@@ -112,7 +109,9 @@ ztunnel_config = FunctionTool(
     name="ztunnel_config",
 )
 
-ZTunnelConfig, ZTunnelConfigConfig = create_typed_fn_tool(ztunnel_config, "kagent.tools.istio.ZTunnelConfig", "ZTunnelConfig")
+ZTunnelConfig, ZTunnelConfigConfig = create_typed_fn_tool(
+    ztunnel_config, "kagent.tools.istio.ZTunnelConfig", "ZTunnelConfig"
+)
 
 waypoint_status = FunctionTool(
     _waypoint_status,
@@ -120,7 +119,9 @@ waypoint_status = FunctionTool(
     name="waypoint_status",
 )
 
-WaypointStatus, WaypointStatusConfig = create_typed_fn_tool(waypoint_status, "kagent.tools.istio.WaypointStatus", "WaypointStatus")
+WaypointStatus, WaypointStatusConfig = create_typed_fn_tool(
+    waypoint_status, "kagent.tools.istio.WaypointStatus", "WaypointStatus"
+)
 
 list_waypoints = FunctionTool(
     _list_waypoints,
@@ -128,7 +129,9 @@ list_waypoints = FunctionTool(
     name="list_waypoints",
 )
 
-ListWaypoints, ListWaypointsConfig = create_typed_fn_tool(list_waypoints, "kagent.tools.istio.ListWaypoints", "ListWaypoints")
+ListWaypoints, ListWaypointsConfig = create_typed_fn_tool(
+    list_waypoints, "kagent.tools.istio.ListWaypoints", "ListWaypoints"
+)
 
 generate_waypoint = FunctionTool(
     _generate_waypoint,
@@ -136,7 +139,9 @@ generate_waypoint = FunctionTool(
     name="generate_waypoint",
 )
 
-GenerateWaypoint, GenerateWaypointConfig = create_typed_fn_tool(generate_waypoint, "kagent.tools.istio.GenerateWaypoint", "GenerateWaypoint")
+GenerateWaypoint, GenerateWaypointConfig = create_typed_fn_tool(
+    generate_waypoint, "kagent.tools.istio.GenerateWaypoint", "GenerateWaypoint"
+)
 
 delete_waypoint = FunctionTool(
     _delete_waypoint,
@@ -144,15 +149,17 @@ delete_waypoint = FunctionTool(
     name="delete_waypoint",
 )
 
-DeleteWaypoint, DeleteWaypointConfig = create_typed_fn_tool(delete_waypoint, "kagent.tools.istio.DeleteWaypoint", "DeleteWaypoint")
-
-apply_waypoint = FunctionTool(
-    _apply_waypoint,
-    description="Apply a waypoint configuration to a cluster",
-    name="apply_waypoint"
+DeleteWaypoint, DeleteWaypointConfig = create_typed_fn_tool(
+    delete_waypoint, "kagent.tools.istio.DeleteWaypoint", "DeleteWaypoint"
 )
 
-ApplyWaypoint, ApplyWaypointConfig = create_typed_fn_tool(apply_waypoint, "kagent.tools.istio.ApplyWaypoint", "ApplyWaypoint")
+apply_waypoint = FunctionTool(
+    _apply_waypoint, description="Apply a waypoint configuration to a cluster", name="apply_waypoint"
+)
+
+ApplyWaypoint, ApplyWaypointConfig = create_typed_fn_tool(
+    apply_waypoint, "kagent.tools.istio.ApplyWaypoint", "ApplyWaypoint"
+)
 
 remote_clusters = FunctionTool(
     _remote_clusters,
@@ -160,7 +167,9 @@ remote_clusters = FunctionTool(
     name="remote_clusters",
 )
 
-RemoteClusters, RemoteClustersConfig = create_typed_fn_tool(remote_clusters, "kagent.tools.istio.RemoteClusters", "RemoteClusters")
+RemoteClusters, RemoteClustersConfig = create_typed_fn_tool(
+    remote_clusters, "kagent.tools.istio.RemoteClusters", "RemoteClusters"
+)
 
 proxy_status = FunctionTool(
     _proxy_status,
@@ -176,7 +185,9 @@ generate_manifest = FunctionTool(
     name="generate_manifest",
 )
 
-GenerateManifest, GenerateManifestConfig = create_typed_fn_tool(generate_manifest, "kagent.tools.istio.GenerateManifest", "GenerateManifest")
+GenerateManifest, GenerateManifestConfig = create_typed_fn_tool(
+    generate_manifest, "kagent.tools.istio.GenerateManifest", "GenerateManifest"
+)
 
 install_istio = FunctionTool(
     _install_istio,

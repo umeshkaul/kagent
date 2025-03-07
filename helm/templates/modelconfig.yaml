@@ -1,0 +1,10 @@
+apiVersion: kagent.dev/v1alpha1
+kind: ModelConfig
+metadata:
+  name: default-model-config
+  labels:
+    {{- include "kagent.labels" . | nindent 4 }}
+spec:
+  apiKeySecretName: {{ .Values.openai.secretName }}
+  apiKeySecretKey: {{ .Values.openai.secretKey }}
+  model: gpt-4o

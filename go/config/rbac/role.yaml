@@ -5,12 +5,11 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - agent.ai.solo.io
+  - kagent.dev
   resources:
-  - autogenagents
-  - autogenmodelconfigs
-  - autogenteams
-  - autogentools
+  - agents
+  - modelconfigs
+  - teams
   verbs:
   - create
   - delete
@@ -20,21 +19,19 @@ rules:
   - update
   - watch
 - apiGroups:
-  - agent.ai.solo.io
+  - kagent.dev
   resources:
-  - autogenagents/finalizers
-  - autogenmodelconfigs/finalizers
-  - autogenteams/finalizers
-  - autogentools/finalizers
+  - agents/finalizers
+  - modelconfigs/finalizers
+  - teams/finalizers
   verbs:
   - update
 - apiGroups:
-  - agent.ai.solo.io
+  - kagent.dev
   resources:
-  - autogenagents/status
-  - autogenmodelconfigs/status
-  - autogenteams/status
-  - autogentools/status
+  - agents/status
+  - modelconfigs/status
+  - teams/status
   verbs:
   - get
   - patch

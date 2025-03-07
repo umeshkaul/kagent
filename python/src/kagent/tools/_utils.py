@@ -15,6 +15,7 @@ def create_typed_fn_tool(fn_tool: FunctionTool, override_provider: str, class_na
         component_provider_override = override_provider
         component_type = "tool"
         component_config_schema = ToolConfig
+        component_description = fn_tool.description
 
         def __init__(self):
             self.fn_tool = fn_tool

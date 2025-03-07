@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-export type ComponentType = "team" | "agent" | "model" | "tool" | "termination";
+export type ComponentType = "team" | "agent" | "model" | "tool" | "termination" | "chat_completion_context";
 
 export interface Component<T extends ComponentConfig> {
   provider: string;
@@ -76,8 +76,19 @@ export interface FunctionToolConfig {
   global_imports: any[]; // Sequence[Import] equivalent
   has_cancellation_support: boolean;
 }
-export interface KAgentToolConfig {
-  // Nothing for now, but this is where the config would go
+
+export interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: any; // Schema equivalent
+}
+export interface MCPToolConfig {
+  server_params: any; // StdioServerParameters | SseServerParams equivalent
+  tool: MCPTool;
+}
+
+export interface BuiltInToolConfig {
+  [key: string]: any;
 }
 
 // Provider-based Configs
@@ -94,6 +105,16 @@ export interface RoundRobinGroupChatConfig {
   participants: Component<AgentConfig>[];
   termination_condition?: Component<TerminationConfig>;
   max_turns?: number;
+  model_client: Component<ModelConfig>;
+}
+
+export interface SocietyOfMindAgentConfig {
+  name: string;
+  team: Component<TeamConfig>;
+  model_client: Component<ModelConfig>;
+  model_context: Component<ChatCompletionContextConfig>;
+  description?: string;
+  model_client_stream?: boolean;
 }
 
 export interface MultimodalWebSurferConfig {
@@ -122,6 +143,7 @@ export interface AssistantAgentConfig {
   system_message?: string;
   reflect_on_tool_use: boolean;
   tool_call_summary_format: string;
+  model_client_stream: boolean;
 }
 
 export interface UserProxyAgentConfig {
@@ -189,18 +211,22 @@ export interface TextMentionTerminationConfig {
   text: string;
 }
 
+export interface TextMessageTerminationConfig {
+  source: string;
+}
+
 // Config type unions based on provider
-export type TeamConfig = SelectorGroupChatConfig | RoundRobinGroupChatConfig;
+export type TeamConfig = SelectorGroupChatConfig | RoundRobinGroupChatConfig | SocietyOfMindAgentConfig;
 
 export type AgentConfig = MultimodalWebSurferConfig | AssistantAgentConfig | UserProxyAgentConfig;
 
 export type ModelConfig = OpenAIClientConfig | AzureOpenAIClientConfig;
 
-export type ToolConfig = FunctionToolConfig | KAgentToolConfig;
+export type ToolConfig = FunctionToolConfig | MCPToolConfig | BuiltInToolConfig;
 
 export type ChatCompletionContextConfig = UnboundedChatCompletionContextConfig;
 
-export type TerminationConfig = OrTerminationConfig | MaxMessageTerminationConfig | TextMentionTerminationConfig;
+export type TerminationConfig = OrTerminationConfig | MaxMessageTerminationConfig | TextMentionTerminationConfig | TextMessageTerminationConfig;
 
 export type ComponentConfig = TeamConfig | AgentConfig | ModelConfig | ToolConfig | TerminationConfig | ChatCompletionContextConfig;
 
@@ -211,6 +237,10 @@ export interface DBModel {
   created_at?: string;
   updated_at?: string;
   version?: number;
+}
+
+export interface Tool extends DBModel {
+  component: Component<ToolConfig>;
 }
 
 export interface Message extends DBModel {
@@ -251,7 +281,7 @@ export interface SessionRuns {
 }
 
 export interface WebSocketMessage {
-  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event" | "system";
+  type: "message" | "result" | "completion" | "input_request" | "error" | "llm_call_event" | "system" | "message_chunk";
   data?: AgentMessageConfig | TaskResult;
   status?: RunStatus;
   error?: string;
@@ -278,11 +308,6 @@ export interface Run {
   team_result: TeamResult | null;
   messages: Message[];
   error_message?: string;
-}
-
-export interface CreateRunResponse {
-  run_id: string;
-  status: RunStatus;
 }
 
 export interface GetSessionRunsResponse {

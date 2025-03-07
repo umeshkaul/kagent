@@ -1,5 +1,8 @@
 # Build the manager binary
-FROM docker.io/golang:1.23 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.23.7-alpine AS builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 ARG TARGETOS
 ARG TARGETARCH
 
@@ -28,5 +31,8 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
 USER 65532:65532
+
+LABEL org.opencontainers.image.source=https://github.com/kagent-dev/kagent
+LABEL org.opencontainers.image.description="Kagent controller is the controller for the Kagent app."
 
 ENTRYPOINT ["/manager"]

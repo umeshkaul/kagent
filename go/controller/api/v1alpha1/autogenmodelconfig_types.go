@@ -20,37 +20,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AutogenModelConfigSpec defines the desired state of AutogenModelConfig.
-type AutogenModelConfigSpec struct {
+// ModelConfigSpec defines the desired state of ModelConfig.
+type ModelConfigSpec struct {
 	Model            string `json:"model"`
 	APIKeySecretName string `json:"apiKeySecretName"`
 	APIKeySecretKey  string `json:"apiKeySecretKey"`
 }
 
-// AutogenModelConfigStatus defines the observed state of AutogenModelConfig.
-type AutogenModelConfigStatus struct{}
+// ModelConfigStatus defines the observed state of ModelConfig.
+type ModelConfigStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// AutogenModelConfig is the Schema for the autogenmodelconfigs API.
-type AutogenModelConfig struct {
+// ModelConfig is the Schema for the modelconfigs API.
+type ModelConfig struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AutogenModelConfigSpec   `json:"spec,omitempty"`
-	Status AutogenModelConfigStatus `json:"status,omitempty"`
+	Spec   ModelConfigSpec   `json:"spec,omitempty"`
+	Status ModelConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// AutogenModelConfigList contains a list of AutogenModelConfig.
-type AutogenModelConfigList struct {
+// ModelConfigList contains a list of ModelConfig.
+type ModelConfigList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []AutogenModelConfig `json:"items"`
+	Items           []ModelConfig `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&AutogenModelConfig{}, &AutogenModelConfigList{})
+	SchemeBuilder.Register(&ModelConfig{}, &ModelConfigList{})
 }

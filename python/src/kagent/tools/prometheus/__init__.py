@@ -21,6 +21,7 @@ from ._prometheus import (
     TSDBStatusTool,
     WALReplayTool,
 )
+from ._promql import GeneratePromQLTool, GeneratePromQLToolConfig
 
 __all__ = [
     "AlertmanagersTool",
@@ -44,4 +45,6 @@ __all__ = [
     "TargetsTool",
     "TSDBStatusTool",
     "WALReplayTool",
+    "GeneratePromQLTool",
+    "GeneratePromQLToolConfig",
 ]

@@ -23,24 +23,43 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AutogenTeamSpec defines the desired state of AutogenTeam.
-type AutogenTeamSpec struct {
-	Participants         []string             `json:"participants"`
-	Description          string               `json:"description"`
-	SelectorTeamConfig   SelectorTeamConfig   `json:"selectorTeamConfig"`
+// TeamSpec defines the desired state of Team.
+type TeamSpec struct {
+	Participants []string `json:"participants"`
+	Description  string   `json:"description"`
+	ModelConfig  string   `json:"modelConfig"`
+	// +kubebuilder:validation:Optional
+	RoundRobinTeamConfig *RoundRobinTeamConfig `json:"roundRobinTeamConfig"`
+	// +kubebuilder:validation:Optional
+	SelectorTeamConfig *SelectorTeamConfig `json:"selectorTeamConfig"`
+	// +kubebuilder:validation:Optional
+	MagenticOneTeamConfig *MagenticOneTeamConfig `json:"magenticOneTeamConfig"`
+	// +kubebuilder:validation:Optional
+	SwarmTeamConfig      *SwarmTeamConfig     `json:"swarmTeamConfig"`
 	TerminationCondition TerminationCondition `json:"terminationCondition"`
 	MaxTurns             int64                `json:"maxTurns"`
 }
 
+type RoundRobinTeamConfig struct{}
+
 type SelectorTeamConfig struct {
 	SelectorPrompt string `json:"selectorPrompt"`
-	ModelConfig    string `json:"modelConfig"`
+}
+
+type MagenticOneTeamConfig struct {
+	MaxStalls         int    `json:"maxStalls"`
+	FinalAnswerPrompt string `json:"finalAnswerPrompt"`
+}
+
+type SwarmTeamConfig struct {
 }
 
 type TerminationCondition struct {
 	// ONEOF: maxMessageTermination, textMentionTermination, orTermination
 	MaxMessageTermination  *MaxMessageTermination  `json:"maxMessageTermination,omitempty"`
 	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
+	TextMessageTermination *TextMessageTermination `json:"textMessageTermination,omitempty"`
+	StopMessageTermination *StopMessageTermination `json:"stopMessageTermination,omitempty"`
 	OrTermination          *OrTermination          `json:"orTermination,omitempty"`
 }
 
@@ -52,6 +71,12 @@ type TextMentionTermination struct {
 	Text string `json:"text"`
 }
 
+type TextMessageTermination struct {
+	Source string `json:"source"`
+}
+
+type StopMessageTermination struct{}
+
 type OrTermination struct {
 	Conditions []OrTerminationCondition `json:"conditions"`
 }
@@ -61,30 +86,30 @@ type OrTerminationCondition struct {
 	TextMentionTermination *TextMentionTermination `json:"textMentionTermination,omitempty"`
 }
 
-// AutogenTeamStatus defines the observed state of AutogenTeam.
-type AutogenTeamStatus struct{}
+// TeamStatus defines the observed state of Team.
+type TeamStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// AutogenTeam is the Schema for the autogenteams API.
-type AutogenTeam struct {
+// Team is the Schema for the teams API.
+type Team struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AutogenTeamSpec   `json:"spec,omitempty"`
-	Status AutogenTeamStatus `json:"status,omitempty"`
+	Spec   TeamSpec   `json:"spec,omitempty"`
+	Status TeamStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// AutogenTeamList contains a list of AutogenTeam.
-type AutogenTeamList struct {
+// TeamList contains a list of Team.
+type TeamList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []AutogenTeam `json:"items"`
+	Items           []Team `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&AutogenTeam{}, &AutogenTeamList{})
+	SchemeBuilder.Register(&Team{}, &TeamList{})
 }

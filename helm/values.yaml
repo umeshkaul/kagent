@@ -1,11 +1,19 @@
 # Default values for autogenstudio
 replicaCount: 1
 
+global:
+  tag: ""
+
+openai:
+  secretName: "autogenstudio-openai"
+  apiKey: ""
+  secretKey: "OPENAI_API_KEY"
+
 controller:
   image:
-    registry: gcr.io
-    repository: solo-io-kagent/autogenstudio-controller
-    tag: ""  # Will default to Chart version
+    registry: ghcr.io
+    repository: kagent-dev/kagent/controller
+    tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -15,11 +23,11 @@ controller:
       cpu: 500m
       memory: 512Mi
 
-web:
+app:
   image:
-    registry: gcr.io
-    repository: solo-io-kagent/autogenstudio-web
-    tag: ""
+    registry: ghcr.io
+    repository: kagent-dev/kagent/app
+    tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
   resources:
     requests:
@@ -29,10 +37,30 @@ web:
       cpu: 1000m
       memory: 1Gi
 
+ui:
+  image:
+    registry: ghcr.io
+    repository: kagent-dev/kagent/ui
+    tag: ""  # Will default to global, then Chart version
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+
 service:
   type: ClusterIP
-  port: 80
-  targetPort: 8081  # the web UI runs on port 8081
+  ports:
+    ui:
+      port: 80
+      targetPort: 80
+    app:
+      port: 8081
+      targetPort: 8081
 
 imagePullSecrets: []
 nameOverride: ""

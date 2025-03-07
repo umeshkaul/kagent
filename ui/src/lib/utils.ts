@@ -1,14 +1,32 @@
-import { LLMCall } from "@/components/LLMCallModal";
+import { LLMCall } from "@/components/chat/LLMCallModal";
 import { FunctionCall, FunctionExecutionResult, ImageContent, TeamResult } from "@/types/datamodel";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import type { TextMessageConfig } from "@/types/datamodel";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function getWsUrl() {
+  let url = "";
+  if (process.env.NODE_ENV === "production") {
+    url = process.env.NEXT_PUBLIC_BACKEND_URL || `ws://${window.location.host}/api/ws`;
+  } else {
+    url = process.env.NEXT_PUBLIC_BACKEND_URL || "ws://localhost:8081/api/ws";
+  }
+  return url;
+
+}
 export function getBackendUrl() {
-  return process.env.BACKEND_URL || "http://localhost:8081/api";
+  let url = "";
+
+  if (process.env.NODE_ENV === "production") {
+    url = process.env.NEXT_PUBLIC_BACKEND_URL || "http://0.0.0.0/api";
+  } else {
+    url = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8081/api";
+  }
+  return url;
 }
 
 export function getWebSocketUrl() {
@@ -16,61 +34,6 @@ export function getWebSocketUrl() {
   const wsProtocol = backendUrl.startsWith("https") ? "wss" : "ws";
 
   return backendUrl.replace(/^https?/, wsProtocol);
-}
-
-export async function fetchApi<T>(path: string, userId: string, options: RequestInit = {}): Promise<T> {
-  try {
-    const url = `${getBackendUrl()}${path}`;
-    const urlWithUser = url.includes("?") ? `${url}&user_id=${userId}` : `${url}?user_id=${userId}`;
-
-    const response = await fetch(urlWithUser, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...options.headers,
-      },
-      // Add timeout to prevent hanging requests
-      signal: AbortSignal.timeout(15000), // 15 second timeout
-    });
-
-    if (!response.ok) {
-      // More specific error based on status code
-      const errorMessage = `Request failed with status ${response.status}`;
-      throw new Error(errorMessage);
-    }
-
-    // Check if response can be parsed as JSON
-    const contentType = response.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Response was not JSON");
-    }
-
-    const jsonResponse = await response.json();
-
-    // Check if data property exists
-    if (options.method === "GET" || (options.method === "POST" && !jsonResponse.hasOwnProperty("data"))) {
-      throw new Error("Response missing data property");
-    }
-
-    return jsonResponse.data;
-  } catch (error) {
-    // Convert common fetch errors into more meaningful messages
-    if (error instanceof TypeError && error.message === "Failed to fetch") {
-      throw new Error(`Network error - Could not reach ${getBackendUrl()}`);
-    }
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error("Request timed out - server took too long to respond");
-    }
-
-    // Re-throw the error with more context
-    console.error("Error in fetchApi:", {
-      path,
-      url: `${getBackendUrl()}${path}`,
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-    throw error;
-  }
 }
 
 export function getRelativeTimeString(date: string | number | Date): string {
@@ -193,11 +156,19 @@ export const messageUtils = {
     return content.every((item) => typeof item === "object" && item !== null && "call_id" in item && "content" in item);
   },
 
+  isTextMessageContent(content: unknown): content is TextMessageConfig {
+    return typeof content === "object" && content !== null && "content" in content && "type" in content && content.type === "TextMessage";
+  },
+
+  isUserTextMessageContent(content: unknown): content is TextMessageConfig {
+    return messageUtils.isTextMessageContent(content) && content.source === "user";
+  },
+
   isLlmCallEvent(content: unknown): content is LLMCall {
     try {
       const parsed = JSON.parse(String(content));
       return typeof parsed === "object" && parsed !== null && "type" in parsed && parsed.type === "LLMCall";
-    } catch  {
+    } catch {
       return false;
     }
   },

@@ -17,44 +17,57 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AutogenAgentSpec defines the desired state of AutogenAgent.
-type AutogenAgentSpec struct {
-	Name          string   `json:"name,omitempty"`
-	Description   string   `json:"description,omitempty"`
-	SystemMessage string   `json:"systemMessage,omitempty"`
-	Tools         []string `json:"tools,omitempty"`
+// AgentSpec defines the desired state of Agent.
+type AgentSpec struct {
+	Description   string `json:"description,omitempty"`
+	SystemMessage string `json:"systemMessage,omitempty"`
+	Tools         []Tool `json:"tools,omitempty"`
 }
 
-// AutogenAgentStatus defines the observed state of AutogenAgent.
-type AutogenAgentStatus struct{}
+type Tool struct {
+	Provider string `json:"provider,omitempty"`
+	// note: this implementation is due to the kubebuilder limitation https://github.com/kubernetes-sigs/controller-tools/issues/636
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// +kubebuilder:validation:Schemaless
+	Config map[string]AnyType `json:"config,omitempty"`
+}
+
+type AnyType struct {
+	json.RawMessage `json:",inline"`
+}
+
+// AgentStatus defines the observed state of Agent.
+type AgentStatus struct{}
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 
-// AutogenAgent is the Schema for the autogenagents API.
-type AutogenAgent struct {
+// Agent is the Schema for the agents API.
+type Agent struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AutogenAgentSpec   `json:"spec,omitempty"`
-	Status AutogenAgentStatus `json:"status,omitempty"`
+	Spec   AgentSpec   `json:"spec,omitempty"`
+	Status AgentStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// AutogenAgentList contains a list of AutogenAgent.
-type AutogenAgentList struct {
+// AgentList contains a list of Agent.
+type AgentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []AutogenAgent `json:"items"`
+	Items           []Agent `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&AutogenAgent{}, &AutogenAgentList{})
+	SchemeBuilder.Register(&Agent{}, &AgentList{})
 }

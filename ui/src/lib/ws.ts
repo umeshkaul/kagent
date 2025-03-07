@@ -1,19 +1,24 @@
-import { getBackendUrl } from "@/lib/utils";
-import { AgentMessageConfig, Message, Run, Session } from "@/types/datamodel";
+import { Run, Session } from "@/types/datamodel";
+import type { InitialMessage, TextMessageConfig, WebSocketMessage } from "@/types/datamodel";
+import { createSession } from "@/app/actions/sessions";
+import { createRun } from "@/app/actions/runs";
+import { getWsUrl } from "./utils";
+
+export type ChatStatus =
+  | "ready" // Ready to accept messages
+  | "thinking" // Processing a message
+  | "error"; // Error state
 
 interface RunWithSession {
   run: Run;
   session: Session;
 }
 
-import { getWebSocketUrl } from "@/lib/utils";
-import type { InitialMessage, TextMessageConfig, WebSocketMessage } from "@/types/datamodel";
-
 interface WebSocketHandlers {
   onMessage: (message: WebSocketMessage) => void;
   onError: (error: string) => void;
   onClose: () => void;
-  onStatusChange?: (status: "connecting" | "connected" | "reconnecting" | "closed") => void;
+  onStatusChange: (status: ChatStatus) => void;
 }
 
 export interface WebSocketManager {
@@ -45,14 +50,19 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
 
   function connect() {
     try {
-      const wsUrl = `${getWebSocketUrl()}/ws/runs/${runId}`;
+      const wsUrl = `${getWsUrl()}/runs/${runId}`;
       const socket = new WebSocket(wsUrl);
       manager.socket = socket;
 
-      handlers.onStatusChange?.("connecting");
+      // If we're connecting with an initial message, we're already in "thinking" mode
+      // Otherwise we're ready for input
+      if (initialMessage) {
+        handlers.onStatusChange("thinking");
+      } else {
+        handlers.onStatusChange("ready");
+      }
 
       socket.onopen = () => {
-        handlers.onStatusChange?.("connected");
         manager.reconnectAttempts = 0;
         manager.isReconnecting = false;
 
@@ -73,17 +83,19 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
       socket.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
-          console.log("WebSocket message:", message);
           switch (message.type) {
+            case "message_chunk":
             case "message":
             case "result":
             case "completion":
-              if (message.data) {
-                handlers.onMessage(message);
-              }
+              handlers.onMessage(message);
+              break;
+            case "input_request":
+              handlers.onStatusChange("ready");
               break;
             case "error":
               handlers.onError((message.data as TextMessageConfig).content || "Unknown error occurred");
+              handlers.onStatusChange("error");
               break;
             case "system":
               console.log("System message:", message);
@@ -92,20 +104,22 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
         } catch (error) {
           console.error("Error parsing WebSocket message:", error);
           handlers.onError("Failed to parse message");
+          handlers.onStatusChange("error");
         }
       };
 
       socket.onerror = (error) => {
         console.error("WebSocket error:", error);
         handlers.onError("WebSocket connection error");
+        handlers.onStatusChange("error");
         maybeReconnect();
       };
 
       socket.onclose = (event) => {
-        handlers.onStatusChange?.("closed");
-
         if (!event.wasClean) {
           console.log("WebSocket connection lost. Attempting to reconnect...");
+          handlers.onError("Connection lost. Attempting to reconnect...");
+          handlers.onStatusChange("error");
           maybeReconnect();
         }
 
@@ -116,6 +130,7 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
     } catch (error) {
       console.error("Failed to create WebSocket:", error);
       handlers.onError("Failed to create WebSocket connection");
+      handlers.onStatusChange("error");
       maybeReconnect();
       return null;
     }
@@ -128,7 +143,6 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
     }
 
     manager.isReconnecting = true;
-    handlers.onStatusChange?.("reconnecting");
 
     // Exponential backoff with jitter
     const delay = Math.min(INITIAL_RETRY_DELAY * Math.pow(2, manager.reconnectAttempts) + Math.random() * 1000, MAX_RETRY_DELAY);
@@ -140,6 +154,8 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
   }
 
   function send(message: string) {
+    handlers.onStatusChange("thinking");
+
     if (manager.socket?.readyState === WebSocket.OPEN) {
       manager.socket.send(message);
     } else {
@@ -177,31 +193,22 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
 }
 
 export const createRunWithSession = async (teamId: number, userId: string): Promise<RunWithSession> => {
-  // Create a session
-  const sessionResponse = await fetch(`${getBackendUrl()}/sessions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ user_id: userId, team_id: teamId }),
-  }).then((res) => res.json());
+  const sessionResponse = await createSession({ userId, teamId });
+  if (!sessionResponse.success || !sessionResponse.data) {
+    throw new Error("Failed to create session");
+  }
 
-  const session = sessionResponse.data as Session;
-
+  const session = sessionResponse.data;
   const payload = { session_id: session.id, user_id: userId };
-  const response = await fetch(`${getBackendUrl()}/runs`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
 
-  if (!response.ok) {
+  const runResponse = await createRun(payload);
+  if (!runResponse.success || !runResponse.data) {
     throw new Error("Failed to create run");
   }
 
-  const runResponse = await response.json();
-
   // Ensure we're getting the correct ID from the response
   const run: Run = {
-    id: runResponse.data.run_id || runResponse.data.id,
+    id: runResponse.data.run_id,
     created_at: new Date().toISOString(),
     status: "created",
     task: { content: "", source: "user" },
@@ -219,13 +226,3 @@ export const createRunWithSession = async (teamId: number, userId: string): Prom
     session,
   };
 };
-
-export const createMessage = (config: AgentMessageConfig, runId: string, sessionId: number, userId: string): Message => ({
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-  config,
-  session_id: sessionId,
-  run_id: runId,
-  user_id: userId,
-  message_meta: {},
-});

@@ -37,6 +37,7 @@ def get_http_client(config: Config, cancellation_token: CancellationToken) -> ht
 
 ArgsT = TypeVar("ArgsT", bound=BaseModel, contravariant=True)
 
+
 class BaseTool(BaseCoreTool[ArgsT, BaseModel], Component[Config]):
     """Base class for all Prometheus tools"""
 
@@ -78,8 +79,8 @@ class QueryInput(BaseModel):
 class QueryTool(BaseTool):
     """Tool for executing instant Prometheus queries"""
 
-    _description = """Executes instant queries against Prometheus to retrieve current metric values. 
-        Use this tool when you need to get the latest values of metrics or perform calculations on current data. 
+    _description = """Executes instant queries against Prometheus to retrieve current metric values.
+        Use this tool when you need to get the latest values of metrics or perform calculations on current data.
         The query must be a valid PromQL expression."""
 
     def __init__(self, config: Config) -> None:
@@ -107,8 +108,8 @@ class QueryRangeInput(BaseModel):
 class QueryRangeTool(BaseTool):
     """Tool for executing range queries in Prometheus"""
 
-    _description = """Executes time series queries over a specified time range in Prometheus. 
-        Use this tool for analyzing metric patterns, trends, and historical data. 
+    _description = """Executes time series queries over a specified time range in Prometheus.
+        Use this tool for analyzing metric patterns, trends, and historical data.
         You can specify the time range, resolution (step), and timeout for the query."""
 
     def __init__(self, config: Config) -> None:
@@ -141,8 +142,8 @@ class SeriesInput(BaseModel):
 class SeriesQueryTool(BaseTool):
     """Tool for querying Prometheus series"""
 
-    _description = """Finds time series that match certain label selectors in Prometheus. 
-        Use this tool to discover which metrics exist and their label combinations. 
+    _description = """Finds time series that match certain label selectors in Prometheus.
+        Use this tool to discover which metrics exist and their label combinations.
         You can specify time ranges to limit the search scope and set a maximum number of results."""
 
     def __init__(self, config: Config) -> None:
@@ -174,8 +175,8 @@ class LabelNamesInput(BaseModel):
 class LabelNamesTool(BaseTool):
     """Tool for getting Prometheus label names"""
 
-    _description = """Retrieves all label names that are available in the Prometheus server. 
-        Use this tool to discover what dimensions are available for querying and filtering metrics. 
+    _description = """Retrieves all label names that are available in the Prometheus server.
+        Use this tool to discover what dimensions are available for querying and filtering metrics.
         You can optionally filter by time range and series selectors."""
 
     def __init__(self, config: Config) -> None:
@@ -208,8 +209,8 @@ class LabelValuesInput(BaseModel):
 class LabelValuesTool(BaseTool):
     """Tool for getting Prometheus label values"""
 
-    _description = """Retrieves all possible values for a specific label name in Prometheus. 
-        Use this tool to understand the range of values a particular label can have. 
+    _description = """Retrieves all possible values for a specific label name in Prometheus.
+        Use this tool to understand the range of values a particular label can have.
         You can filter by time range and series selectors to narrow down the results."""
 
     def __init__(self, config: Config) -> None:
@@ -232,22 +233,16 @@ class LabelValuesTool(BaseTool):
         return cls(config)
 
 
-class TargetState(str, Enum):
-    ACTIVE = "active"
-    DROPPED = "dropped"
-    ANY = "any"
-
-
 class TargetsInput(BaseModel):
-    state: Optional[TargetState] = Field(default=None, description="Target state filter")
+    state: Optional[str] = Field(default=None, description="Target state filter, must be one of: active, dropped, any")
     scrape_pool: Optional[str] = Field(default=None, description="Scrape pool name")
 
 
 class TargetsTool(BaseTool):
     """Tool for getting Prometheus target discovery state"""
 
-    _description = """Provides information about all Prometheus scrape targets and their current state. 
-        Use this tool to monitor which targets are being scraped successfully and which are failing. 
+    _description = """Provides information about all Prometheus scrape targets and their current state.
+        Use this tool to monitor which targets are being scraped successfully and which are failing.
         You can filter targets by state (active/dropped) and scrape pool."""
 
     def __init__(self, config: Config) -> None:
@@ -281,8 +276,8 @@ class RulesInput(BaseModel):
 class RulesTool(BaseTool):
     """Tool for getting Prometheus alerting and recording rules"""
 
-    _description = """Retrieves information about configured alerting and recording rules in Prometheus. 
-        Use this tool to understand what alerts are defined and what metrics are being pre-computed. 
+    _description = """Retrieves information about configured alerting and recording rules in Prometheus.
+        Use this tool to understand what alerts are defined and what metrics are being pre-computed.
         You can filter rules by type, name, group, and other criteria."""
 
     def __init__(self, config: Config) -> None:
@@ -317,8 +312,8 @@ class AlertsInput(BaseModel):
 class AlertsTool(BaseTool):
     """Tool for getting active Prometheus alerts"""
 
-    _description = """Retrieves all currently firing alerts in the Prometheus server. 
-        Use this tool to monitor the current alert state and identify ongoing issues. 
+    _description = """Retrieves all currently firing alerts in the Prometheus server.
+        Use this tool to monitor the current alert state and identify ongoing issues.
         Returns details about alert names, labels, and when they started firing."""
 
     def __init__(self, config: Config) -> None:
@@ -343,8 +338,8 @@ class TargetMetadataInput(BaseModel):
 class TargetMetadataTool(BaseTool):
     """Tool for getting Prometheus target metadata"""
 
-    _description = """Retrieves metadata about metrics exposed by specific Prometheus targets. 
-        Use this tool to understand metric types, help texts, and units. 
+    _description = """Retrieves metadata about metrics exposed by specific Prometheus targets.
+        Use this tool to understand metric types, help texts, and units.
         You can filter by target labels and specific metric names."""
 
     def __init__(self, config: Config) -> None:
@@ -372,8 +367,8 @@ class AlertmanagersInput(BaseModel):
 class AlertmanagersTool(BaseTool):
     """Tool for getting Prometheus alertmanager discovery state"""
 
-    _description = """Provides information about the Alertmanager instances known to Prometheus. 
-        Use this tool to verify the connection status between Prometheus and its Alertmanagers. 
+    _description = """Provides information about the Alertmanager instances known to Prometheus.
+        Use this tool to verify the connection status between Prometheus and its Alertmanagers.
         Shows both active and dropped Alertmanager instances."""
 
     def __init__(self, config: Config) -> None:
@@ -398,8 +393,8 @@ class MetadataInput(BaseModel):
 class MetadataTool(BaseTool):
     """Tool for getting Prometheus metric metadata"""
 
-    _description = """Retrieves metadata for Prometheus metrics including help text and type information. 
-        Use this tool to understand what metrics mean and how they should be interpreted. 
+    _description = """Retrieves metadata for Prometheus metrics including help text and type information.
+        Use this tool to understand what metrics mean and how they should be interpreted.
         You can filter by specific metric names and set limits on the number of results."""
 
     def __init__(self, config: Config) -> None:
@@ -427,8 +422,8 @@ class StatusConfigInput(BaseModel):
 class StatusConfigTool(BaseTool):
     """Tool for getting Prometheus configuration"""
 
-    _description = """Retrieves the current configuration of the Prometheus server. 
-        Use this tool to view the complete runtime configuration including scrape configs, alert rules, and other settings. 
+    _description = """Retrieves the current configuration of the Prometheus server.
+        Use this tool to view the complete runtime configuration including scrape configs, alert rules, and other settings.
         Helps verify the current server configuration state."""
 
     def __init__(self, config: Config) -> None:
@@ -451,8 +446,8 @@ class StatusFlagsInput(BaseModel):
 class StatusFlagsTool(BaseTool):
     """Tool for getting Prometheus flag values"""
 
-    _description = """Retrieves the current command-line flag values used by Prometheus. 
-        Use this tool to understand how the Prometheus server was started and what runtime options are enabled. 
+    _description = """Retrieves the current command-line flag values used by Prometheus.
+        Use this tool to understand how the Prometheus server was started and what runtime options are enabled.
         Shows all configuration flags and their current values."""
 
     def __init__(self, config: Config) -> None:
@@ -475,8 +470,8 @@ class RuntimeInfoInput(BaseModel):
 class RuntimeInfoTool(BaseTool):
     """Tool for getting Prometheus runtime information"""
 
-    _description = """Provides detailed information about the Prometheus server's runtime state. 
-        Use this tool to monitor server health and performance through details about garbage collection, 
+    _description = """Provides detailed information about the Prometheus server's runtime state.
+        Use this tool to monitor server health and performance through details about garbage collection,
         memory usage, and other runtime metrics."""
 
     def __init__(self, config: Config) -> None:
@@ -499,8 +494,8 @@ class BuildInfoInput(BaseModel):
 class BuildInfoTool(BaseTool):
     """Tool for getting Prometheus build information"""
 
-    _description = """Retrieves information about how the Prometheus server was built. 
-        Use this tool to verify version information, build timestamps, and other compilation details. 
+    _description = """Retrieves information about how the Prometheus server was built.
+        Use this tool to verify version information, build timestamps, and other compilation details.
         Helps confirm the version and build configuration of the running server."""
 
     def __init__(self, config: Config) -> None:
@@ -523,8 +518,8 @@ class TSDBStatusInput(BaseModel):
 class TSDBStatusTool(BaseTool):
     """Tool for getting Prometheus TSDB status"""
 
-    _description = """Provides information about the time series database (TSDB) status in Prometheus. 
-        Use this tool to monitor database health through details about data storage, head blocks, 
+    _description = """Provides information about the time series database (TSDB) status in Prometheus.
+        Use this tool to monitor database health through details about data storage, head blocks,
         WAL status, and other TSDB metrics."""
 
     def __init__(self, config: Config) -> None:
@@ -548,8 +543,8 @@ class CreateSnapshotInput(BaseModel):
 class CreateSnapshotTool(BaseTool):
     """Tool for creating Prometheus snapshots"""
 
-    _description = """Creates a snapshot of the current Prometheus TSDB data. 
-        Use this tool for backup purposes or creating point-in-time copies of the data. 
+    _description = """Creates a snapshot of the current Prometheus TSDB data.
+        Use this tool for backup purposes or creating point-in-time copies of the data.
         You can optionally skip snapshotting the head block (latest, incomplete data)."""
 
     def __init__(self, config: Config) -> None:
@@ -575,8 +570,8 @@ class DeleteSeriesInput(BaseModel):
 class DeleteSeriesTool(BaseTool):
     """Tool for deleting Prometheus series data"""
 
-    _description = """Deletes time series data matching specific criteria in Prometheus. 
-        Use this tool carefully to remove obsolete data or free up storage space. 
+    _description = """Deletes time series data matching specific criteria in Prometheus.
+        Use this tool carefully to remove obsolete data or free up storage space.
         Deleted data cannot be recovered. You can specify time ranges and series selectors."""
 
     def __init__(self, config: Config) -> None:
@@ -604,8 +599,8 @@ class CleanTombstonesInput(BaseModel):
 class CleanTombstonesTool(BaseTool):
     """Tool for cleaning Prometheus tombstones"""
 
-    _description = """Removes tombstone files created during Prometheus data deletion operations. 
-        Use this tool to maintain database cleanliness and recover storage space. 
+    _description = """Removes tombstone files created during Prometheus data deletion operations.
+        Use this tool to maintain database cleanliness and recover storage space.
         Tombstones are markers for deleted data and can be safely removed after their retention period."""
 
     def __init__(self, config: Config) -> None:
@@ -628,8 +623,8 @@ class WALReplayInput(BaseModel):
 class WALReplayTool(BaseTool):
     """Tool for getting Prometheus WAL replay status"""
 
-    _description = """Retrieves the status of Write-Ahead Log (WAL) replay operations in Prometheus. 
-        Use this tool to monitor the progress of WAL replay during server startup or recovery. 
+    _description = """Retrieves the status of Write-Ahead Log (WAL) replay operations in Prometheus.
+        Use this tool to monitor the progress of WAL replay during server startup or recovery.
         Helps track data durability and recovery progress."""
 
     def __init__(self, config: Config) -> None:

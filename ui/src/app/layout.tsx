@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AgentsProvider } from "@/components/AgentsProvider";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -9,17 +13,23 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "kagents | Solo.io",
+  title: "kagent.dev | Solo.io",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <TooltipProvider>
-      <html lang="en">
-        <body className={geistSans.className}>
-          <main className="bg-[#1A1A1A]">{children}</main>
-        </body>
-      </html>
+      <AgentsProvider>
+        <html lang="en" className="">
+          <body className={`${geistSans.className} flex flex-col h-screen overflow-hidden`}>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <Header />
+              <main className="flex-1 overflow-y-scroll w-full mx-auto">{children}</main>
+              <Footer />
+            </ThemeProvider>
+          </body>
+        </html>
+      </AgentsProvider>
     </TooltipProvider>
   );
 }
