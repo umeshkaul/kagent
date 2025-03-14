@@ -73,10 +73,10 @@ WORKDIR /app/python
 COPY pyproject.toml .
 COPY .python-version .
 COPY uv.lock .
-COPY src src
 COPY README.md .
-RUN uv sync --frozen && \
-    chown -R python:pythongroup /app/python
+RUN uv sync --frozen
+COPY src src
+RUN chown -R python:pythongroup /app/python
 
 # Generate tools and agents
 RUN mkdir -p /root/.autogenstudio/configs
@@ -94,4 +94,4 @@ EXPOSE 8081
 LABEL org.opencontainers.image.source=https://github.com/kagent-dev/kagent
 LABEL org.opencontainers.image.description="Kagent app is the apiserver for running agents."
 
-CMD ["uv", "run", "autogenstudio", "ui", "--host", "0.0.0.0", "--port", "8081"]
+CMD ["uv", "run", "kagent", "serve", "--host", "0.0.0.0", "--port", "8081"]
