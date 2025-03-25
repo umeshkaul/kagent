@@ -64,12 +64,14 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton tooltip={displayName}>
                     <span>{displayName}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    {displayDescription &&  <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" /> }
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <span className="text-sm text-muted-foreground flex px-2">{displayDescription}</span>
-                </CollapsibleContent>
+                {displayDescription && (
+                  <CollapsibleContent>
+                    <span className="text-sm text-muted-foreground flex px-2">{displayDescription}</span>
+                  </CollapsibleContent>
+                )}
               </SidebarMenuItem>
             </Collapsible>
           );

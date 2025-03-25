@@ -70,7 +70,7 @@ func (h *ToolServersHandler) HandleGetToolServer(w http.ResponseWriter, r *http.
 		return
 	}
 
-	toolServer, err := h.AutogenClient.GetToolServer(&toolServerID, userID)
+	toolServer, err := h.AutogenClient.GetToolServer(toolServerID, userID)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -128,4 +128,26 @@ func (h *ToolServersHandler) HandleGetServerTools(w http.ResponseWriter, r *http
 	}
 
 	RespondWithJSON(w, http.StatusOK, tools)
+}
+
+func (h *ToolServersHandler) HandleDeleteToolServer(w http.ResponseWriter, r *http.Request) {
+	toolServerID, err := GetIntPathParam(r, "toolServerID")
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userID, err := GetUserID(r)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = h.AutogenClient.DeleteToolServer(&toolServerID, userID)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

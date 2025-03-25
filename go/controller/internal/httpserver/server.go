@@ -115,11 +115,12 @@ func (s *HTTPServer) setupRoutes() {
 
 	// Runs
 	s.router.HandleFunc(APIPathRuns, s.handlers.Runs.HandleCreateRun).Methods(http.MethodPost)
-	s.router.HandleFunc("/api/sessions/{sessionID}/runs", s.handlers.Runs.HandleListSessionRuns).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}/runs", s.handlers.Runs.HandleListSessionRuns).Methods(http.MethodGet)
 
 	// Sessions
 	s.router.HandleFunc(APIPathSessions, s.handlers.Sessions.HandleListSessions).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathSessions, s.handlers.Sessions.HandleCreateSession).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", s.handlers.Sessions.HandleGetSession).Methods(http.MethodGet)
 
 	// Tools
 	s.router.HandleFunc(APIPathTools, s.handlers.Tools.HandleListTools).Methods(http.MethodGet)
@@ -130,6 +131,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathToolServers+"/{toolServerID}", s.handlers.ToolServers.HandleGetToolServer).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathToolServers+"/{toolServerID}/refresh", s.handlers.ToolServers.HandleRefreshToolServer).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathToolServers+"/{toolServerID}/tools", s.handlers.ToolServers.HandleGetServerTools).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathToolServers+"/{toolServerID}", s.handlers.ToolServers.HandleDeleteToolServer).Methods(http.MethodDelete)
 
 	// Teams
 	s.router.HandleFunc(APIPathTeams, s.handlers.Teams.HandleListTeams).Methods(http.MethodGet)

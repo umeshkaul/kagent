@@ -16,19 +16,10 @@ func (c *Client) ListToolServers(userID string) ([]*ToolServer, error) {
 	return toolServers, err
 }
 
-func (c *Client) GetToolServer(serverID *int, userID string) (*ToolServer, error) {
-	allToolServers, err := c.ListToolServers(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, server := range allToolServers {
-		if *server.Id == *serverID {
-			return server, nil
-		}
-	}
-
-	return nil, nil
+func (c *Client) GetToolServer(serverID int, userID string) (*ToolServer, error) {
+	var toolServer *ToolServer
+	err := c.doRequest("GET", fmt.Sprintf("/toolservers/%d?user_id=%s", serverID, userID), nil, &toolServer)
+	return toolServer, err
 }
 
 func (c *Client) DeleteToolServer(serverID *int, userID string) error {

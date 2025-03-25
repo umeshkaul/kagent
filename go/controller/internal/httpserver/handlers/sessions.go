@@ -55,3 +55,30 @@ func (h *SessionsHandler) HandleCreateSession(w http.ResponseWriter, r *http.Req
 
 	RespondWithJSON(w, http.StatusCreated, session)
 }
+
+func (h *SessionsHandler) HandleGetSession(w http.ResponseWriter, r *http.Request) {
+	sessionID, err := GetIntPathParam(r, "sessionID")
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userID, err := GetUserID(r)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	session, err := h.AutogenClient.GetSession(sessionID, userID)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if session == nil {
+		RespondWithError(w, http.StatusNotFound, "Session not found")
+		return
+	}
+
+	RespondWithJSON(w, http.StatusOK, session)
+}
