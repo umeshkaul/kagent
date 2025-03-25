@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { getTeams, createAgent } from "@/app/actions/teams";
-import { Component, ToolConfig, Agent, AgentTool } from "@/types/datamodel";
+import { Component, ToolConfig, Agent, AgentTool, AgentResponse } from "@/types/datamodel";
 import { getTools } from "@/app/actions/tools";
-import { BaseResponse, Model } from "@/lib/types";
-import { isIdentifier } from "@/lib/utils";
+import type { BaseResponse, Model } from "@/lib/types";
 import { getModels } from "@/app/actions/models";
 
 interface ValidationErrors {
@@ -26,7 +25,7 @@ export interface AgentFormData {
 }
 
 interface AgentsContextType {
-  agents: Agent[];
+  agents: AgentResponse[];
   models: Model[];
   loading: boolean;
   error: string;
@@ -34,7 +33,7 @@ interface AgentsContextType {
   refreshTeams: () => Promise<void>;
   createNewAgent: (agentData: AgentFormData) => Promise<BaseResponse<Agent>>;
   updateAgent: (id: string, agentData: AgentFormData) => Promise<BaseResponse<Agent>>;
-  getAgentById: (id: string) => Promise<Agent | null>;
+  getAgentById: (id: string) => Promise<AgentResponse | null>;
   validateAgentData: (data: Partial<AgentFormData>) => ValidationErrors;
 }
 
@@ -53,7 +52,7 @@ interface AgentsProviderProps {
 }
 
 export function AgentsProvider({ children }: AgentsProviderProps) {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<AgentResponse[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [tools, setTools] = useState<Component<ToolConfig>[]>([]);
@@ -118,9 +117,6 @@ export function AgentsProvider({ children }: AgentsProviderProps) {
     if (data.name !== undefined) {
       if (!data.name.trim()) {
         errors.name = "Agent name is required";
-      } // we only check that it's required as this will be the label -- the name is created from the label
-      else if (!isIdentifier(data.name)) {
-        errors.name = "Agent name must not contain special characters";
       }
     }
 
@@ -140,7 +136,7 @@ export function AgentsProvider({ children }: AgentsProviderProps) {
   };
 
   // Get agent by ID function
-  const getAgentById = async (name: string): Promise<Agent | null> => {
+  const getAgentById = async (name: string): Promise<AgentResponse | null> => {
     try {
       // First ensure we have the latest teams data
       const { data: teams } = await getTeams();
@@ -151,7 +147,7 @@ export function AgentsProvider({ children }: AgentsProviderProps) {
       }
 
       // Find the team/agent with the matching ID
-      const agent = teams.find((team) => String(team.metadata.name) === name);
+      const agent = teams.find((team) => String(team.agent.metadata.name) === name);
 
       if (!agent) {
         console.warn(`Agent with name ${name} not found`);

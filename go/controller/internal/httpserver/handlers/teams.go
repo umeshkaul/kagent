@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -33,6 +32,11 @@ func convertToKubernetesIdentifier(name string) string {
 
 // HandleListTeams handles GET /api/teams requests
 func (h *TeamsHandler) HandleListTeams(w http.ResponseWriter, r *http.Request) {
+	userID, err := GetUserID(r)
+	if err != nil {
+		RespondWithError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	agentList := &v1alpha1.AgentList{}
 	if err := h.KubeClient.List(r.Context(), agentList); err != nil {
@@ -42,7 +46,7 @@ func (h *TeamsHandler) HandleListTeams(w http.ResponseWriter, r *http.Request) {
 
 	teamsWithID := make([]map[string]interface{}, 0)
 	for _, team := range agentList.Items {
-		autogenTeam, err := h.AutogenClient.GetTeam(convertToKubernetesIdentifier(team.Name), "")
+		autogenTeam, err := h.AutogenClient.GetTeam(convertToKubernetesIdentifier(team.Name), userID)
 		if err != nil {
 			RespondWithError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -52,9 +56,25 @@ func (h *TeamsHandler) HandleListTeams(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		// Get the model config for the team
+		modelConfig := &v1alpha1.ModelConfig{}
+		if err := h.KubeClient.Get(r.Context(), types.NamespacedName{
+			Name:      team.Spec.ModelConfigRef,
+			Namespace: DefaultResourceNamespace,
+		}, modelConfig); err != nil {
+			continue
+		}
+
+		if modelConfig == nil {
+			continue
+		}
+
 		teamsWithID = append(teamsWithID, map[string]interface{}{
-			"id":    autogenTeam.Id,
-			"agent": team,
+			"id":        autogenTeam.Id,
+			"agent":     team,
+			"component": autogenTeam.Component,
+			"provider":  modelConfig.Spec.Provider,
+			"model":     modelConfig.Spec.Model,
 		})
 	}
 
@@ -131,15 +151,7 @@ func (h *TeamsHandler) HandleCreateTeam(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !validationResp.IsValid {
-		ctrllog.Log.Error(fmt.Errorf("invalid team"), "Invalid team")
-
-		for _, err := range validationResp.Errors {
-			ctrllog.Log.Info(err.Error, "Error")
-		}
-
-		for _, warning := range validationResp.Warnings {
-			ctrllog.Log.Info(warning.Error, "Warning")
-		}
+		ctrllog.Log.Info("Invalid team", "errors", validationResp.Errors, "warnings", validationResp.Warnings)
 
 		RespondWithError(w, http.StatusNotAcceptable, "Invalid team")
 		return
@@ -154,7 +166,7 @@ func (h *TeamsHandler) HandleCreateTeam(w http.ResponseWriter, r *http.Request) 
 	RespondWithJSON(w, http.StatusCreated, teamRequest)
 }
 
-// HandleGetTeam handles GET /api/teams/{teamLabel} requests
+// HandleGetTeam handles GET /api/teams/{teamID} requests
 func (h *TeamsHandler) HandleGetTeam(w http.ResponseWriter, r *http.Request) {
 	userID, err := GetUserID(r)
 	if err != nil {
@@ -162,11 +174,19 @@ func (h *TeamsHandler) HandleGetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	teamLabel, err := GetPathParam(r, "teamLabel")
+	teamID, err := GetIntPathParam(r, "teamID")
 	if err != nil {
 		RespondWithError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	autogenTeam, err := h.AutogenClient.GetTeamByID(teamID, userID)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	teamLabel := convertToKubernetesIdentifier(*autogenTeam.Component.Label)
 
 	team := &v1alpha1.Agent{}
 	if err := h.KubeClient.Get(r.Context(), types.NamespacedName{
@@ -177,17 +197,23 @@ func (h *TeamsHandler) HandleGetTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get the equivalent from the autogen client
-	autogenTeam, err := h.AutogenClient.GetTeam(team.Name, userID)
-	if err != nil {
+	// Get the model config for the team
+	modelConfig := &v1alpha1.ModelConfig{}
+	if err := h.KubeClient.Get(r.Context(), types.NamespacedName{
+		Name:      team.Spec.ModelConfigRef,
+		Namespace: DefaultResourceNamespace,
+	}, modelConfig); err != nil {
 		RespondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	// Create a new object that contains the team information from team and the ID from the autogenTeam
 	teamWithID := &map[string]interface{}{
-		"id":    autogenTeam.Id,
-		"agent": team,
+		"id":        autogenTeam.Id,
+		"agent":     team,
+		"component": autogenTeam.Component,
+		"provider":  modelConfig.Spec.Provider,
+		"model":     modelConfig.Spec.Model,
 	}
 
 	RespondWithJSON(w, http.StatusOK, teamWithID)

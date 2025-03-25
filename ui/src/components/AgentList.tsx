@@ -9,7 +9,7 @@ import { LoadingState } from "./LoadingState";
 import { useAgents } from "./AgentsProvider";
 
 export default function AgentList() {
-  const { agents, loading, error } = useAgents();
+  const { agents , loading, error } = useAgents();
 
   if (error) {
     return <ErrorState message={error} />;
@@ -40,7 +40,7 @@ export default function AgentList() {
           </Button>
         </div>
       ) : (
-        <AgentGrid agents={agents || []} />
+        <AgentGrid agentResponse={agents || []} />
       )}
     </div>
   );

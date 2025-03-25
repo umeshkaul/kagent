@@ -380,6 +380,14 @@ export interface AgentResourceSpec {
   modelConfigRef: string;
 }
 export interface Agent {
-  metadata: ResourceMetadata;
-  spec: AgentResourceSpec;
+    metadata: ResourceMetadata;
+    spec: AgentResourceSpec;
+}
+
+export interface AgentResponse {
+  id: number;
+  agent: Agent;
+  component: Component<TeamConfig>;
+  model: string;
+  provider: string;
 }

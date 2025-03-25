@@ -1,14 +1,14 @@
 "use server";
 
 import { BaseResponse } from "@/lib/types";
-import { Agent } from "@/types/datamodel";
+import { Agent, AgentResponse } from "@/types/datamodel";
 import { revalidatePath } from "next/cache";
 import { fetchApi } from "./utils";
 import { AgentFormData } from "@/components/AgentsProvider";
 
-export async function getTeam(teamLabel: string | number): Promise<BaseResponse<Agent>> {
+export async function getTeam(teamLabel: string | number): Promise<BaseResponse<AgentResponse>> {
   try {
-    const data = await fetchApi<Agent>(`/teams/${teamLabel}`);
+    const data = await fetchApi<AgentResponse>(`/teams/${teamLabel}`);
     return { success: true, data };
   } catch (error) {
     console.error("Error getting team:", error);
@@ -34,7 +34,6 @@ export async function deleteTeam(teamLabel: string) {
 }
 
 function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
-  // TODO: Fill out the model field once the backend supports it
   return {
     metadata: {
       name: agentFormData.name,
@@ -46,10 +45,12 @@ function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
       tools: agentFormData.tools.map((tool) => ({
         provider: tool.provider,
         description: tool.description ?? "No description provided",
-        config: Object.entries(tool.config).reduce((acc, [key, value]) => {
-          acc[key] = String(value);
-          return acc;
-        }, {} as { [key: string]: string }),
+        config: tool.config
+          ? Object.entries(tool.config).reduce((acc, [key, value]) => {
+              acc[key] = String(value);
+              return acc;
+            }, {} as { [key: string]: string })
+          : {},
       })),
     },
   };
@@ -67,7 +68,7 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
 
   try {
     const response = await fetchApi<Agent>(`/teams`, {
-      method:  update ? "PUT" : "POST",
+      method: update ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
       },
@@ -86,13 +87,10 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
   }
 }
 
-export async function getTeams(): Promise<BaseResponse<Agent[]>> {
+export async function getTeams(): Promise<BaseResponse<AgentResponse[]>> {
   try {
-    const data = await fetchApi<Agent[]>(`/teams`);
-
-    console.log('DATA', data)
-    const sortedData = data.sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
-
+    const data = await fetchApi<AgentResponse[]>(`/teams`);
+    const sortedData = data.sort((a, b) => a.agent.metadata.name.localeCompare(b.agent.metadata.name));
     return { success: true, data: sortedData };
   } catch (error) {
     console.error("Error getting teams:", error);

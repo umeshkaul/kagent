@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { ChatStatus, setupWebSocket, WebSocketManager } from "./ws";
-import { AgentMessageConfig, InitialMessage, Message, Run, Session, Team, WebSocketMessage, SessionWithRuns } from "@/types/datamodel";
+import { AgentMessageConfig, InitialMessage, Message, Run, Session, WebSocketMessage, SessionWithRuns, AgentResponse } from "@/types/datamodel";
 import { loadExistingChat, sendMessage, startNewChat } from "@/app/actions/chat";
 import { messageUtils } from "./utils";
 
@@ -12,13 +12,13 @@ interface ChatState {
   status: ChatStatus;
   error: string | null;
   websocketManager: WebSocketManager | null;
-  team: Team | null;
+  team: AgentResponse | null;
   currentStreamingContent: string;
   currentStreamingMessage: Message | null;
 
   // Actions
-  initializeNewChat: (agentName: string) => Promise<void>;
-  sendUserMessage: (content: string, agentName: string) => Promise<void>;
+  initializeNewChat: (agentId: string) => Promise<void>;
+  sendUserMessage: (content: string, agentId: string) => Promise<void>;
   loadChat: (chatId: string) => Promise<void>;
   cleanup: () => void;
   handleWebSocketMessage: (message: WebSocketMessage) => void;
@@ -36,11 +36,11 @@ const useChatStore = create<ChatState>((set, get) => ({
   currentStreamingContent: "",
   currentStreamingMessage: null,
 
-  initializeNewChat: async (agentName) => {
+  initializeNewChat: async (agentId) => {
     try {
       // Clean up any existing websocket
       get().cleanup();
-      const { team, session, run } = await startNewChat(agentName);
+      const { team, session, run } = await startNewChat(agentId);
       // Add the new session to sessions list
       set({
         team,

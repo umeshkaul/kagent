@@ -138,7 +138,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathTeams, s.handlers.Teams.HandleListTeams).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathTeams, s.handlers.Teams.HandleCreateTeam).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathTeams, s.handlers.Teams.HandleUpdateTeam).Methods(http.MethodPut)
-	s.router.HandleFunc(APIPathTeams+"/{teamLabel}", s.handlers.Teams.HandleGetTeam).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", s.handlers.Teams.HandleGetTeam).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathTeams+"/{teamLabel}", s.handlers.Teams.HandleDeleteTeam).Methods(http.MethodDelete)
 
 	// Use middleware for common functionality

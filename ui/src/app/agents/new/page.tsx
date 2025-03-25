@@ -12,11 +12,10 @@ import { ModelSelectionSection } from "@/components/create/ModelSelectionSection
 import { ToolsSection } from "@/components/create/ToolsSection";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAgents } from "@/components/AgentsProvider";
-import { Agent, Component, ToolConfig } from "@/types/datamodel";
+import type { AgentTool } from "@/types/datamodel";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import KagentLogo from "@/components/kagent-logo";
-import { getModel } from "@/app/actions/models";
 
 interface ValidationErrors {
   name?: string;
@@ -33,16 +32,6 @@ function AgentPageContent() {
   const searchParams = useSearchParams();
   const { models, tools, loading, error, createNewAgent, updateAgent, getAgentById, validateAgentData } = useAgents();
 
-  const getModelIdFromTeam = async (agent: Agent): Promise<string | undefined> => {
-    try {
-      const { data } = await getModel(agent.spec.modelConfigRef);
-      return data?.model;
-    } catch (error) {
-      console.error("Error extracting model ID:", error);
-      return undefined;
-    }
-  };
-
   // Determine if in edit mode
   const isEditMode = searchParams.get("edit") === "true";
   const agentId = searchParams.get("id");
@@ -55,8 +44,8 @@ function AgentPageContent() {
   // Default to the first model
   const [selectedModel, setSelectedModel] = useState<Model | null>(models && models.length > 0 ? models[0] : null);
 
-  // Tools state
-  const [selectedTools, setSelectedTools] = useState<Component<ToolConfig>[]>([]);
+  // Tools state - now using AgentTool interface correctly
+  const [selectedTools, setSelectedTools] = useState<AgentTool[]>([]);
 
   // Overall form state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,24 +65,28 @@ function AgentPageContent() {
       if (isEditMode && agentId) {
         try {
           setIsLoading(true);
-          const agent = await getAgentById(agentId);
+          const agentResponse = await getAgentById(agentId);
 
+          if (!agentResponse) {
+            setGeneralError("Agent not found");
+            setIsLoading(false);
+            return;
+          }
+          const agent = agentResponse.agent;
           if (agent) {
             try {
-              // Populate form with existing agent data from the assistant agent
+              // Populate form with existing agent data
               setName(agent.metadata.name || "");
               setDescription(agent.spec.description || "");
               setSystemPrompt(agent.spec.systemMessage || "");
 
-              // Extract and set tools
-              // TODO!! !setSelectedTools(agent.spec.tools || []);
+              // Extract and set tools - these are already AgentTool objects
+              setSelectedTools(agent.spec.tools || []);
 
-              // Find the model id from the model client and match it to available models
-              const modelId = await getModelIdFromTeam(agent);
-              if (modelId) {
-                const model = models.find((m) => m.model === modelId) || models[0];
-                setSelectedModel(model);
-              }
+              setSelectedModel({
+                model: agentResponse.model,
+                name: agent.spec.modelConfigRef,
+              });
             } catch (extractError) {
               console.error("Error extracting assistant data:", extractError);
               setGeneralError("Failed to extract agent data from team structure");
@@ -111,7 +104,7 @@ function AgentPageContent() {
     };
 
     fetchAgentData();
-  }, [isEditMode, agentId, getAgentById]);
+  }, [isEditMode, agentId, getAgentById, models]);
 
   const validateForm = () => {
     const formData = {
@@ -119,14 +112,7 @@ function AgentPageContent() {
       description,
       systemPrompt,
       model: selectedModel || undefined,
-      tools: selectedTools.map((tool) => ({
-        provider: tool.provider,
-        description: tool.description || "",
-        config: Object.entries(tool.config).reduce((acc, [key, value]) => {
-          acc[key] = String(value); // Ensure all values are strings
-          return acc;
-        }, {} as { [key: string]: string }), // Explicitly type the accumulator
-      })),
+      tools: selectedTools,
     };
 
     const newErrors = validateAgentData(formData);
@@ -161,14 +147,7 @@ function AgentPageContent() {
         result = await updateAgent(agentId, {
           ...agentData,
           model: selectedModel,
-          tools: selectedTools.map((tool) => ({
-            provider: tool.provider,
-            description: tool.description || "",
-            config: Object.entries(tool.config).reduce((acc, [key, value]) => {
-              acc[key] = String(value); // Ensure all values are strings
-              return acc;
-            }, {} as { [key: string]: string }), // Explicitly type the accumulator
-          })),
+          tools: selectedTools,
         });
       } else {
         // Create new agent
@@ -178,14 +157,7 @@ function AgentPageContent() {
         result = await createNewAgent({
           ...agentData,
           model: selectedModel,
-          tools: selectedTools.map((tool) => ({
-            provider: tool.provider,
-            description: tool.description || "",
-            config: Object.entries(tool.config).reduce((acc, [key, value]) => {
-              acc[key] = String(value); // Ensure all values are strings
-              return acc;
-            }, {} as { [key: string]: string }), // Explicitly type the accumulator
-          })),
+          tools: selectedTools,
         });
       }
 

@@ -1,21 +1,21 @@
 "use server";
 
-import { Agent, AgentMessageConfig, GetSessionRunsResponse, Message, Run, Session } from "@/types/datamodel";
+import { AgentMessageConfig, AgentResponse, GetSessionRunsResponse, Message, Run, Session } from "@/types/datamodel";
 import { getTeam } from "./teams";
 import { getSession, getSessionRuns, getSessions } from "./sessions";
 import { fetchApi, getCurrentUserId } from "./utils";
 import { createRunWithSession } from "@/lib/ws";
 
-export async function startNewChat(agentName: string) {
+export async function startNewChat(agentId: string): Promise<{ team: AgentResponse; session: Session; run: Run }> {
   const userId = await getCurrentUserId();
-  const teamData = await getTeam(agentName);
+  const teamData = await getTeam(agentId);
 
   if (!teamData.success || !teamData.data) {
     throw new Error("Agent not found");
   }
 
   // Create new session and run
-  const { session, run } = await createRunWithSession(agentName, userId);
+  const { session, run } = await createRunWithSession(agentId, userId);
   return { team: teamData.data, session, run };
 }
 
@@ -59,7 +59,7 @@ export async function loadExistingChat(chatId: string) {
 }
 
 
-export async function getChatData(agentId: number, chatId: string | null): Promise<{ notFound?: boolean; agent?: Agent; sessions?: { session: Session; runs: Run[] }[]; viewState?: { session: Session; run: Run } | null }> {
+export async function getChatData(agentId: number, chatId: string | null): Promise<{ notFound?: boolean; agent?: AgentResponse; sessions?: { session: Session; runs: Run[] }[]; viewState?: { session: Session; run: Run } | null }> {
   try {
     // Fetch agent details
     const agentData = await getTeam(agentId);

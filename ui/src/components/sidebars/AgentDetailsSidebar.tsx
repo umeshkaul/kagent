@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
-import type { Agent, AgentTool } from "@/types/datamodel";
+import type { AgentResponse, AgentTool } from "@/types/datamodel";
 import { getTeam } from "@/app/actions/teams";
 import { SidebarHeader, Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { AgentActions } from "./AgentActions";
@@ -15,16 +15,16 @@ interface AgentDetailsSidebarProps {
 }
 
 export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProps) {
-  const [selectedTeam, setSelectedTeam] = useState<Agent | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<AgentResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTeam = async () => {
       setLoading(true);
       try {
-        const teamData = await getTeam(selectedAgentId);
-        if (teamData && teamData.data) {
-          setSelectedTeam(teamData.data);
+        const { data }  = await getTeam(selectedAgentId);
+        if (data && data.agent) {
+          setSelectedTeam(data);
         }
       } catch (error) {
         console.error("Failed to fetch team:", error);
@@ -86,16 +86,16 @@ export function AgentDetailsSidebar({ selectedAgentId }: AgentDetailsSidebarProp
           <ScrollArea>
             <SidebarGroup>
               <SidebarGroupLabel className="font-bold">
-                {selectedTeam?.metadata.name} ({selectedTeam?.spec.modelConfigRef})
+                {selectedTeam?.agent.metadata.name} ({selectedTeam?.model})
               </SidebarGroupLabel>
-              <p className="text-sm flex px-2 text-muted-foreground">{selectedTeam?.spec.description}</p>
+              <p className="text-sm flex px-2 text-muted-foreground">{selectedTeam?.agent.spec.description}</p>
             </SidebarGroup>
             <SidebarGroup>
-              <AgentActions agentName={selectedTeam?.metadata.name ?? ""} onCopyJson={() => navigator.clipboard.writeText(JSON.stringify(selectedTeam, null, 2))} />
+              <AgentActions agentName={selectedTeam?.agent.metadata.name ?? ""} onCopyJson={() => navigator.clipboard.writeText(JSON.stringify(selectedTeam, null, 2))} />
             </SidebarGroup>
             <SidebarGroup className="group-data-[collapsible=icon]:hidden">
               <SidebarGroupLabel>Tools</SidebarGroupLabel>
-              {renderAgentTools(selectedTeam?.spec.tools)}
+              {renderAgentTools(selectedTeam?.agent.spec.tools)}
             </SidebarGroup>
           </ScrollArea>
         </SidebarContent>

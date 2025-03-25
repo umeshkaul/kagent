@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useEffect, useState } from "react";
 import { getTeams } from "@/app/actions/teams";
-import { Agent } from "@/types/datamodel";
+import { AgentResponse } from "@/types/datamodel";
 import KagentLogo from "../kagent-logo";
 import { useRouter } from "next/navigation";
 import { getChatData } from "@/app/actions/chat";
@@ -19,8 +19,8 @@ interface AgentSwitcherProps {
 export function AgentSwitcher({ agentId }: AgentSwitcherProps) {
   const router = useRouter();
   const { isMobile } = useSidebar();
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<Agent | null>(null);
+  const [agentResponses, setAgentResponses] = useState<AgentResponse[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<AgentResponse | null>(null);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -34,10 +34,10 @@ export function AgentSwitcher({ agentId }: AgentSwitcherProps) {
 
   useEffect(() => {
     const fetchTeams = async () => {
-      const teamData = await getTeams();
+      const { data } = await getTeams();
 
-      if (teamData && teamData.data) {
-        setAgents(teamData.data);
+      if (data) {
+        setAgentResponses(data);
       }
     };
 
@@ -58,20 +58,20 @@ export function AgentSwitcher({ agentId }: AgentSwitcherProps) {
                 <KagentLogo className="w-4 h-4" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{selectedTeam.metadata.name}</span>
-                <span className="truncate text-xs">{selectedTeam.spec.modelConfigRef}</span>
+                <span className="truncate font-semibold">{selectedTeam.agent.metadata.name}</span>
+                <span className="truncate text-xs">{selectedTeam.provider} ({selectedTeam.model})</span>
               </div>
               <ChevronsUpDown className="ml-auto" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg" align="start" side={isMobile ? "bottom" : "right"} sideOffset={4}>
             <DropdownMenuLabel className="text-xs text-muted-foreground">Agents</DropdownMenuLabel>
-            {agents.map((agent, index) => {
+            {agentResponses.map(({ id, agent}, index) => {
               return (
                 <DropdownMenuItem
                   key={agent.metadata.name}
                   onClick={() => {
-                    router.push(`/agents/${agent.metadata.name}/chat`);
+                    router.push(`/agents/${id}/chat`);
                   }}
                   className="gap-2 p-2"
                 >
