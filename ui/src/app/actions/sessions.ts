@@ -59,7 +59,7 @@ export async function createSession(session: CreateSessionRequest): Promise<Base
       },
       body: JSON.stringify({
         user_id: session.userId,
-        team_id: session.teamId,
+        team_id: session.agentName,
       }),
     });
 

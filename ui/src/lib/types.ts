@@ -15,7 +15,7 @@ export interface Model {
 
 export interface CreateSessionRequest {
   userId: string;
-  teamId: number;
+  agentName: string;
 }
 
 export interface CreateRunRequest {

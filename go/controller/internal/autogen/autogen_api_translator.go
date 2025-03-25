@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/kagent-dev/kagent/go/autogen/api"
@@ -70,6 +71,15 @@ func NewAutogenApiTranslator(
 }
 
 func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*autogen_client.Team, error) {
+	modelConfig := &v1alpha1.ModelConfig{}
+	err := a.kube.Get(ctx, types.NamespacedName{
+		Name:      agent.Spec.ModelConfigRef,
+		Namespace: agent.Namespace,
+	}, &v1alpha1.ModelConfig{})
+	if err != nil {
+		return nil, err
+	}
+
 	// generate an internal round robin "team" for the individual agent
 	team := &v1alpha1.Team{
 		ObjectMeta: agent.ObjectMeta,
@@ -80,6 +90,7 @@ func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v
 		Spec: v1alpha1.TeamSpec{
 			Participants:         []string{agent.Name},
 			Description:          agent.Spec.Description,
+			ModelConfig:          modelConfig.Name,
 			RoundRobinTeamConfig: &v1alpha1.RoundRobinTeamConfig{},
 			TerminationCondition: v1alpha1.TerminationCondition{
 				StopMessageTermination: &v1alpha1.StopMessageTermination{},
@@ -328,6 +339,7 @@ func (a *apiTranslator) translateTaskAgent(
 		Spec: v1alpha1.TeamSpec{
 			Participants:         []string{agent.Name},
 			Description:          agent.Spec.Description,
+			ModelConfig:          agent.Spec.ModelConfigRef,
 			RoundRobinTeamConfig: &v1alpha1.RoundRobinTeamConfig{},
 			TerminationCondition: v1alpha1.TerminationCondition{
 				TextMessageTermination: &v1alpha1.TextMessageTermination{
@@ -576,4 +588,170 @@ func addModelClientToConfig(
 
 	(*toolConfig)["model_client"] = cfg
 	return nil
+}
+
+// createModelClientForProvider creates a model client component based on the model provider
+func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey string) (*api.Component, error) {
+	switch modelConfig.Spec.Provider {
+	case v1alpha1.ProviderAnthropic:
+		anthropicConfig := map[string]interface{}{
+			"model":   modelConfig.Spec.Model,
+			"api_key": apiKey,
+			"stream_options": map[string]interface{}{
+				"include_usage": true,
+			},
+		}
+
+		// Add provider-specific configurations
+		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.Anthropic != nil {
+			config := modelConfig.Spec.ProviderConfig.Anthropic
+
+			if config.BaseURL != "" {
+				anthropicConfig["api_base"] = config.BaseURL
+			}
+
+			if config.MaxTokens > 0 {
+				anthropicConfig["max_tokens"] = config.MaxTokens
+			}
+
+			if config.Temperature != "" {
+				temp, err := strconv.ParseFloat(config.Temperature, 64)
+				if err == nil {
+					anthropicConfig["temperature"] = temp
+				}
+			}
+
+			if config.TopP != "" {
+				topP, err := strconv.ParseFloat(config.TopP, 64)
+				if err == nil {
+					anthropicConfig["top_p"] = topP
+				}
+			}
+
+			if config.TopK > 0 {
+				anthropicConfig["top_k"] = config.TopK
+			}
+		}
+
+		return &api.Component{
+			Provider:      "autogen_ext.models.anthropic.AnthropicChatCompletionClient",
+			ComponentType: "model",
+			Version:       makePtr(1),
+			Config:        anthropicConfig,
+		}, nil
+
+	case v1alpha1.ProviderAzureOpenAI:
+		azureConfig := map[string]interface{}{
+			"model":   modelConfig.Spec.Model,
+			"api_key": apiKey,
+			"stream_options": map[string]interface{}{
+				"include_usage": true,
+			},
+		}
+
+		// Add provider-specific configurations
+		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.AzureOpenAI != nil {
+			config := modelConfig.Spec.ProviderConfig.AzureOpenAI
+
+			if config.Endpoint != "" {
+				azureConfig["api_base"] = config.Endpoint
+			}
+
+			if config.APIVersion != "" {
+				azureConfig["api_version"] = config.APIVersion
+			}
+
+			if config.DeploymentName != "" {
+				azureConfig["deployment_name"] = config.DeploymentName
+			}
+
+			if config.MaxTokens > 0 {
+				azureConfig["max_tokens"] = config.MaxTokens
+			}
+
+			if config.Temperature != "" {
+				temp, err := strconv.ParseFloat(config.Temperature, 64)
+				if err == nil {
+					azureConfig["temperature"] = temp
+				}
+			}
+
+			if config.TopP != "" {
+				topP, err := strconv.ParseFloat(config.TopP, 64)
+				if err == nil {
+					azureConfig["top_p"] = topP
+				}
+			}
+		}
+
+		return &api.Component{
+			Provider:      "autogen_ext.models.azure_openai.AzureOpenAIChatCompletionClient",
+			ComponentType: "model",
+			Version:       makePtr(1),
+			Config:        azureConfig,
+		}, nil
+
+	case v1alpha1.ProviderOpenAI:
+		openAIConfig := map[string]interface{}{
+			"model":   modelConfig.Spec.Model,
+			"api_key": apiKey,
+			"stream_options": map[string]interface{}{
+				"include_usage": true,
+			},
+		}
+
+		// Add provider-specific configurations
+		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.OpenAI != nil {
+			config := modelConfig.Spec.ProviderConfig.OpenAI
+
+			if config.BaseURL != "" {
+				openAIConfig["api_base"] = config.BaseURL
+			}
+
+			if config.Organization != "" {
+				openAIConfig["organization"] = config.Organization
+			}
+
+			if config.MaxTokens > 0 {
+				openAIConfig["max_tokens"] = config.MaxTokens
+			}
+
+			if config.Temperature != "" {
+				temp, err := strconv.ParseFloat(config.Temperature, 64)
+				if err == nil {
+					openAIConfig["temperature"] = temp
+				}
+			}
+
+			if config.TopP != "" {
+				topP, err := strconv.ParseFloat(config.TopP, 64)
+				if err == nil {
+					openAIConfig["top_p"] = topP
+				}
+			}
+
+			if config.FrequencyPenalty != "" {
+				freqP, err := strconv.ParseFloat(config.FrequencyPenalty, 64)
+				if err == nil {
+					openAIConfig["frequency_penalty"] = freqP
+				}
+			}
+
+			if config.PresencePenalty != "" {
+				presP, err := strconv.ParseFloat(config.PresencePenalty, 64)
+				if err == nil {
+					openAIConfig["presence_penalty"] = presP
+				}
+			}
+		}
+
+		return &api.Component{
+			Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
+			ComponentType: "model",
+			Version:       makePtr(1),
+			Config:        openAIConfig,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported model provider: %s", modelConfig.Spec.Provider)
+	}
 }

@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Plus, FunctionSquare, X, Settings2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState, useEffect } from "react";
-import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
+import {   isMcpTool } from "@/lib/data";
 import { Label } from "../ui/label";
 import { SelectToolsDialog } from "./SelectToolsDialog";
-import { Component, ToolConfig } from "@/types/datamodel";
+import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
 
 interface ToolsSectionProps {
   allTools: Component<ToolConfig>[];
@@ -19,7 +19,7 @@ interface ToolsSectionProps {
 
 export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubmitting }: ToolsSectionProps) => {
   const [showToolSelector, setShowToolSelector] = useState(false);
-  const [configTool, setConfigTool] = useState<Component<ToolConfig> | null>(null);
+  const [configTool, setConfigTool] = useState<AgentTool | null>(null);
   const [showConfig, setShowConfig] = useState(false);
   const [toolConfigMap, setToolConfigMap] = useState<Record<string, unknown>>({});
 
@@ -27,7 +27,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   useEffect(() => {
     const newToolConfigMap: Record<string, unknown> = {};
     selectedTools.forEach((tool) => {
-      const toolId = getToolIdentifier(tool);
+      const toolId = tool.provider;// getToolIdentifier(tool);
       newToolConfigMap[toolId] = { ...tool.config };
     });
     setToolConfigMap(newToolConfigMap);
@@ -43,7 +43,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   const handleConfigSave = () => {
     if (!configTool) return;
 
-    const toolId = getToolIdentifier(configTool);
+    const toolId =  configTool.provider;
 
     // Update the toolConfigMap
     setToolConfigMap((prev) => ({
@@ -53,7 +53,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
 
     // Update the selectedTools array with the new config
     const updatedTools = selectedTools.map((tool) => {
-      if (getToolIdentifier(tool) === toolId) {
+      if (tool.provider === toolId) {
         return {
           ...tool,
           config: { ...configTool.config },
@@ -73,8 +73,8 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   };
 
   const handleRemoveTool = (tool: Component<ToolConfig>) => {
-    const toolId = getToolIdentifier(tool);
-    const updatedTools = selectedTools.filter((t) => getToolIdentifier(t) !== toolId);
+    const toolId = tool.provider; // getToolIdentifier(tool);
+    const updatedTools = selectedTools.filter((t) => t.provider !== toolId); // getToolIdentifier(t)
 
     // Also remove from the config map
     const updatedConfigMap = { ...toolConfigMap };
@@ -119,9 +119,9 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configure {getToolDisplayName(configTool)}</DialogTitle>
+            <DialogTitle>Configure {configTool.provider}</DialogTitle>
             <DialogDescription>
-              Configure the settings for <span className="text-primary">{getToolDisplayName(configTool)}</span>. These settings will be used when the tool is executed.
+              Configure the settings for <span className="text-primary">{configTool.provider}</span>. These settings will be used when the tool is executed.
             </DialogDescription>
           </DialogHeader>
 
@@ -164,9 +164,9 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   const renderSelectedTools = () => (
     <div className="space-y-2">
       {selectedTools.map((tool: Component<ToolConfig>) => {
-        const displayName = getToolDisplayName(tool);
-        const displayDescription = getToolDescription(tool);
-        const toolIdentifier = getToolIdentifier(tool);
+        const displayName = tool.provider; // getToolDisplayName(tool);
+        const displayDescription = tool.description;// getToolDescription(tool);
+        const toolIdentifier = tool.provider;// getToolIdentifier(tool);
         return (
           <Card key={toolIdentifier}>
             <CardContent className="p-4">

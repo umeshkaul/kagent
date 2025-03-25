@@ -14,7 +14,14 @@ spec:
     singular: modelconfig
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.provider
+      name: Provider
+      type: string
+    - jsonPath: .spec.model
+      name: Model
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: ModelConfig is the Schema for the modelconfigs API.
@@ -45,10 +52,96 @@ spec:
                 type: string
               model:
                 type: string
+              parameters:
+                additionalProperties:
+                  type: string
+                description: |-
+                  Additional configuration parameters as key-value pairs
+                  Can be used for any provider-specific parameters not covered by structured fields
+                type: object
+              provider:
+                default: OpenAI
+                description: The provider of the model
+                enum:
+                - Anthropic
+                - OpenAI
+                - AzureOpenAI
+                type: string
+              providerConfig:
+                description: Provider-specific configuration
+                properties:
+                  anthropic:
+                    description: Configuration for Anthropic provider models
+                    properties:
+                      baseUrl:
+                        description: Base URL for the Anthropic API (overrides default)
+                        type: string
+                      maxTokens:
+                        description: Maximum tokens to generate
+                        type: integer
+                      temperature:
+                        description: Temperature for sampling
+                        type: string
+                      topK:
+                        description: Top-k sampling parameter
+                        type: integer
+                      topP:
+                        description: Top-p sampling parameter
+                        type: string
+                    type: object
+                  azureOpenAI:
+                    description: Configuration for Azure OpenAI provider models
+                    properties:
+                      apiVersion:
+                        description: API version for the Azure OpenAI API
+                        type: string
+                      deploymentName:
+                        description: Deployment name for the Azure OpenAI API
+                        type: string
+                      endpoint:
+                        description: Endpoint for the Azure OpenAI API
+                        type: string
+                      maxTokens:
+                        description: Maximum tokens to generate
+                        type: integer
+                      temperature:
+                        description: Temperature for sampling
+                        type: string
+                      topP:
+                        description: Top-p sampling parameter
+                        type: string
+                    type: object
+                  openAI:
+                    description: Configuration for OpenAI provider models
+                    properties:
+                      baseUrl:
+                        description: Base URL for the OpenAI API (overrides default)
+                        type: string
+                      frequencyPenalty:
+                        description: Frequency penalty
+                        type: string
+                      maxTokens:
+                        description: Maximum tokens to generate
+                        type: integer
+                      organization:
+                        description: Organization ID for the OpenAI API
+                        type: string
+                      presencePenalty:
+                        description: Presence penalty
+                        type: string
+                      temperature:
+                        description: Temperature for sampling
+                        type: string
+                      topP:
+                        description: Top-p sampling parameter
+                        type: string
+                    type: object
+                type: object
             required:
             - apiKeySecretKey
             - apiKeySecretName
             - model
+            - provider
             type: object
           status:
             description: ModelConfigStatus defines the observed state of ModelConfig.

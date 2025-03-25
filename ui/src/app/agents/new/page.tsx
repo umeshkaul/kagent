@@ -12,11 +12,11 @@ import { ModelSelectionSection } from "@/components/create/ModelSelectionSection
 import { ToolsSection } from "@/components/create/ToolsSection";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAgents } from "@/components/AgentsProvider";
-import { Component, ToolConfig, Team } from "@/types/datamodel";
+import { Agent, Component, ToolConfig } from "@/types/datamodel";
 import { LoadingState } from "@/components/LoadingState";
 import { ErrorState } from "@/components/ErrorState";
 import KagentLogo from "@/components/kagent-logo";
-import { getUsersAgentFromTeam } from "@/lib/agents";
+import { getModel } from "@/app/actions/models";
 
 interface ValidationErrors {
   name?: string;
@@ -33,13 +33,10 @@ function AgentPageContent() {
   const searchParams = useSearchParams();
   const { models, tools, loading, error, createNewAgent, updateAgent, getAgentById, validateAgentData } = useAgents();
 
-  const getModelIdFromTeam = (team: Team): string | undefined => {
+  const getModelIdFromTeam = async (agent: Agent): Promise<string | undefined> => {
     try {
-      // Try to find model from the assistantAgent's model_client first
-      const assistantAgent = getUsersAgentFromTeam(team);
-      if (assistantAgent.config.model_client?.config?.model) {
-        return assistantAgent.config.model_client.config.model;
-      }
+      const { data } = await getModel(agent.spec.modelConfigRef);
+      return data?.model;
     } catch (error) {
       console.error("Error extracting model ID:", error);
       return undefined;
@@ -79,30 +76,23 @@ function AgentPageContent() {
       if (isEditMode && agentId) {
         try {
           setIsLoading(true);
-          const team = await getAgentById(agentId);
+          const agent = await getAgentById(agentId);
 
-          if (team) {
+          if (agent) {
             try {
-              // Extract the inner assistant agent from the team structure
-              const assistantAgent = getUsersAgentFromTeam(team);
+              // Populate form with existing agent data from the assistant agent
+              setName(agent.metadata.name || "");
+              setDescription(agent.spec.description || "");
+              setSystemPrompt(agent.spec.systemMessage || "");
 
-              if (assistantAgent) {
-                // Populate form with existing agent data from the assistant agent
-                setName(assistantAgent.label || assistantAgent.config.name || "");
-                setDescription(assistantAgent.description || "");
-                setSystemPrompt(assistantAgent.config.system_message || "");
+              // Extract and set tools
+              // TODO!! !setSelectedTools(agent.spec.tools || []);
 
-                // Extract and set tools
-                setSelectedTools(assistantAgent.config.tools || []);
-
-                // Find the model id from the model client and match it to available models
-                const modelId = getModelIdFromTeam(team);
-                if (modelId) {
-                  const model = models.find((m) => m.model === modelId) || models[0];
-                  setSelectedModel(model);
-                }
-              } else {
-                throw new Error("Assistant agent configuration not found in team");
+              // Find the model id from the model client and match it to available models
+              const modelId = await getModelIdFromTeam(agent);
+              if (modelId) {
+                const model = models.find((m) => m.model === modelId) || models[0];
+                setSelectedModel(model);
               }
             } catch (extractError) {
               console.error("Error extracting assistant data:", extractError);
@@ -129,7 +119,14 @@ function AgentPageContent() {
       description,
       systemPrompt,
       model: selectedModel || undefined,
-      tools: selectedTools,
+      tools: selectedTools.map((tool) => ({
+        provider: tool.provider,
+        description: tool.description || "",
+        config: Object.entries(tool.config).reduce((acc, [key, value]) => {
+          acc[key] = String(value); // Ensure all values are strings
+          return acc;
+        }, {} as { [key: string]: string }), // Explicitly type the accumulator
+      })),
     };
 
     const newErrors = validateAgentData(formData);
@@ -161,13 +158,35 @@ function AgentPageContent() {
         if (!selectedModel) {
           throw new Error("Model is required to update the agent.");
         }
-        result = await updateAgent(agentId, { ...agentData, model: selectedModel });
+        result = await updateAgent(agentId, {
+          ...agentData,
+          model: selectedModel,
+          tools: selectedTools.map((tool) => ({
+            provider: tool.provider,
+            description: tool.description || "",
+            config: Object.entries(tool.config).reduce((acc, [key, value]) => {
+              acc[key] = String(value); // Ensure all values are strings
+              return acc;
+            }, {} as { [key: string]: string }), // Explicitly type the accumulator
+          })),
+        });
       } else {
         // Create new agent
         if (!selectedModel) {
           throw new Error("Model is required to create the agent.");
         }
-        result = await createNewAgent({ ...agentData, model: selectedModel });
+        result = await createNewAgent({
+          ...agentData,
+          model: selectedModel,
+          tools: selectedTools.map((tool) => ({
+            provider: tool.provider,
+            description: tool.description || "",
+            config: Object.entries(tool.config).reduce((acc, [key, value]) => {
+              acc[key] = String(value); // Ensure all values are strings
+              return acc;
+            }, {} as { [key: string]: string }), // Explicitly type the accumulator
+          })),
+        });
       }
 
       if (!result.success) {

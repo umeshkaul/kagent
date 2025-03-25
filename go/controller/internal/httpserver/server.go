@@ -112,6 +112,7 @@ func (s *HTTPServer) setupRoutes() {
 
 	// Model configs
 	s.router.HandleFunc(APIPathModelConfig, s.handlers.ModelConfig.HandleListModelConfigs).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathModelConfig+"/{configName}", s.handlers.ModelConfig.HandleGetModelConfig).Methods(http.MethodGet)
 
 	// Runs
 	s.router.HandleFunc(APIPathRuns, s.handlers.Runs.HandleCreateRun).Methods(http.MethodPost)

@@ -17,8 +17,8 @@ interface ChatState {
   currentStreamingMessage: Message | null;
 
   // Actions
-  initializeNewChat: (agentId: number) => Promise<void>;
-  sendUserMessage: (content: string, agentId: number) => Promise<void>;
+  initializeNewChat: (agentName: string) => Promise<void>;
+  sendUserMessage: (content: string, agentName: string) => Promise<void>;
   loadChat: (chatId: string) => Promise<void>;
   cleanup: () => void;
   handleWebSocketMessage: (message: WebSocketMessage) => void;
@@ -36,11 +36,11 @@ const useChatStore = create<ChatState>((set, get) => ({
   currentStreamingContent: "",
   currentStreamingMessage: null,
 
-  initializeNewChat: async (agentId) => {
+  initializeNewChat: async (agentName) => {
     try {
       // Clean up any existing websocket
       get().cleanup();
-      const { team, session, run } = await startNewChat(agentId);
+      const { team, session, run } = await startNewChat(agentName);
       // Add the new session to sessions list
       set({
         team,

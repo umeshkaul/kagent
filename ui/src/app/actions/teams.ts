@@ -1,14 +1,14 @@
 "use server";
 
 import { BaseResponse } from "@/lib/types";
-import { Team } from "@/types/datamodel";
+import { Agent } from "@/types/datamodel";
 import { revalidatePath } from "next/cache";
 import { fetchApi } from "./utils";
 import { AgentFormData } from "@/components/AgentsProvider";
 
-export async function getTeam(teamLabel: string | number): Promise<BaseResponse<Team>> {
+export async function getTeam(teamLabel: string | number): Promise<BaseResponse<Agent>> {
   try {
-    const data = await fetchApi<Team>(`/teams/${teamLabel}`);
+    const data = await fetchApi<Agent>(`/teams/${teamLabel}`);
     return { success: true, data };
   } catch (error) {
     console.error("Error getting team:", error);
@@ -33,28 +33,6 @@ export async function deleteTeam(teamLabel: string) {
   }
 }
 
-interface ResourceMetadata {
-  name: string;
-  namespace?: string;
-}
-
-interface AgentToolList {
-  provider: string;
-  description: string;
-  config: {
-    [key: string]: string;
-  };
-}
-interface AgentResourceSpec {
-  description: string;
-  systemMessage: string;
-  tools: AgentToolList[];
-}
-interface Agent {
-  metadata: ResourceMetadata;
-  spec: AgentResourceSpec;
-}
-
 function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
   // TODO: Fill out the model field once the backend supports it
   return {
@@ -64,6 +42,7 @@ function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
     spec: {
       description: agentFormData.description,
       systemMessage: agentFormData.systemPrompt,
+      modelConfigRef: agentFormData.model.name,
       tools: agentFormData.tools.map((tool) => ({
         provider: tool.provider,
         description: tool.description ?? "No description provided",
@@ -76,7 +55,7 @@ function fromAgentFormDataToAgent(agentFormData: AgentFormData): Agent {
   };
 }
 
-export async function createAgent(agentConfig: AgentFormData, update: boolean = false): Promise<BaseResponse<Team>> {
+export async function createAgent(agentConfig: AgentFormData, update: boolean = false): Promise<BaseResponse<Agent>> {
   let agentSpec;
 
   try {
@@ -87,7 +66,7 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
   }
 
   try {
-    const response = await fetchApi<Team>(`/teams`, {
+    const response = await fetchApi<Agent>(`/teams`, {
       method:  update ? "PUT" : "POST",
       headers: {
         "Content-Type": "application/json",
@@ -99,7 +78,7 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
       throw new Error("Failed to create team");
     }
 
-    revalidatePath(`/agents/${response.id}/chat`);
+    revalidatePath(`/agents/${response.metadata.name}/chat`);
     return { success: true, data: response };
   } catch (error) {
     console.error("Error creating team:", error);
@@ -107,10 +86,12 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
   }
 }
 
-export async function getTeams(): Promise<BaseResponse<Team[]>> {
+export async function getTeams(): Promise<BaseResponse<Agent[]>> {
   try {
-    const data = await fetchApi<Team[]>(`/teams`);
-    const sortedData = data.sort((a, b) => a.component.label?.localeCompare(b.component.label || "") || 0);
+    const data = await fetchApi<Agent[]>(`/teams`);
+
+    console.log('DATA', data)
+    const sortedData = data.sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
 
     return { success: true, data: sortedData };
   } catch (error) {

@@ -192,8 +192,8 @@ export function setupWebSocket(runId: string, handlers: WebSocketHandlers, initi
   };
 }
 
-export const createRunWithSession = async (teamId: number, userId: string): Promise<RunWithSession> => {
-  const sessionResponse = await createSession({ userId, teamId });
+export const createRunWithSession = async (agentName: string, userId: string): Promise<RunWithSession> => {
+  const sessionResponse = await createSession({ userId, agentName });
   if (!sessionResponse.success || !sessionResponse.data) {
     throw new Error("Failed to create session");
   }
