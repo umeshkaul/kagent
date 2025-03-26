@@ -70,8 +70,6 @@ spec:
                   type: object
                 maxItems: 20
                 type: array
-            required:
-            - modelConfigRef
             type: object
           status:
             description: AgentStatus defines the observed state of Agent.

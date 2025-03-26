@@ -30,7 +30,8 @@ const (
 type AgentSpec struct {
 	Description string `json:"description,omitempty"`
 	// +kubebuilder:validation:MinLength=1
-	SystemMessage  string `json:"systemMessage,omitempty"`
+	SystemMessage string `json:"systemMessage,omitempty"`
+	// +optional
 	ModelConfigRef string `json:"modelConfigRef"`
 	// +kubebuilder:validation:MaxItems=20
 	Tools []*Tool `json:"tools,omitempty"`

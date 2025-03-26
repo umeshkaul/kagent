@@ -576,7 +576,7 @@ func addModelClientToConfig(
 // createModelClientForProvider creates a model client component based on the model provider
 func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []byte, includeUsage bool) (*api.Component, error) {
 	switch modelConfig.Spec.Provider {
-	case v1alpha1.ProviderAnthropic:
+	case v1alpha1.Anthropic:
 		config := &api.AnthropicClientConfiguration{
 			BaseAnthropicClientConfiguration: api.BaseAnthropicClientConfiguration{
 				APIKey: makePtr(string(apiKey)),
@@ -585,8 +585,8 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		}
 
 		// Add provider-specific configurations
-		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.Anthropic != nil {
-			anthropicConfig := modelConfig.Spec.ProviderConfig.Anthropic
+		if modelConfig.Spec.ProviderAnthropic != nil {
+			anthropicConfig := modelConfig.Spec.ProviderAnthropic
 
 			if anthropicConfig.BaseURL != "" {
 				config.BaseURL = &anthropicConfig.BaseURL
@@ -630,7 +630,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 			Config:        configMap,
 		}, nil
 
-	case v1alpha1.ProviderAzureOpenAI:
+	case v1alpha1.AzureOpenAI:
 		config := &api.AzureOpenAIClientConfig{
 			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
 				Model:  modelConfig.Spec.Model,
@@ -646,8 +646,8 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		}
 
 		// Add provider-specific configurations
-		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.AzureOpenAI != nil {
-			azureConfig := modelConfig.Spec.ProviderConfig.AzureOpenAI
+		if modelConfig.Spec.ProviderAzureOpenAI != nil {
+			azureConfig := modelConfig.Spec.ProviderAzureOpenAI
 
 			if azureConfig.Endpoint != "" {
 				config.AzureEndpoint = &azureConfig.Endpoint
@@ -687,7 +687,7 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 			Config:        api.MustToConfig(config),
 		}, nil
 
-	case v1alpha1.ProviderOpenAI:
+	case v1alpha1.OpenAI:
 		config := &api.OpenAIClientConfig{
 			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
 				Model:  modelConfig.Spec.Model,
@@ -702,8 +702,8 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []by
 		}
 
 		// Add provider-specific configurations
-		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.OpenAI != nil {
-			openAIConfig := modelConfig.Spec.ProviderConfig.OpenAI
+		if modelConfig.Spec.ProviderOpenAI != nil {
+			openAIConfig := modelConfig.Spec.ProviderOpenAI
 
 			if openAIConfig.BaseURL != "" {
 				config.BaseURL = &openAIConfig.BaseURL

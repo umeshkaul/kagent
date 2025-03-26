@@ -80,15 +80,13 @@ var _ = Describe("AutogenClient", func() {
 			},
 			Spec: v1alpha1.ModelConfigSpec{
 				Model:            "gpt-4o",
-				Provider:         v1alpha1.ProviderOpenAI,
+				Provider:         v1alpha1.OpenAI,
 				APIKeySecretName: apikeySecret.Name,
 				APIKeySecretKey:  apikeySecretKey,
-				ProviderConfig: &v1alpha1.ProviderConfig{
-					OpenAI: &v1alpha1.OpenAIConfig{
-						Temperature: "0.7",
-						MaxTokens:   func(i int) *int { return &i }(1024),
-						TopP:        "0.95",
-					},
+				ProviderOpenAI: &v1alpha1.OpenAIConfig{
+					Temperature: "0.7",
+					MaxTokens:   func(i int) *int { return &i }(1024),
+					TopP:        "0.95",
 				},
 			},
 		}

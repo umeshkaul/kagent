@@ -29,9 +29,9 @@ const (
 type ModelProvider string
 
 const (
-	ProviderAnthropic   ModelProvider = "Anthropic"
-	ProviderOpenAI      ModelProvider = "OpenAI"
-	ProviderAzureOpenAI ModelProvider = "AzureOpenAI"
+	Anthropic   ModelProvider = "Anthropic"
+	AzureOpenAI ModelProvider = "AzureOpenAI"
+	OpenAI      ModelProvider = "OpenAI"
 )
 
 // ProviderConfig contains provider-specific configurations
@@ -155,14 +155,23 @@ type ModelConfigSpec struct {
 
 	// The provider of the model
 	// +kubebuilder:default=OpenAI
+	// +kubebuilder:validation:Enum=Anthropic;OpenAI;AzureOpenAI
 	Provider ModelProvider `json:"provider"`
 
 	APIKeySecretName string `json:"apiKeySecretName"`
 	APIKeySecretKey  string `json:"apiKeySecretKey"`
 
-	// Provider-specific configuration
+	// OpenAI-specific configuration
 	// +optional
-	ProviderConfig *ProviderConfig `json:"providerConfig,omitempty"`
+	ProviderOpenAI *OpenAIConfig `json:"openAI,omitempty"`
+
+	// Anthropic-specific configuration
+	// +optional
+	ProviderAnthropic *AnthropicConfig `json:"anthropicC,omitempty"`
+
+	// Azure OpenAI-specific configuration
+	// +optional
+	ProviderAzureOpenAI *AzureOpenAIConfig `json:"azureOpenAI,omitempty"`
 }
 
 // ModelConfigStatus defines the observed state of ModelConfig.
