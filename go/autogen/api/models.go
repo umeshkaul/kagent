@@ -97,8 +97,6 @@ type BaseAnthropicClientConfiguration struct {
 }
 
 type AnthropicClientConfiguration struct {
-	Tools      []map[string]interface{} `json:"tools,omitempty"`
-	ToolChoice interface{}              `json:"tool_choice,omitempty"`
 	BaseAnthropicClientConfiguration
 }
 
