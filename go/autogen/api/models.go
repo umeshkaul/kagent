@@ -14,9 +14,7 @@ type OpenAICreateArgumentsConfig struct {
 	MaxTokens        *int               `json:"max_tokens,omitempty"`
 	N                *int               `json:"n,omitempty"`
 	PresencePenalty  *float64           `json:"presence_penalty,omitempty"`
-	ResponseFormat   interface{}        `json:"response_format,omitempty"`
 	Seed             *int               `json:"seed,omitempty"`
-	Stop             interface{}        `json:"stop,omitempty"`
 	Temperature      *float64           `json:"temperature,omitempty"`
 	TopP             *float64           `json:"top_p,omitempty"`
 	User             *string            `json:"user,omitempty"`
@@ -28,13 +26,12 @@ type StreamOptions struct {
 
 type BaseOpenAIClientConfig struct {
 	// Base OpenAI fields
-	Model             string         `json:"model"`
-	APIKey            *string        `json:"api_key,omitempty"`
-	Timeout           *int           `json:"timeout,omitempty"`
-	MaxRetries        *int           `json:"max_retries,omitempty"`
-	ModelCapabilities interface{}    `json:"model_capabilities,omitempty"`
-	ModelInfo         *ModelInfo     `json:"model_info,omitempty"`
-	StreamOptions     *StreamOptions `json:"stream_options,omitempty"`
+	Model         string         `json:"model"`
+	APIKey        *string        `json:"api_key,omitempty"`
+	Timeout       *int           `json:"timeout,omitempty"`
+	MaxRetries    *int           `json:"max_retries,omitempty"`
+	ModelInfo     *ModelInfo     `json:"model_info,omitempty"`
+	StreamOptions *StreamOptions `json:"stream_options,omitempty"`
 	OpenAICreateArgumentsConfig
 }
 
@@ -58,12 +55,11 @@ type AzureOpenAIClientConfig struct {
 	BaseOpenAIClientConfig
 
 	// AzureOpenAIClientConfig specific fields
-	AzureEndpoint        *string     `json:"azure_endpoint,omitempty"`
-	AzureDeployment      *string     `json:"azure_deployment,omitempty"`
-	APIVersion           *string     `json:"api_version,omitempty"`
-	AzureADToken         *string     `json:"azure_ad_token,omitempty"`
-	AzureADTokenProvider interface{} `json:"azure_ad_token_provider,omitempty"`
-	Stream               *bool       `json:"stream,omitempty"`
+	AzureEndpoint   *string `json:"azure_endpoint,omitempty"`
+	AzureDeployment *string `json:"azure_deployment,omitempty"`
+	APIVersion      *string `json:"api_version,omitempty"`
+	AzureADToken    *string `json:"azure_ad_token,omitempty"`
+	Stream          *bool   `json:"stream,omitempty"`
 }
 
 func (c *AzureOpenAIClientConfig) ToConfig() (map[string]interface{}, error) {
@@ -75,13 +71,12 @@ func (c *AzureOpenAIClientConfig) FromConfig(config map[string]interface{}) erro
 }
 
 type AnthropicCreateArguments struct {
-	MaxTokens      *int              `json:"max_tokens,omitempty"`
-	Temperature    *float64          `json:"temperature,omitempty"`
-	TopP           *float64          `json:"top_p,omitempty"`
-	TopK           *int              `json:"top_k,omitempty"`
-	StopSequences  []string          `json:"stop_sequences,omitempty"`
-	ResponseFormat interface{}       `json:"response_format,omitempty"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
+	MaxTokens     *int              `json:"max_tokens,omitempty"`
+	Temperature   *float64          `json:"temperature,omitempty"`
+	TopP          *float64          `json:"top_p,omitempty"`
+	TopK          *int              `json:"top_k,omitempty"`
+	StopSequences []string          `json:"stop_sequences,omitempty"`
+	Metadata      map[string]string `json:"metadata,omitempty"`
 }
 
 type BaseAnthropicClientConfiguration struct {

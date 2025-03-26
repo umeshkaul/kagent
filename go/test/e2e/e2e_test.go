@@ -53,15 +53,13 @@ var _ = Describe("E2e", func() {
 			},
 			Spec: v1alpha1.ModelConfigSpec{
 				Model:            "gpt-4o",
-				Provider:         v1alpha1.ProviderOpenAI,
+				Provider:         v1alpha1.OpenAI,
 				APIKeySecretName: apiKeySecret.Name,
 				APIKeySecretKey:  apikeySecretKey,
-				ProviderConfig: &v1alpha1.ProviderConfig{
-					OpenAI: &v1alpha1.OpenAIConfig{
-						Temperature: "0.7",
-						MaxTokens:   2048,
-						TopP:        "0.95",
-					},
+				ProviderOpenAI: &v1alpha1.OpenAIConfig{
+					Temperature: "0.7",
+					MaxTokens:   ptrToInt(2048),
+					TopP:        "0.95",
 				},
 			},
 		}
@@ -164,6 +162,10 @@ func writeKubeObjects(file string, objects ...metav1.Object) {
 
 	err := os.WriteFile(file, bytes, 0644)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func ptrToInt(v int) *int {
+	return &v
 }
 
 func readFileAsString(path string) string {
