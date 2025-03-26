@@ -88,7 +88,7 @@ type OpenAIConfig struct {
 
 	// Maximum tokens to generate
 	// +optional
-	MaxTokens int `json:"maxTokens,omitempty"`
+	MaxTokens *int `json:"maxTokens,omitempty"`
 
 	// Top-p sampling parameter
 	// +optional
@@ -101,21 +101,40 @@ type OpenAIConfig struct {
 	// Presence penalty
 	// +optional
 	PresencePenalty string `json:"presencePenalty,omitempty"`
+
+	// Seed value
+	// +optional
+	Seed *int `json:"seed,omitempty"`
+
+	// N value
+	N *int `json:"n,omitempty"`
+
+	// Timeout
+	Timeout *int `json:"timeout,omitempty"`
 }
 
 // AzureOpenAIConfig contains Azure OpenAI-specific configuration options
 type AzureOpenAIConfig struct {
 	// Endpoint for the Azure OpenAI API
-	// +optional
-	Endpoint string `json:"endpoint,omitempty"`
+	// +required
+	Endpoint string `json:"azureEndpoint,omitempty"`
 
 	// API version for the Azure OpenAI API
-	// +optional
+	// +required
 	APIVersion string `json:"apiVersion,omitempty"`
 
 	// Deployment name for the Azure OpenAI API
 	// +optional
-	DeploymentName string `json:"deploymentName,omitempty"`
+	DeploymentName string `json:"azureDeployment,omitempty"`
+
+	// Azure AD token for authentication
+	// +optional
+	AzureADToken string `json:"azureAdToken,omitempty"`
+
+	// Azure AD token provider
+	// +optional
+	// TODO (peterj): We need to figure out how to implement this
+	// AzureADTokenProvider interface{} `json:"azureAdTokenProvider,omitempty"`
 
 	// Temperature for sampling
 	// +optional
@@ -123,7 +142,7 @@ type AzureOpenAIConfig struct {
 
 	// Maximum tokens to generate
 	// +optional
-	MaxTokens int `json:"maxTokens,omitempty"`
+	MaxTokens *int `json:"maxTokens,omitempty"`
 
 	// Top-p sampling parameter
 	// +optional
@@ -144,11 +163,6 @@ type ModelConfigSpec struct {
 	// Provider-specific configuration
 	// +optional
 	ProviderConfig *ProviderConfig `json:"providerConfig,omitempty"`
-
-	// Additional configuration parameters as key-value pairs
-	// Can be used for any provider-specific parameters not covered by structured fields
-	// +optional
-	Parameters map[string]string `json:"parameters,omitempty"`
 }
 
 // ModelConfigStatus defines the observed state of ModelConfig.

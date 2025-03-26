@@ -83,7 +83,7 @@ export async function createAgent(agentConfig: AgentFormData, update: boolean = 
     return { success: true, data: response };
   } catch (error) {
     console.error("Error creating team:", error);
-    return { success: false, error: "Failed to create team. Please try again." };
+    return { success: false, error: `Failed to create team: ${error}` };
   }
 }
 

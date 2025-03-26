@@ -71,12 +71,15 @@ func NewAutogenApiTranslator(
 }
 
 func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*autogen_client.Team, error) {
-	modelConfig := &v1alpha1.ModelConfig{}
-	err := a.kube.Get(ctx, types.NamespacedName{
-		Name:      agent.Spec.ModelConfigRef,
-		Namespace: agent.Namespace,
-	}, &v1alpha1.ModelConfig{})
-	if err != nil {
+	modelConfig := a.defaultModelConfig
+	// Use the provided model config if set, otherwise use the default one
+	if agent.Spec.ModelConfigRef != "" {
+		modelConfig = types.NamespacedName{
+			Name:      agent.Spec.ModelConfigRef,
+			Namespace: agent.Namespace,
+		}
+	}
+	if err := a.kube.Get(ctx, modelConfig, &v1alpha1.ModelConfig{}); err != nil {
 		return nil, err
 	}
 
@@ -160,34 +163,14 @@ func (a *apiTranslator) translateGroupChatForTeam(
 		return nil, fmt.Errorf("model api key not found")
 	}
 
-	modelClientWithStreaming := &api.Component{
-		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
-		ComponentType: "model",
-		Version:       makePtr(1),
-		//ComponentVersion: 1,
-		Config: api.MustToConfig(&api.OpenAIClientConfig{
-			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
-				Model:  modelConfig.Spec.Model,
-				APIKey: makePtr(string(modelApiKey)),
-				// By default, we include usage in the stream
-				// If we aren't streaming this may break, but I think we're good for now
-				StreamOptions: &api.StreamOptions{
-					IncludeUsage: true,
-				},
-			},
-		}),
+	modelClientWithStreaming, err := createModelClientForProvider(modelConfig, modelApiKey, true)
+	if err != nil {
+		return nil, err
 	}
-	modelClientWithoutStreaming := &api.Component{
-		Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
-		ComponentType: "model",
-		Version:       makePtr(1),
-		//ComponentVersion: 1,
-		Config: api.MustToConfig(&api.OpenAIClientConfig{
-			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
-				Model:  modelConfig.Spec.Model,
-				APIKey: makePtr(string(modelApiKey)),
-			},
-		}),
+
+	modelClientWithoutStreaming, err := createModelClientForProvider(modelConfig, modelApiKey, false)
+	if err != nil {
+		return nil, err
 	}
 
 	modelContext := &api.Component{
@@ -591,156 +574,174 @@ func addModelClientToConfig(
 }
 
 // createModelClientForProvider creates a model client component based on the model provider
-func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey string) (*api.Component, error) {
+func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey []byte, includeUsage bool) (*api.Component, error) {
 	switch modelConfig.Spec.Provider {
 	case v1alpha1.ProviderAnthropic:
-		anthropicConfig := map[string]interface{}{
-			"model":   modelConfig.Spec.Model,
-			"api_key": apiKey,
-			"stream_options": map[string]interface{}{
-				"include_usage": true,
+		config := &api.AnthropicClientConfiguration{
+			BaseAnthropicClientConfiguration: api.BaseAnthropicClientConfiguration{
+				APIKey: makePtr(string(apiKey)),
+				Model:  modelConfig.Spec.Model,
 			},
 		}
 
 		// Add provider-specific configurations
 		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.Anthropic != nil {
-			config := modelConfig.Spec.ProviderConfig.Anthropic
+			anthropicConfig := modelConfig.Spec.ProviderConfig.Anthropic
 
-			if config.BaseURL != "" {
-				anthropicConfig["api_base"] = config.BaseURL
+			if anthropicConfig.BaseURL != "" {
+				config.BaseURL = &anthropicConfig.BaseURL
 			}
 
-			if config.MaxTokens > 0 {
-				anthropicConfig["max_tokens"] = config.MaxTokens
+			if anthropicConfig.MaxTokens > 0 {
+				maxTokens := int(anthropicConfig.MaxTokens)
+				config.MaxTokens = &maxTokens
 			}
 
-			if config.Temperature != "" {
-				temp, err := strconv.ParseFloat(config.Temperature, 64)
+			if anthropicConfig.Temperature != "" {
+				temp, err := strconv.ParseFloat(anthropicConfig.Temperature, 64)
 				if err == nil {
-					anthropicConfig["temperature"] = temp
+					config.Temperature = &temp
 				}
 			}
 
-			if config.TopP != "" {
-				topP, err := strconv.ParseFloat(config.TopP, 64)
+			if anthropicConfig.TopP != "" {
+				topP, err := strconv.ParseFloat(anthropicConfig.TopP, 64)
 				if err == nil {
-					anthropicConfig["top_p"] = topP
+					config.TopP = &topP
 				}
 			}
 
-			if config.TopK > 0 {
-				anthropicConfig["top_k"] = config.TopK
+			if anthropicConfig.TopK > 0 {
+				topK := int(anthropicConfig.TopK)
+				config.TopK = &topK
 			}
+		}
+
+		// Convert to map
+		configMap, err := config.ToConfig()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert Anthropic config: %w", err)
 		}
 
 		return &api.Component{
 			Provider:      "autogen_ext.models.anthropic.AnthropicChatCompletionClient",
 			ComponentType: "model",
 			Version:       makePtr(1),
-			Config:        anthropicConfig,
+			Config:        configMap,
 		}, nil
 
 	case v1alpha1.ProviderAzureOpenAI:
-		azureConfig := map[string]interface{}{
-			"model":   modelConfig.Spec.Model,
-			"api_key": apiKey,
-			"stream_options": map[string]interface{}{
-				"include_usage": true,
+		config := &api.AzureOpenAIClientConfig{
+			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
+				Model:  modelConfig.Spec.Model,
+				APIKey: makePtr(string(apiKey)),
 			},
+			Stream: makePtr(true),
+		}
+
+		if includeUsage {
+			config.StreamOptions = &api.StreamOptions{
+				IncludeUsage: true,
+			}
 		}
 
 		// Add provider-specific configurations
 		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.AzureOpenAI != nil {
-			config := modelConfig.Spec.ProviderConfig.AzureOpenAI
+			azureConfig := modelConfig.Spec.ProviderConfig.AzureOpenAI
 
-			if config.Endpoint != "" {
-				azureConfig["api_base"] = config.Endpoint
+			if azureConfig.Endpoint != "" {
+				config.AzureEndpoint = &azureConfig.Endpoint
 			}
 
-			if config.APIVersion != "" {
-				azureConfig["api_version"] = config.APIVersion
+			if azureConfig.APIVersion != "" {
+				config.APIVersion = &azureConfig.APIVersion
 			}
 
-			if config.DeploymentName != "" {
-				azureConfig["deployment_name"] = config.DeploymentName
+			if azureConfig.DeploymentName != "" {
+				config.AzureDeployment = &azureConfig.DeploymentName
 			}
 
-			if config.MaxTokens > 0 {
-				azureConfig["max_tokens"] = config.MaxTokens
+			if azureConfig.AzureADToken != "" {
+				config.AzureADToken = &azureConfig.AzureADToken
 			}
 
-			if config.Temperature != "" {
-				temp, err := strconv.ParseFloat(config.Temperature, 64)
+			if azureConfig.Temperature != "" {
+				temp, err := strconv.ParseFloat(azureConfig.Temperature, 64)
 				if err == nil {
-					azureConfig["temperature"] = temp
+					config.Temperature = &temp
 				}
 			}
 
-			if config.TopP != "" {
-				topP, err := strconv.ParseFloat(config.TopP, 64)
+			if azureConfig.TopP != "" {
+				topP, err := strconv.ParseFloat(azureConfig.TopP, 64)
 				if err == nil {
-					azureConfig["top_p"] = topP
+					config.TopP = &topP
 				}
 			}
 		}
 
 		return &api.Component{
-			Provider:      "autogen_ext.models.azure_openai.AzureOpenAIChatCompletionClient",
+			Provider:      "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
 			ComponentType: "model",
 			Version:       makePtr(1),
-			Config:        azureConfig,
+			Config:        api.MustToConfig(config),
 		}, nil
 
 	case v1alpha1.ProviderOpenAI:
-		openAIConfig := map[string]interface{}{
-			"model":   modelConfig.Spec.Model,
-			"api_key": apiKey,
-			"stream_options": map[string]interface{}{
-				"include_usage": true,
+		config := &api.OpenAIClientConfig{
+			BaseOpenAIClientConfig: api.BaseOpenAIClientConfig{
+				Model:  modelConfig.Spec.Model,
+				APIKey: makePtr(string(apiKey)),
 			},
+		}
+
+		if includeUsage {
+			config.StreamOptions = &api.StreamOptions{
+				IncludeUsage: true,
+			}
 		}
 
 		// Add provider-specific configurations
 		if modelConfig.Spec.ProviderConfig != nil && modelConfig.Spec.ProviderConfig.OpenAI != nil {
-			config := modelConfig.Spec.ProviderConfig.OpenAI
+			openAIConfig := modelConfig.Spec.ProviderConfig.OpenAI
 
-			if config.BaseURL != "" {
-				openAIConfig["api_base"] = config.BaseURL
+			if openAIConfig.BaseURL != "" {
+				config.BaseURL = &openAIConfig.BaseURL
 			}
 
-			if config.Organization != "" {
-				openAIConfig["organization"] = config.Organization
+			if openAIConfig.Organization != "" {
+				config.Organization = &openAIConfig.Organization
 			}
 
-			if config.MaxTokens > 0 {
-				openAIConfig["max_tokens"] = config.MaxTokens
+			if *openAIConfig.MaxTokens > 0 {
+				config.MaxTokens = openAIConfig.MaxTokens
 			}
 
-			if config.Temperature != "" {
-				temp, err := strconv.ParseFloat(config.Temperature, 64)
+			if openAIConfig.Temperature != "" {
+				temp, err := strconv.ParseFloat(openAIConfig.Temperature, 64)
 				if err == nil {
-					openAIConfig["temperature"] = temp
+					config.Temperature = &temp
 				}
 			}
 
-			if config.TopP != "" {
-				topP, err := strconv.ParseFloat(config.TopP, 64)
+			if openAIConfig.TopP != "" {
+				topP, err := strconv.ParseFloat(openAIConfig.TopP, 64)
 				if err == nil {
-					openAIConfig["top_p"] = topP
+					config.TopP = &topP
 				}
 			}
 
-			if config.FrequencyPenalty != "" {
-				freqP, err := strconv.ParseFloat(config.FrequencyPenalty, 64)
+			if openAIConfig.FrequencyPenalty != "" {
+				freqP, err := strconv.ParseFloat(openAIConfig.FrequencyPenalty, 64)
 				if err == nil {
-					openAIConfig["frequency_penalty"] = freqP
+					config.FrequencyPenalty = &freqP
 				}
 			}
 
-			if config.PresencePenalty != "" {
-				presP, err := strconv.ParseFloat(config.PresencePenalty, 64)
+			if openAIConfig.PresencePenalty != "" {
+				presP, err := strconv.ParseFloat(openAIConfig.PresencePenalty, 64)
 				if err == nil {
-					openAIConfig["presence_penalty"] = presP
+					config.PresencePenalty = &presP
 				}
 			}
 		}
@@ -749,8 +750,9 @@ func createModelClientForProvider(modelConfig *v1alpha1.ModelConfig, apiKey stri
 			Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 			ComponentType: "model",
 			Version:       makePtr(1),
-			Config:        openAIConfig,
+			Config:        api.MustToConfig(config),
 		}, nil
+
 	default:
 		return nil, fmt.Errorf("unsupported model provider: %s", modelConfig.Spec.Provider)
 	}

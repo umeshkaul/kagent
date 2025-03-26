@@ -52,13 +52,6 @@ spec:
                 type: string
               model:
                 type: string
-              parameters:
-                additionalProperties:
-                  type: string
-                description: |-
-                  Additional configuration parameters as key-value pairs
-                  Can be used for any provider-specific parameters not covered by structured fields
-                type: object
               provider:
                 default: OpenAI
                 description: The provider of the model
@@ -95,10 +88,13 @@ spec:
                       apiVersion:
                         description: API version for the Azure OpenAI API
                         type: string
-                      deploymentName:
+                      azureAdToken:
+                        description: Azure AD token for authentication
+                        type: string
+                      azureDeployment:
                         description: Deployment name for the Azure OpenAI API
                         type: string
-                      endpoint:
+                      azureEndpoint:
                         description: Endpoint for the Azure OpenAI API
                         type: string
                       maxTokens:
@@ -110,6 +106,9 @@ spec:
                       topP:
                         description: Top-p sampling parameter
                         type: string
+                    required:
+                    - apiVersion
+                    - azureEndpoint
                     type: object
                   openAI:
                     description: Configuration for OpenAI provider models
@@ -123,15 +122,24 @@ spec:
                       maxTokens:
                         description: Maximum tokens to generate
                         type: integer
+                      "n":
+                        description: N value
+                        type: integer
                       organization:
                         description: Organization ID for the OpenAI API
                         type: string
                       presencePenalty:
                         description: Presence penalty
                         type: string
+                      seed:
+                        description: Seed value
+                        type: integer
                       temperature:
                         description: Temperature for sampling
                         type: string
+                      timeout:
+                        description: Timeout
+                        type: integer
                       topP:
                         description: Top-p sampling parameter
                         type: string
