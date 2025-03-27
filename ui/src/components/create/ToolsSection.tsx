@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, FunctionSquare, X, Settings2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
-import { getToolDescription, getToolDisplayName, isMcpTool } from "@/lib/data";
+import { getToolDescription, getToolDisplayName, getToolIdentifier, isMcpTool } from "@/lib/data";
 import { Label } from "../ui/label";
 import { SelectToolsDialog } from "./SelectToolsDialog";
 import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
@@ -49,12 +49,14 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
   const handleToolSelect = (newSelectedTools: Component<ToolConfig>[]) => {
     // Convert Component<ToolConfig>[] to AgentTool[]
     const agentTools = newSelectedTools.map(componentToAgentTool);
+
+    console.log('agenttools', agentTools);
     setSelectedTools(agentTools);
     setShowToolSelector(false);
   };
 
-  const handleRemoveTool = (toolProvider: string) => {
-    const updatedTools = selectedTools.filter((t) => t.provider !== toolProvider);
+  const handleRemoveTool = (tool: AgentTool) => {
+    const updatedTools = selectedTools.filter((t) => getToolIdentifier(t) !== getToolIdentifier(tool));
     setSelectedTools(updatedTools);
   };
 
@@ -109,7 +111,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                     <Label htmlFor={field} className="flex items-center">
                       {field}
                     </Label>
-                    <Input id={field} type="text" value={configObj[field] || ""} onChange={(e) => handleConfigChange(field, e.target.value)} />
+                    <Input id={field} type="text" value={typeof configObj[field] === "string" ? configObj[field] : JSON.stringify(configObj[field] || "")} onChange={(e) => handleConfigChange(field, e.target.value)} />
                   </div>
                 ))}
             </div>
@@ -143,11 +145,12 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
         const toolConfig = findComponentForAgentTool(agentTool, allTools);
         if (!toolConfig) return null;
 
+        const identifier = getToolIdentifier(toolConfig);
         const displayName = getToolDisplayName(toolConfig);
         const displayDescription = getToolDescription(toolConfig);
 
         return (
-          <Card key={agentTool.provider}>
+          <Card key={identifier}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-xs">
@@ -166,7 +169,7 @@ export const ToolsSection = ({ allTools, selectedTools, setSelectedTools, isSubm
                       <Settings2 className="h-4 w-4" />
                     </Button>
                   )}
-                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(agentTool.provider)} disabled={isSubmitting}>
+                  <Button variant="ghost" size="sm" onClick={() => handleRemoveTool(agentTool)} disabled={isSubmitting}>
                     <X className="h-4 w-4" />
                   </Button>
                 </div>

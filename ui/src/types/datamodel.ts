@@ -369,9 +369,10 @@ export interface AgentTool {
   provider: string;
   description: string;
   config: {
-    [key: string]: string;
+    [key: string]: string | { [key: string]: any };
   };
 }
+
 export interface AgentResourceSpec {
   description: string;
   systemMessage: string;

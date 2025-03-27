@@ -125,6 +125,10 @@ function AgentPageContent() {
       return;
     }
 
+    if (!selectedModel) {
+      throw new Error("Model is required to update the agent.");
+    }
+
     try {
       setIsSubmitting(true);
       setGeneralError("");
@@ -140,25 +144,10 @@ function AgentPageContent() {
       let result;
 
       if (isEditMode && agentId) {
-        // Update existing agent
-        if (!selectedModel) {
-          throw new Error("Model is required to update the agent.");
-        }
-        result = await updateAgent(agentId, {
-          ...agentData,
-          model: selectedModel,
-          tools: selectedTools,
-        });
+        result = await updateAgent(agentId, agentData);
       } else {
-        // Create new agent
-        if (!selectedModel) {
-          throw new Error("Model is required to create the agent.");
-        }
-        result = await createNewAgent({
-          ...agentData,
-          model: selectedModel,
-          tools: selectedTools,
-        });
+        console.log('creating new agent', agentData);
+        result = await createNewAgent(agentData);
       }
 
       if (!result.success) {

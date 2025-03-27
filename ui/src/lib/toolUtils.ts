@@ -3,6 +3,7 @@
  */
 
 import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
+import { getToolDescription, getToolIdentifier } from "./data";
 
 /**
  * Converts a Component<ToolConfig> to an AgentTool
@@ -12,11 +13,9 @@ import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
 export function componentToAgentTool(tool: Component<ToolConfig>): AgentTool {
   return {
     provider: tool.provider,
-    description: tool.description || "",
-    config: Object.entries(tool.config || {}).reduce((acc, [key, value]) => {
-      acc[key] = String(value); // Ensure all values are strings
-      return acc;
-    }, {} as Record<string, string>),
+    description: getToolDescription(tool),
+    // Deep copy the entire config object to preserve all nested structures
+    config: tool.config ? JSON.parse(JSON.stringify(tool.config)) : {},
   };
 }
 
@@ -39,7 +38,7 @@ export function findComponentForAgentTool(
   agentTool: AgentTool,
   availableTools: Component<ToolConfig>[]
 ): Component<ToolConfig> | undefined {
-  return availableTools.find((tool) => tool.provider === agentTool.provider);
+  return availableTools.find((tool) => getToolIdentifier(tool) === getToolIdentifier(agentTool));
 }
 
 /**
@@ -52,7 +51,7 @@ export function isAgentToolInComponents(
   agentTool: AgentTool,
   components: Component<ToolConfig>[]
 ): boolean {
-  return components.some((component) => component.provider === agentTool.provider);
+  return components.some((component) => getToolIdentifier(component) === getToolIdentifier(agentTool));
 }
 
 /**

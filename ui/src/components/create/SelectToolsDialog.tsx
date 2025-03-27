@@ -10,6 +10,7 @@ import { AgentTool, Component, ToolConfig } from "@/types/datamodel";
 import ProviderFilter from "./ProviderFilter";
 import ToolItem from "./ToolItem";
 import { findComponentForAgentTool } from "@/lib/toolUtils";
+import { getToolDisplayName, getToolDescription, getToolIdentifier } from "@/lib/data";
 
 // Maximum number of tools that can be selected
 const MAX_TOOLS_LIMIT = 10;
@@ -82,8 +83,12 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
     const searchLower = searchTerm.toLowerCase();
 
     return availableTools.filter((tool) => {
-      // Search matching
-      const matchesSearch = tool.provider.toLowerCase().includes(searchLower) || (tool.description?.toLowerCase().includes(searchLower) ?? false);
+      // Search matching - use getToolDisplayName and getToolDescription
+      const toolName = getToolDisplayName(tool).toLowerCase();
+      const toolDescription = getToolDescription(tool)?.toLowerCase() ?? "";
+      const matchesSearch = toolName.includes(searchLower) || 
+                          toolDescription.includes(searchLower) || 
+                          tool.provider.toLowerCase().includes(searchLower);
 
       // Tab matching
       const isSelected = localSelectedComponents.some((t) => t.provider === tool.provider);
@@ -104,15 +109,15 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
 
     // Sort tools first - new tools at the top within each category
     const sortedTools = [...filteredTools].sort((a, b) => {
-      const aIsNew = newlyDiscoveredTools.some((t) => t.provider === a.provider);
-      const bIsNew = newlyDiscoveredTools.some((t) => t.provider === b.provider);
+      const aIsNew = newlyDiscoveredTools.some((t) => getToolIdentifier(t) === getToolIdentifier(a));
+      const bIsNew = newlyDiscoveredTools.some((t) => getToolIdentifier(t) === getToolIdentifier(b));
 
       // Primary sort: new tools first
       if (aIsNew && !bIsNew) return -1;
       if (!aIsNew && bIsNew) return 1;
 
       // Secondary sort: alphabetical by name
-      return (a.provider || "").localeCompare(b.provider || "");
+      return getToolDisplayName(a).localeCompare(getToolDisplayName(b));
     });
 
     // Group by categories
@@ -131,21 +136,24 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
   const isLimitReached = localSelectedComponents.length >= MAX_TOOLS_LIMIT;
 
   // Helper functions for tool state
-  const isToolSelected = (tool: Component<ToolConfig>) => localSelectedComponents.some((t) => t.provider === tool.provider);
+  const isToolSelected = (tool: Component<ToolConfig>) => localSelectedComponents.some((t) => getToolIdentifier(t) === getToolIdentifier(tool));
 
   // Event handlers
   const handleToggleTool = (tool: Component<ToolConfig>) => {
     const isCurrentlySelected = isToolSelected(tool);
+
+    console.log("isCurrentlySelected", isCurrentlySelected);
 
     // If tool is not selected and we've reached limit, don't allow adding
     if (!isCurrentlySelected && isLimitReached) {
       return;
     }
 
-    setLocalSelectedComponents((prev) => (isCurrentlySelected ? prev.filter((t) => t.provider !== tool.provider) : [...prev, tool]));
+    setLocalSelectedComponents((prev) => (isCurrentlySelected ? prev.filter((t) => getToolIdentifier(t) !== getToolIdentifier(tool)) : [...prev, tool]));
   };
 
   const handleSave = () => {
+    console.log("localSelectedComponents", localSelectedComponents);
     onToolsSelected(localSelectedComponents);
     onOpenChange(false);
   };
@@ -174,13 +182,17 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
   const selectAllProviders = () => setSelectedProviders(new Set(providers));
   const clearProviders = () => setSelectedProviders(new Set());
 
-  // Modified to respect the tool limit
+  // Modified to respect the tool limit and ensure proper object copying
   const selectAllTools = () => {
-    if (filteredTools.length <= MAX_TOOLS_LIMIT) {
-      setLocalSelectedComponents(filteredTools);
-    } else {
-      setLocalSelectedComponents(filteredTools.slice(0, MAX_TOOLS_LIMIT));
-    }
+    const toolsToSelect = filteredTools.slice(0, MAX_TOOLS_LIMIT).map(tool => {
+      // Make deep copies of each tool to ensure config objects are preserved
+      return {
+        ...tool,
+        config: tool.config ? JSON.parse(JSON.stringify(tool.config)) : undefined
+      };
+    });
+    
+    setLocalSelectedComponents(toolsToSelect);
   };
 
   const clearToolSelection = () => setLocalSelectedComponents([]);
@@ -188,14 +200,12 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
   // Stats
   const totalTools = availableTools.length;
   const selectedCount = localSelectedComponents.length;
-  const newToolsCount = newlyDiscoveredTools.length;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(isOpen) => {
-        // Auto-save if closing with newly discovered tools
-        if (!isOpen && newToolsCount > 0) {
+        if (!isOpen) {
           onToolsSelected(localSelectedComponents);
         }
         onOpenChange(isOpen);
@@ -203,7 +213,7 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
     >
       <DialogContent className="max-w-4xl max-h-[85vh] h-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">{newToolsCount > 0 ? "Select Discovered Tools" : "Select Tools"}</DialogTitle>
+          <DialogTitle className="text-xl">Select Tools</DialogTitle>
         </DialogHeader>
 
         {/* Tool limit warning */}
@@ -250,14 +260,6 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
                   {selectedCount}
                 </Badge>
               </TabsTrigger>
-              {newToolsCount > 0 && (
-                <TabsTrigger value="new">
-                  New
-                  <Badge variant="outline" className="ml-1 bg-background">
-                    {newToolsCount}
-                  </Badge>
-                </TabsTrigger>
-              )}
             </TabsList>
           </Tabs>
 
@@ -293,7 +295,15 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
                   {expandedCategories[category] && (
                     <div className="divide-y">
                       {tools.map((tool) => (
-                        <ToolItem key={tool.provider} tool={tool} isSelected={isToolSelected(tool)} onToggle={handleToggleTool} disabled={!isToolSelected(tool) && isLimitReached} />
+                        <ToolItem 
+                          key={getToolIdentifier(tool)} 
+                          tool={tool} 
+                          isSelected={isToolSelected(tool)} 
+                          onToggle={handleToggleTool} 
+                          disabled={!isToolSelected(tool) && isLimitReached}
+                          displayName={getToolDisplayName(tool)}
+                          description={getToolDescription(tool)}
+                        />
                       ))}
                     </div>
                   )}
@@ -319,13 +329,8 @@ export const SelectToolsDialog: React.FC<SelectToolsDialogProps> = ({ open, onOp
               <span className="text-muted-foreground">(Maximum: {MAX_TOOLS_LIMIT})</span>
             </div>
             <div className="flex gap-2">
-              {newToolsCount === 0 && (
-                <Button variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-              )}
               <Button className="bg-violet-500 hover:bg-violet-600 text-white" onClick={handleSave}>
-                {newToolsCount > 0 ? "Add Selected Tools" : "Save Selection"}
+                Save Selection
               </Button>
             </div>
           </div>
