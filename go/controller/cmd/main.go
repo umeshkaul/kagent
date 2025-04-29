@@ -29,6 +29,7 @@ import (
 
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 
+	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
 	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
 
@@ -87,6 +88,7 @@ func main() {
 	var defaultModelConfig types.NamespacedName
 	var tlsOpts []func(*tls.Config)
 	var httpServerAddr string
+	var a2aBaseUrl string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -112,6 +114,7 @@ func main() {
 	flag.StringVar(&defaultModelConfig.Name, "default-model-config-name", "default-model-config", "The name of the default model config.")
 	flag.StringVar(&defaultModelConfig.Namespace, "default-model-config-namespace", podNamespace, "The namespace of the default model config.")
 	flag.StringVar(&httpServerAddr, "http-server-address", ":8083", "The address the HTTP server binds to.")
+	flag.StringVar(&a2aBaseUrl, "a2a-base-url", fmt.Sprintf("http://127.0.0.1:8083%v", httpserver.APIPathA2A), "The base URL of the A2A Server endpoint, as advertised to clients.")
 
 	opts := zap.Options{
 		Development: true,
@@ -256,11 +259,16 @@ func main() {
 		defaultModelConfig,
 	)
 
+	a2aHandler := a2a.NewA2AHttpMux()
+
+	a2aReconciler := a2a.NewAutogenReconciler(autogenClient, a2aHandler, a2aBaseUrl)
+
 	autogenReconciler := autogen.NewAutogenReconciler(
 		apiTranslator,
 		kubeClient,
 		autogenClient,
 		defaultModelConfig,
+		a2aReconciler,
 	)
 
 	if err = (&controller.AutogenTeamReconciler{
@@ -334,6 +342,7 @@ func main() {
 		BindAddr:      httpServerAddr,
 		AutogenClient: autogenClient,
 		KubeClient:    kubeClient,
+		A2AHandler:    a2aHandler,
 	})
 	if err := mgr.Add(httpServer); err != nil {
 		setupLog.Error(err, "unable to set up HTTP server")
