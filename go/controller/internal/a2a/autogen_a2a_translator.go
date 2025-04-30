@@ -107,9 +107,6 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 			return "", fmt.Errorf("failed to invoke task: %w", err)
 		}
 
-		//b, err := json.Marshal(resp.TaskResult)
-
-		//return string(b), err
 		var lastMessageContent string
 		for _, msg := range resp.TaskResult.Messages {
 			switch msg.Content.(type) {
@@ -149,28 +146,6 @@ func fetchAgentTeam(teamComponent *api.Component) (*api.Component, error) {
 			// this is the "society of mind" TaskAgent agent, it wraps another team which contains our agent participant, so we must unwrap
 			// this is created per-agent for each agent internally by the kagent translator
 			return taskAgentConfig.Team, nil
-			//case "autogen_agentchat.agents.AssistantAgent":
-			//	// this is our agent, the component is the config we want
-			//	agentConfig := &api.AssistantAgentConfig{}
-			//	err := agentConfig.FromConfig(participant.Config)
-			//	if err != nil {
-			//		return nil, err
-			//	}
-			//
-			//	agentTeamConfig, err := agentConfig.ToConfig()
-			//	if err != nil {
-			//		return nil, err
-			//	}
-			//
-			//	return &api.Component{
-			//		Provider:         teamComponent.Provider,
-			//		ComponentType:    teamComponent.ComponentType,
-			//		Version:          teamComponent.Version,
-			//		ComponentVersion: teamComponent.ComponentVersion,
-			//		Description:      teamComponent.Description,
-			//		Label:            teamComponent.Label,
-			//		Config:           agentTeamConfig,
-			//	}, nil
 		}
 	}
 
