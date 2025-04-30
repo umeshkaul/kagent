@@ -111,7 +111,7 @@ func main() {
 	flag.StringVar(&defaultModelConfig.Name, "default-model-config-name", "default-model-config", "The name of the default model config.")
 	flag.StringVar(&defaultModelConfig.Namespace, "default-model-config-namespace", podNamespace, "The namespace of the default model config.")
 	flag.StringVar(&httpServerAddr, "http-server-address", ":8083", "The address the HTTP server binds to.")
-	flag.StringVar(&a2aBaseUrl, "a2a-base-url", fmt.Sprintf("http://127.0.0.1:8083%v", httpserver.APIPathA2A), "The base URL of the A2A Server endpoint, as advertised to clients.")
+	flag.StringVar(&a2aBaseUrl, "a2a-base-url", "http://127.0.0.1:8083", "The base URL of the A2A Server endpoint, as advertised to clients.")
 
 	opts := zap.Options{
 		Development: true,
@@ -258,7 +258,11 @@ func main() {
 
 	a2aHandler := a2a.NewA2AHttpMux(httpserver.APIPathA2A)
 
-	a2aReconciler := a2a.NewAutogenReconciler(autogenClient, a2aHandler, a2aBaseUrl)
+	a2aReconciler := a2a.NewAutogenReconciler(
+		autogenClient,
+		a2aHandler,
+		a2aBaseUrl+httpserver.APIPathA2A,
+	)
 
 	autogenReconciler := autogen.NewAutogenReconciler(
 		apiTranslator,
