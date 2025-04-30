@@ -43,6 +43,9 @@ func (a *autogenA2ATranslator) TranslateHandlerForAgent(ctx context.Context, age
 	if err != nil {
 		return nil, err
 	}
+	if card == nil {
+		return nil, nil
+	}
 
 	handler, err := a.makeHandlerForTeam(ctx, autogenTeam)
 	if err != nil {
@@ -59,11 +62,22 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
 ) (*server.AgentCard, error) {
-
+	a2AConfig := agent.Spec.A2AConfig
+	if a2AConfig == nil {
+		return nil, nil
+	}
+	skills := a2AConfig.Skills
+	if len(skills) == 0 {
+		return nil, fmt.Errorf("no skills found for agent %s", agent.Name)
+	}
+	var convertedSkills []server.AgentSkill
+	for _, skill := range skills {
+		convertedSkills = append(convertedSkills, server.AgentSkill(skill))
+	}
 	return &server.AgentCard{
 		Name:        agent.Name,
 		Description: common.MakePtr(agent.Spec.Description),
-		URL:         fmt.Sprintf("%s/%s", a.a2aBaseUrl, agent.Name),
+		URL:         fmt.Sprintf("%s/%s", a.a2aBaseUrl, agent.Namespace+"_"+agent.Name),
 		//Provider:           nil,
 		Version: fmt.Sprintf("%v", agent.Generation),
 		//DocumentationURL:   nil,
@@ -71,7 +85,7 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 		//Authentication:     nil,
 		DefaultInputModes:  []string{"text"},
 		DefaultOutputModes: []string{"text"},
-		//Skills:             nil,
+		Skills:             convertedSkills,
 	}, nil
 }
 
@@ -79,7 +93,7 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 	ctx context.Context,
 	autogenTeam *autogen_client.Team,
 ) (TaskHandler, error) {
-	teamComponent, err := removeUserProxyParticipant(autogenTeam.Component)
+	teamComponent, err := fetchAgentTeam(autogenTeam.Component)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get team component: %w", err)
 	}
@@ -90,47 +104,75 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 			TeamConfig: teamComponent,
 		})
 		if err != nil {
-			return "", nil
+			return "", fmt.Errorf("failed to invoke task: %w", err)
 		}
 
-		if !resp.Status {
-			return "", fmt.Errorf("failed to invoke task: %s", resp.Message)
+		//b, err := json.Marshal(resp.TaskResult)
+
+		//return string(b), err
+		var lastMessageContent string
+		for _, msg := range resp.TaskResult.Messages {
+			switch msg.Content.(type) {
+			case string:
+				lastMessageContent = msg.Content.(string)
+			default:
+				b, err := json.Marshal(msg.Content)
+				if err != nil {
+					return "", fmt.Errorf("failed to marshal message content: %w", err)
+				}
+				lastMessageContent = string(b)
+			}
 		}
 
-		b, err := json.Marshal(resp.Data)
-
-		return string(b), err
+		return lastMessageContent, nil
 	}, nil
 }
 
 // TODO(ilackarms): remove this once we stop translating the user proxy agent
-// this is a hack to remove the user proxy agent participant from the team component
-func removeUserProxyParticipant(teamComponent *api.Component) (*api.Component, error) {
+// this is a hack to fetch the internally "wrapped" agent team that is produced by the translator, without the society of mind agent and user proxy agent
+func fetchAgentTeam(teamComponent *api.Component) (*api.Component, error) {
 	teamConfig := &api.RoundRobinGroupChatConfig{}
 	err := teamConfig.FromConfig(teamComponent.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	for i, participant := range teamConfig.Participants {
-		if participant.Provider == "autogen_agentchat.agents.UserProxyAgent" {
-			teamConfig.Participants = append(teamConfig.Participants[:i], teamConfig.Participants[i+1:]...)
-			break
+	for _, participant := range teamConfig.Participants {
+		switch participant.Provider {
+		case "kagent.agents.TaskAgent":
+			taskAgentConfig := &api.TaskAgentConfig{}
+			err := taskAgentConfig.FromConfig(participant.Config)
+			if err != nil {
+				return nil, err
+			}
+
+			// this is the "society of mind" TaskAgent agent, it wraps another team which contains our agent participant, so we must unwrap
+			// this is created per-agent for each agent internally by the kagent translator
+			return taskAgentConfig.Team, nil
+			//case "autogen_agentchat.agents.AssistantAgent":
+			//	// this is our agent, the component is the config we want
+			//	agentConfig := &api.AssistantAgentConfig{}
+			//	err := agentConfig.FromConfig(participant.Config)
+			//	if err != nil {
+			//		return nil, err
+			//	}
+			//
+			//	agentTeamConfig, err := agentConfig.ToConfig()
+			//	if err != nil {
+			//		return nil, err
+			//	}
+			//
+			//	return &api.Component{
+			//		Provider:         teamComponent.Provider,
+			//		ComponentType:    teamComponent.ComponentType,
+			//		Version:          teamComponent.Version,
+			//		ComponentVersion: teamComponent.ComponentVersion,
+			//		Description:      teamComponent.Description,
+			//		Label:            teamComponent.Label,
+			//		Config:           agentTeamConfig,
+			//	}, nil
 		}
 	}
 
-	teamComponentConfig, err := teamConfig.ToConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	return &api.Component{
-		Provider:         teamComponent.Provider,
-		ComponentType:    teamComponent.ComponentType,
-		Version:          teamComponent.Version,
-		ComponentVersion: teamComponent.ComponentVersion,
-		Description:      teamComponent.Description,
-		Label:            teamComponent.Label,
-		Config:           teamComponentConfig,
-	}, nil
+	return nil, fmt.Errorf("failed to find agent team in component")
 }

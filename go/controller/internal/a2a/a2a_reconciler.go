@@ -47,6 +47,10 @@ func (a *a2aReconciler) ReconcileAutogenAgent(
 	if err != nil {
 		return err
 	}
+	if params == nil {
+		reconcileLog.Info("No a2a handler found for agent, a2a will be disabled", "agent", agent.Name)
+		return nil
+	}
 
 	return a.a2aHandler.SetAgentHandler(
 		fmt.Sprintf("%s_%s", agent.Namespace, agent.Name),

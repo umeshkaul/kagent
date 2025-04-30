@@ -48,6 +48,50 @@ spec:
           spec:
             description: AgentSpec defines the desired state of Agent.
             properties:
+              a2aConfig:
+                properties:
+                  skills:
+                    items:
+                      description: AgentSkill describes a specific capability or function
+                        of the agent.
+                      properties:
+                        description:
+                          description: Description is an optional detailed description
+                            of the skill.
+                          type: string
+                        examples:
+                          description: Examples are optional usage examples.
+                          items:
+                            type: string
+                          type: array
+                        id:
+                          description: ID is the unique identifier for the skill.
+                          type: string
+                        inputModes:
+                          description: InputModes are the supported input data modes/types.
+                          items:
+                            type: string
+                          type: array
+                        name:
+                          description: Name is the human-readable name of the skill.
+                          type: string
+                        outputModes:
+                          description: OutputModes are the supported output data modes/types.
+                          items:
+                            type: string
+                          type: array
+                        tags:
+                          description: Tags are optional tags for categorization.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - id
+                      - name
+                      type: object
+                    minItems: 1
+                    type: array
+                type: object
               description:
                 type: string
               modelConfig:

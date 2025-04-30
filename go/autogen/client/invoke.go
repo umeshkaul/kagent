@@ -8,16 +8,21 @@ type InvokeTaskRequest struct {
 }
 
 type InvokeTaskResult struct {
-	Message string `json:"message"`
-	Status  bool   `json:"status"`
-	Data    struct {
-		Usage      string  `json:"usage"`
-		Duration   float64 `json:"duration"`
-		TaskResult struct {
-			StopReason string                   `json:"stop_reason"`
-			Messages   []map[string]interface{} `json:"messages"`
-		} `json:"task_result"`
-	} `json:"data"`
+	Duration   float64 `json:"duration"`
+	TaskResult struct {
+		Messages []struct {
+			Content  interface{} `json:"content"`
+			Metadata struct {
+			} `json:"metadata"`
+			ModelsUsage *struct {
+				CompletionTokens int `json:"completion_tokens"`
+				PromptTokens     int `json:"prompt_tokens"`
+			} `json:"models_usage"`
+			Source string `json:"source"`
+		} `json:"messages"`
+		StopReason string `json:"stop_reason"`
+	} `json:"task_result"`
+	Usage string `json:"usage"`
 }
 
 func (c *Client) InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error) {

@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"trpc.group/trpc-go/trpc-a2a-go/server"
 )
 
 const (
@@ -35,6 +37,8 @@ type AgentSpec struct {
 	ModelConfig string `json:"modelConfig,omitempty"`
 	// +kubebuilder:validation:MaxItems=20
 	Tools []*Tool `json:"tools,omitempty"`
+	// +optional
+	A2AConfig *A2AConfig `json:"a2aConfig,omitempty"`
 }
 
 // ToolProviderType represents the tool provider type
@@ -92,6 +96,13 @@ type McpServerTool struct {
 type AnyType struct {
 	json.RawMessage `json:",inline"`
 }
+
+type A2AConfig struct {
+	// +kubebuilder:validation:MinItems=1
+	Skills []AgentSkill `json:"skills,omitempty"`
+}
+
+type AgentSkill server.AgentSkill
 
 // AgentStatus defines the observed state of Agent.
 type AgentStatus struct {
