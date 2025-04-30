@@ -12,7 +12,7 @@ openai:
 
 controller:
   image:
-    registry: ghcr.io
+    registry: cr.kagent.dev
     repository: kagent-dev/kagent/controller
     tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
@@ -23,10 +23,11 @@ controller:
     limits:
       cpu: 500m
       memory: 512Mi
+  env: {} # Additional environment variables for the controller can be added here
 
 app:
   image:
-    registry: ghcr.io
+    registry: cr.kagent.dev
     repository: kagent-dev/kagent/app
     tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
@@ -37,10 +38,11 @@ app:
     limits:
       cpu: 1000m
       memory: 1Gi
+  env: {} # Additional environment variables for the app can be added here
 
 ui:
   image:
-    registry: ghcr.io
+    registry: cr.kagent.dev
     repository: kagent-dev/kagent/ui
     tag: ""  # Will default to global, then Chart version
     pullPolicy: IfNotPresent
@@ -51,6 +53,7 @@ ui:
     limits:
       cpu: 1000m
       memory: 1Gi
+  env: {} # Additional environment variables for the ui can be added here
   
 
 service:
