@@ -53,7 +53,7 @@ func (a *a2aReconciler) ReconcileAutogenAgent(
 	}
 
 	return a.a2aHandler.SetAgentHandler(
-		fmt.Sprintf("%s_%s", agent.Namespace, agent.Name),
+		fmt.Sprintf("%s/%s", agent.Namespace, agent.Name),
 		params,
 	)
 }

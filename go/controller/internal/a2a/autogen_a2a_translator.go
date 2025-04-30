@@ -77,7 +77,7 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 	return &server.AgentCard{
 		Name:        agent.Name,
 		Description: common.MakePtr(agent.Spec.Description),
-		URL:         fmt.Sprintf("%s/%s", a.a2aBaseUrl, agent.Namespace+"_"+agent.Name),
+		URL:         fmt.Sprintf("%s/%s", a.a2aBaseUrl, agent.Namespace+"/"+agent.Name),
 		//Provider:           nil,
 		Version: fmt.Sprintf("%v", agent.Generation),
 		//DocumentationURL:   nil,
