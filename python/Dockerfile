@@ -60,7 +60,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/sbin:/bin:/root/.cargo/bin"
 
-RUN uv python install 3.13.0
+RUN uv python install 3.12
 
 # Create groups and users
 RUN groupadd -g 1002 pythongroup \
