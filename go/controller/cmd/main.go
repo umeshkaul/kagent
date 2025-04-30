@@ -259,7 +259,7 @@ func main() {
 		defaultModelConfig,
 	)
 
-	a2aHandler := a2a.NewA2AHttpMux()
+	a2aHandler := a2a.NewA2AHttpMux(httpserver.APIPathA2A)
 
 	a2aReconciler := a2a.NewAutogenReconciler(autogenClient, a2aHandler, a2aBaseUrl)
 

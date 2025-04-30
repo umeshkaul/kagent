@@ -25,15 +25,17 @@ type A2AHandlerMux interface {
 }
 
 type handlerMux struct {
-	handlers map[string]http.Handler
-	lock     sync.RWMutex
+	handlers       map[string]http.Handler
+	lock           sync.RWMutex
+	basePathPrefix string
 }
 
 var _ A2AHandlerMux = &handlerMux{}
 
-func NewA2AHttpMux() *handlerMux {
+func NewA2AHttpMux(pathPrefix string) *handlerMux {
 	return &handlerMux{
-		handlers: make(map[string]http.Handler),
+		handlers:       make(map[string]http.Handler),
+		basePathPrefix: pathPrefix,
 	}
 }
 
@@ -77,9 +79,10 @@ func (a *handlerMux) getHandler(name string) (http.Handler, bool) {
 func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// get the handler name from the first path segment
-	handlerName, remainingPath := popPath(r.URL.Path)
+	path := strings.TrimPrefix(r.URL.Path, a.basePathPrefix)
+	handlerName, remainingPath := popPath(path)
 	if handlerName == "" {
-		http.Error(w, "Handler name not provided", http.StatusBadRequest)
+		http.Error(w, "Agent name not provided", http.StatusBadRequest)
 		return
 	}
 
@@ -88,7 +91,7 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		http.Error(
 			w,
-			fmt.Sprintf("Handler %s not found", handlerName),
+			fmt.Sprintf("Agent %s not found", handlerName),
 			http.StatusNotFound,
 		)
 		return
