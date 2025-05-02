@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	"github.com/kagent-dev/kagent/go/controller/utils/a2autils"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"trpc.group/trpc-go/trpc-a2a-go/protocol"
 	"trpc.group/trpc-go/trpc-a2a-go/taskmanager"
@@ -37,8 +38,13 @@ func (a *a2aTaskProcessor) Process(
 	message protocol.Message,
 	handle taskmanager.TaskHandle,
 ) error {
+	// Update task status to working.
+	if err := handle.UpdateStatus(protocol.TaskStateWorking, nil); err != nil {
+		return fmt.Errorf("failed to update initial task status: %w", err)
+	}
+
 	// Extract text from the incoming message.
-	text := extractText(message)
+	text := a2autils.ExtractText(message)
 	if text == "" {
 		err := fmt.Errorf("input message must contain text")
 		a.handleErr(taskID, err, handle)
@@ -67,8 +73,8 @@ func (a *a2aTaskProcessor) Process(
 
 	// Add the processed text as an artifact.
 	artifact := protocol.Artifact{
-		Name:        common.MakePtr("Reversed Text"),
-		Description: common.MakePtr("The input text reversed"),
+		Name:        common.MakePtr("Task Result"),
+		Description: common.MakePtr("The result of the task processing"),
 		Index:       0,
 		Parts:       []protocol.Part{protocol.NewTextPart(result)},
 		LastChunk:   common.MakePtr(true),
@@ -97,14 +103,4 @@ func (a a2aTaskProcessor) handleErr(
 	if updateStatusErr != nil {
 		processorLog.Error(updateStatusErr, "Failed to update task status", "taskID", taskID)
 	}
-}
-
-// extractText extracts the text content from a message.
-func extractText(message protocol.Message) string {
-	for _, part := range message.Parts {
-		if textPart, ok := part.(protocol.TextPart); ok {
-			return textPart.Text
-		}
-	}
-	return ""
 }

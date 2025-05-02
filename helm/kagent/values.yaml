@@ -65,6 +65,9 @@ service:
     app:
       port: 8081
       targetPort: 8081
+    a2a:
+      port: 8083
+      targetPort: 8083
 
 imagePullSecrets: []
 nameOverride: ""

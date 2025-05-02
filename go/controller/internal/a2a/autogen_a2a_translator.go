@@ -38,7 +38,11 @@ func NewAutogenA2ATranslator(
 	}
 }
 
-func (a *autogenA2ATranslator) TranslateHandlerForAgent(ctx context.Context, agent *v1alpha1.Agent, autogenTeam *autogen_client.Team) (*A2AHandlerParams, error) {
+func (a *autogenA2ATranslator) TranslateHandlerForAgent(
+	ctx context.Context,
+	agent *v1alpha1.Agent,
+	autogenTeam *autogen_client.Team,
+) (*A2AHandlerParams, error) {
 	card, err := a.translateCardForAgent(ctx, agent)
 	if err != nil {
 		return nil, err

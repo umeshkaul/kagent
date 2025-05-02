@@ -43,23 +43,38 @@ func main() {
 	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
-	if err != nil {
-		// Error connecting to server, port-forward the server
-		go func() {
-
-			if err := cmd.Start(); err != nil {
-				fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
-				os.Exit(1)
-			}
-		}()
-	}
-
+	autogenPortFwdCmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
+	// Error connecting to server, port-forward the server
+	go func() {
+		if err := autogenPortFwdCmd.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
+			os.Exit(1)
+		}
+	}()
 	// Ensure the context is cancelled when the shell is closed
 	defer func() {
 		cancel()
 		// cmd.Wait()
-		if err := cmd.Wait(); err != nil {
+		if err := autogenPortFwdCmd.Wait(); err != nil {
+			// These 2 errors are expected
+			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
+				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
+			}
+		}
+	}()
+	a2aPortFwdCmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8083:8083")
+	// Error connecting to server, port-forward the server
+	go func() {
+		if err := a2aPortFwdCmd.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+	// Ensure the context is cancelled when the shell is closed
+	defer func() {
+		cancel()
+		// cmd.Wait()
+		if err := a2aPortFwdCmd.Wait(); err != nil {
 			// These 2 errors are expected
 			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
 				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
@@ -305,6 +320,8 @@ Example:
 			cli.DashboardCmd(ctx, c)
 		},
 	})
+
+	shell.AddCmd(cli.A2ACmd(ctx))
 
 	shell.Run()
 }
