@@ -38,6 +38,8 @@ type AgentSpec struct {
 	// +kubebuilder:validation:MaxItems=20
 	Tools []*Tool `json:"tools,omitempty"`
 	// +optional
+	Memory []string `json:"memory,omitempty"`
+	// +optional
 	A2AConfig *A2AConfig `json:"a2aConfig,omitempty"`
 }
 
