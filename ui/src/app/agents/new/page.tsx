@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Settings2 } from "lucide-react";
-import { ModelConfig } from "@/lib/types";
+import { ModelConfig, MemoryResponse } from "@/lib/types";
 import { SystemPromptSection } from "@/components/create/SystemPromptSection";
 import { ModelSelectionSection } from "@/components/create/ModelSelectionSection";
 import { ToolsSection } from "@/components/create/ToolsSection";
+import { MemorySelectionSection } from "@/components/create/MemorySelectionSection";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAgents } from "@/components/AgentsProvider";
 import { LoadingState } from "@/components/LoadingState";
@@ -17,6 +18,7 @@ import KagentLogo from "@/components/kagent-logo";
 import { AgentFormData } from "@/components/AgentsProvider";
 import { Tool } from "@/types/datamodel";
 import { toast } from "sonner";
+import { listMemories } from "@/app/actions/memories";
 
 interface ValidationErrors {
   name?: string;
@@ -25,17 +27,18 @@ interface ValidationErrors {
   model?: string;
   knowledgeSources?: string;
   tools?: string;
+  memory?: string;
+}
+
+interface AgentPageContentProps {
+  isEditMode: boolean;
+  agentId: string | null;
 }
 
 // Inner component that uses useSearchParams, wrapped in Suspense
-function AgentPageContent() {
+function AgentPageContent({ isEditMode, agentId }: AgentPageContentProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { models, tools, loading, error, createNewAgent, updateAgent, getAgentById, validateAgentData } = useAgents();
-
-  // Determine if in edit mode
-  const isEditMode = searchParams.get("edit") === "true";
-  const agentId = searchParams.get("id");
 
   // Basic form state
   const [name, setName] = useState("");
@@ -48,6 +51,10 @@ function AgentPageContent() {
 
   // Tools state - now using AgentTool interface correctly
   const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
+
+  // Memory state
+  const [availableMemories, setAvailableMemories] = useState<MemoryResponse[]>([]);
+  const [selectedMemories, setSelectedMemories] = useState<string[]>([]);
 
   // Overall form state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +111,19 @@ function AgentPageContent() {
     fetchAgentData();
   }, [isEditMode, agentId, getAgentById]);
 
+  useEffect(() => {
+    const fetchMemories = async () => {
+      try {
+        const memories = await listMemories();
+        setAvailableMemories(memories);
+      } catch (error) {
+        console.error("Error fetching memories:", error);
+        toast.error("Failed to load available memories.");
+      }
+    };
+    fetchMemories();
+  }, []);
+
   const validateForm = () => {
     const formData = {
       name,
@@ -122,16 +142,19 @@ function AgentPageContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const validateField = (fieldName: keyof ValidationErrors, value: any) => {
     const formData: Partial<AgentFormData> = {};
-    
+
     // Set only the field being validated
-    if (fieldName === 'name') formData.name = value;
-    else if (fieldName === 'description') formData.description = value;
-    else if (fieldName === 'systemPrompt') formData.systemPrompt = value;
-    else if (fieldName === 'model') formData.model = value;
-    else if (fieldName === 'tools') formData.tools = value;
-    
+    switch (fieldName) {
+      case 'name': formData.name = value; break;
+      case 'description': formData.description = value; break;
+      case 'systemPrompt': formData.systemPrompt = value; break;
+      case 'model': formData.model = value; break;
+      case 'tools': formData.tools = value; break;
+      case 'memory': formData.memory = value; break;
+    }
+
     const fieldErrors = validateAgentData(formData);
-    
+
     // Update only the specific field error
     setErrors(prev => ({
       ...prev,
@@ -156,6 +179,7 @@ function AgentPageContent() {
         description,
         model: selectedModel,
         tools: selectedTools,
+        memory: selectedMemories,
       };
 
       let result;
@@ -251,6 +275,22 @@ function AgentPageContent() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5" />
+                  Memory
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MemorySelectionSection
+                  availableMemories={availableMemories}
+                  selectedMemories={selectedMemories}
+                  onSelectionChange={setSelectedMemories}
+                  disabled={isSubmitting || isLoading}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Settings2 className="h-5 w-5 text-yellow-500" />
                   Tools & Agents
                 </CardTitle>
@@ -295,9 +335,17 @@ function AgentPageContent() {
 
 // Main component that wraps the content in a Suspense boundary
 export default function AgentPage() {
+  // Determine if in edit mode
+  const searchParams = useSearchParams();
+  const isEditMode = searchParams.get("edit") === "true";
+  const agentId = searchParams.get("id");
+  
+  // Create a key based on the edit mode and agent ID
+  const formKey = isEditMode ? `edit-${agentId}` : 'create';
+  
   return (
     <Suspense fallback={<LoadingState />}>
-      <AgentPageContent />
+      <AgentPageContent key={formKey} isEditMode={isEditMode} agentId={agentId} />
     </Suspense>
   );
 }

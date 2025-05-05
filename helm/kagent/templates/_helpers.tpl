@@ -47,3 +47,25 @@ Selector labels
 app.kubernetes.io/name: {{ include "kagent.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
+
+{{/*Default provider name*/}}
+{{- define "kagent.defaultProviderName" -}}
+{{ .Values.providers.default | default "openAI" | lower}}
+{{- end }}
+
+{{/*Default model name*/}}
+{{- define "kagent.defaultModelConfigName" -}}
+{{ include "kagent.defaultProviderName" . }}-model-config
+{{- end }}
+
+{{/*
+Watch namespaces - transforms list of namespaces cached by the controller into comma-separated string
+Removes duplicates
+*/}}
+{{- define "kagent.watchNamespaces" -}}
+{{- $nsSet := dict }}
+{{- range .Values.controller.watchNamespaces | default list }}
+{{- $_ := set $nsSet . "" }}
+{{- end }}
+{{- keys $nsSet | join "," }}
+{{- end -}}
