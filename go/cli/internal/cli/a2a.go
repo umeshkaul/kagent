@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/abiosoft/ishell/v2"
 	"github.com/google/uuid"
@@ -12,11 +11,6 @@ import (
 	"time"
 	"trpc.group/trpc-go/trpc-a2a-go/client"
 	"trpc.group/trpc-go/trpc-a2a-go/protocol"
-)
-
-var (
-	// default timeout for A2A tasks
-	defaultTimeout = 30 * time.Second
 )
 
 func A2ACmd(ctx context.Context) *ishell.Cmd {
@@ -34,12 +28,13 @@ Example:
 a2a run [--namespace <agent-namespace>] <agent-name> <task>
 `,
 		Func: func(c *ishell.Context) {
-			if len(c.RawArgs) < 2 {
-				c.Println("Usage: a2a run --namespace <agent-namespace> <agent-name> <task>")
+			if len(c.RawArgs) < 4 {
+				c.Println("Usage: a2a run [--namespace <agent-namespace>] <agent-name> <task>")
 				return
 			}
 			flagSet := pflag.NewFlagSet(c.RawArgs[0], pflag.ContinueOnError)
 			agentNamespace := flagSet.String("namespace", "kagent", "Agent namespace")
+			timeout := flagSet.Duration("timeout", 300*time.Second, "Timeout for the task")
 			if err := flagSet.Parse(c.Args); err != nil {
 				c.Printf("Failed to parse flags: %v\n", err)
 				return
@@ -47,7 +42,7 @@ a2a run [--namespace <agent-namespace>] <agent-name> <task>
 			agentName := flagSet.Arg(0)
 			prompt := flagSet.Arg(1)
 
-			result, err := runTask(ctx, *agentNamespace, agentName, prompt)
+			result, err := runTask(ctx, *agentNamespace, agentName, prompt, *timeout)
 			if err != nil {
 				c.Err(err)
 				return
@@ -71,14 +66,16 @@ a2a run [--namespace <agent-namespace>] <agent-name> <task>
 					c.Println("No error message provided.")
 				}
 			case protocol.TaskStateCompleted:
-				c.Println("Task completed successfully.")
-				c.Println("Artifacts:")
-				b, err := json.MarshalIndent(result.Artifacts, "", "  ")
-				if err != nil {
-					c.Err(err)
-					return
+				c.Println("Task completed successfully:")
+				for _, artifact := range result.Artifacts {
+					var text string
+					for _, part := range artifact.Parts {
+						if textPart, ok := part.(protocol.TextPart); ok {
+							text += textPart.Text
+						}
+					}
+					c.Println(text)
 				}
-				c.Println(string(b))
 			}
 		},
 	})
@@ -90,6 +87,7 @@ func runTask(
 	ctx context.Context,
 	agentNamespace, agentName string,
 	userPrompt string,
+	timeout time.Duration,
 ) (*protocol.Task, error) {
 	cfg, err := config.Get()
 	if err != nil {
@@ -112,7 +110,7 @@ func runTask(
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, defaultTimeout)
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	// Process the task

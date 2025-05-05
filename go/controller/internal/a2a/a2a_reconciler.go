@@ -2,7 +2,6 @@ package a2a
 
 import (
 	"context"
-	"fmt"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -53,7 +52,7 @@ func (a *a2aReconciler) ReconcileAutogenAgent(
 	}
 
 	return a.a2aHandler.SetAgentHandler(
-		fmt.Sprintf("%s/%s", agent.Namespace, agent.Name),
+		agent.Namespace, agent.Name,
 		params,
 	)
 }

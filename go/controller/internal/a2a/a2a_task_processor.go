@@ -38,10 +38,6 @@ func (a *a2aTaskProcessor) Process(
 	message protocol.Message,
 	handle taskmanager.TaskHandle,
 ) error {
-	// Update task status to working.
-	if err := handle.UpdateStatus(protocol.TaskStateWorking, nil); err != nil {
-		return fmt.Errorf("failed to update initial task status: %w", err)
-	}
 
 	// Extract text from the incoming message.
 	text := a2autils.ExtractText(message)

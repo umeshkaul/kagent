@@ -17,10 +17,14 @@ type A2AHandlerParams struct {
 // A2AHandlerMux is an interface that defines methods for adding, getting, and removing agentic task handlers.
 type A2AHandlerMux interface {
 	SetAgentHandler(
-		name string,
+		agentNamespace string,
+		agentName string,
 		params *A2AHandlerParams,
 	) error
-	RemoveAgentHandler(name string)
+	RemoveAgentHandler(
+		agentNamespace string,
+		agentName string,
+	)
 	http.Handler
 }
 
@@ -40,7 +44,8 @@ func NewA2AHttpMux(pathPrefix string) *handlerMux {
 }
 
 func (a *handlerMux) SetAgentHandler(
-	name string,
+	agentNamespace string,
+	agentName string,
 	params *A2AHandlerParams,
 ) error {
 	processor := newA2ATaskProcessor(params.HandleTask)
@@ -58,15 +63,18 @@ func (a *handlerMux) SetAgentHandler(
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
-	a.handlers[name] = srv.Handler()
+	a.handlers[makeHandlerName(agentNamespace, agentName)] = srv.Handler()
 
 	return nil
 }
 
-func (a *handlerMux) RemoveAgentHandler(name string) {
+func (a *handlerMux) RemoveAgentHandler(
+	agentNamespace string,
+	agentName string,
+) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
-	delete(a.handlers, name)
+	delete(a.handlers, makeHandlerName(agentNamespace, agentName))
 }
 
 func (a *handlerMux) getHandler(name string) (http.Handler, bool) {
@@ -80,11 +88,18 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// get the handler name from the first path segment
 	path := strings.TrimPrefix(r.URL.Path, a.basePathPrefix)
-	handlerName, remainingPath := popPath(path)
-	if handlerName == "" {
+	agentNamespace, remainingPath := popPath(path)
+	if agentNamespace == "" {
+		http.Error(w, "Agent namespace not provided", http.StatusBadRequest)
+		return
+	}
+	agentName, remainingPath := popPath(remainingPath)
+	if agentName == "" {
 		http.Error(w, "Agent name not provided", http.StatusBadRequest)
 		return
 	}
+
+	handlerName := makeHandlerName(agentNamespace, agentName)
 
 	// get the underlying handler
 	handlerHandler, ok := a.getHandler(handlerName)
@@ -101,6 +116,10 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.URL.Path = "/" + remainingPath
 
 	handlerHandler.ServeHTTP(w, r)
+}
+
+func makeHandlerName(agentNamespace string, agentName string) string {
+	return fmt.Sprintf("%s/%s", agentNamespace, agentName)
 }
 
 // popPath separates the first element of a path from the rest.
