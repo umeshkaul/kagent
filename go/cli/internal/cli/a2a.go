@@ -8,6 +8,9 @@ import (
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	"github.com/kagent-dev/kagent/go/controller/utils/a2autils"
 	"github.com/spf13/pflag"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 	"trpc.group/trpc-go/trpc-a2a-go/client"
 	"trpc.group/trpc-go/trpc-a2a-go/protocol"
@@ -41,6 +44,9 @@ a2a run [--namespace <agent-namespace>] <agent-name> <task>
 			}
 			agentName := flagSet.Arg(0)
 			prompt := flagSet.Arg(1)
+
+			cancel := startPortForward(ctx)
+			defer cancel()
 
 			result, err := runTask(ctx, *agentNamespace, agentName, prompt, *timeout)
 			if err != nil {
@@ -81,6 +87,30 @@ a2a run [--namespace <agent-namespace>] <agent-name> <task>
 	})
 
 	return a2aCmd
+}
+
+func startPortForward(ctx context.Context) func() {
+	ctx, cancel := context.WithCancel(ctx)
+	a2aPortFwdCmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8083:8083")
+	// Error connecting to server, port-forward the server
+	go func() {
+		if err := a2aPortFwdCmd.Start(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Ensure the context is cancelled when the shell is closed
+	return func() {
+		cancel()
+		// cmd.Wait()
+		if err := a2aPortFwdCmd.Wait(); err != nil {
+			// These 2 errors are expected
+			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
+				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
+			}
+		}
+	}
 }
 
 func runTask(
