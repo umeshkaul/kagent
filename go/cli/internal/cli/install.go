@@ -123,7 +123,6 @@ func InstallCmd(ctx context.Context, c *ishell.Context) {
 		c.Println("Port-forward failed to start")
 		return
 	}
-
 	c.Println("\nkagent installed successfully")
 }
 

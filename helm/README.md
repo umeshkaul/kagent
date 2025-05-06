@@ -58,8 +58,6 @@ export KAGENT_DEFAULT_MODEL_PROVIDER=openAI
 
 # use local helm chart
 export KAGENT_HELM_REPO=./helm/
-
-#build and run kagent cli
 make kagent-cli-install
 
 #or use it directly

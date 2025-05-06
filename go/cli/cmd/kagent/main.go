@@ -41,53 +41,33 @@ func main() {
 	}
 
 	client := autogen_client.New(cfg.APIURL, cfg.WSURL)
-
 	ctx, cancel := context.WithCancel(context.Background())
-	autogenPortFwdCmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
+	cmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
 	// Error connecting to server, port-forward the server
 	go func() {
-		if err := autogenPortFwdCmd.Start(); err != nil {
+		if err := cmd.Start(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
 			os.Exit(1)
 		}
 	}()
-	// Ensure the context is cancelled when the shell is closed
-	defer func() {
-		cancel()
-		// cmd.Wait()
-		if err := autogenPortFwdCmd.Wait(); err != nil {
-			// These 2 errors are expected
-			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
-				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
-			}
-		}
-	}()
-	a2aPortFwdCmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8083:8083")
-	// Error connecting to server, port-forward the server
-	go func() {
-		if err := a2aPortFwdCmd.Start(); err != nil {
-			fmt.Fprintf(os.Stderr, "Error starting port-forward: %v\n", err)
-			os.Exit(1)
-		}
-	}()
-	// Ensure the context is cancelled when the shell is closed
-	defer func() {
-		cancel()
-		// cmd.Wait()
-		if err := a2aPortFwdCmd.Wait(); err != nil {
-			// These 2 errors are expected
-			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
-				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
-			}
-		}
-	}()
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+		os.Exit(1)
+	}
 
 	// create new shell.
 	// by default, new shell includes 'exit', 'help' and 'clear' commands.
 	shell := ishell.New()
+	config.SetHistoryPath(homeDir, shell)
+	if err := shell.ClearScreen(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error clearing screen: %v\n", err)
+	}
+	shell.Println("Welcome to kagent CLI. Type 'help' to see available commands.", strings.Repeat(" ", 10))
+
 	config.SetCfg(shell, cfg)
 	config.SetClient(shell, client)
-
 	shell.SetPrompt(config.BoldBlue("kagent >> "))
 
 	runCmd := &ishell.Cmd{
