@@ -50,6 +50,17 @@ func main() {
 			os.Exit(1)
 		}
 	}()
+	// Ensure the context is cancelled when the shell is closed
+	defer func() {
+		cancel()
+		// cmd.Wait()
+		if err := cmd.Wait(); err != nil {
+			// These 2 errors are expected
+			if !strings.Contains(err.Error(), "signal: killed") && !strings.Contains(err.Error(), "exec: not started") {
+				fmt.Fprintf(os.Stderr, "Error waiting for port-forward to exit: %v\n", err)
+			}
+		}
+	}()
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
