@@ -39,6 +39,12 @@ type AgentSpec struct {
 	Tools []*Tool `json:"tools,omitempty"`
 	// +optional
 	Memory []string `json:"memory,omitempty"`
+	// A2AConfig instantiates an A2A server for this agent,
+	// served on the HTTP port of the kagent kubernetes
+	// controller (default 8083).
+	// The A2A server URL will be served at
+	// <kagent-controller-ip>:8083/api/a2a/<agent-namespace>/<agent-name>
+	// Read more about the A2A protocol here: https://github.com/google/A2A
 	// +optional
 	A2AConfig *A2AConfig `json:"a2aConfig,omitempty"`
 }
