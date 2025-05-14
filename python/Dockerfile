@@ -34,6 +34,13 @@ RUN curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/s
     && ./get_helm.sh \
     && rm get_helm.sh
 
+# Install Cilium CLI
+RUN CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt) \
+    && curl -L -o cilium-linux-${TARGETARCH}.tar.gz https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${TARGETARCH}.tar.gz \
+    && tar xzvf cilium-linux-${TARGETARCH}.tar.gz \
+    && mv cilium /usr/local/bin/cilium \
+    && rm cilium-linux-${TARGETARCH}.tar.gz
+
 FROM ghcr.io/astral-sh/uv:${TOOLS_UV_VERSION}-debian-slim AS final
 
 ARG TARGETARCH
@@ -49,6 +56,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /usr/local/bin/kubectl /usr/local/bin/kubectl
 COPY --from=builder /usr/local/bin/istioctl /usr/local/bin/istioctl
 COPY --from=builder /usr/local/bin/helm /usr/local/bin/helm
+COPY --from=builder /usr/local/bin/cilium /usr/local/bin/cilium
 
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
