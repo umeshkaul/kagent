@@ -39,8 +39,6 @@ COPY . .
 RUN --mount=type=cache,target=/cache/bun,rw \
     bun run build                           \
     && mkdir -p /app/ui/public
-RUN --mount=type=cache,target=/cache/bun,rw \
-    bun install --production --prefer-offline
 
 ### STAGE 3: final
 FROM node-os AS final
