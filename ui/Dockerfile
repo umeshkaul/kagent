@@ -31,13 +31,16 @@ FROM node-os AS ui-builder
 
 WORKDIR /app/ui
 COPY package*.json ./
+COPY package-lock.json ./
 RUN --mount=type=cache,target=/cache/bun,rw \
-    bun install -- production --prefer-offline
+    bun install --prefer-offline
 
 COPY . .
 RUN --mount=type=cache,target=/cache/bun,rw \
     bun run build                           \
     && mkdir -p /app/ui/public
+RUN --mount=type=cache,target=/cache/bun,rw \
+    bun install --production --prefer-offline
 
 ### STAGE 3: final
 FROM node-os AS final
