@@ -31,7 +31,6 @@ FROM node-os AS ui-builder
 
 WORKDIR /app/ui
 COPY package*.json ./
-COPY package-lock.json ./
 RUN --mount=type=cache,target=/cache/bun,rw \
     bun install --prefer-offline
 
