@@ -5,6 +5,7 @@ on:
 env:
   CLUSTER_CTX: kind-kagent
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
 
 jobs:
   solve-challenge:
@@ -74,6 +75,7 @@ jobs:
       env:
         DOCKER_BUILD_ARGS: "--push --platform linux/amd64"
         DOCKER_BUILDER: "docker buildx"
+        BUILD_ARGS: "--platform linux/amd64"
       run: |
         bash .github/data/agent-framework/0.setup.sh
 
