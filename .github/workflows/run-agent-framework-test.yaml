@@ -62,7 +62,7 @@ jobs:
         # - { name: scn1_ch22, scenario: scenario1, challenge: service-incorrect-port-number.yaml}
         # - { name: scn1_ch23, scenario: scenario1, challenge: missing-service-selector.yaml}
         # - { name: scn1_ch24, scenario: scenario1, challenge: pod-security-context-issue.yaml}
-    runs-on: ['ubuntu-24.04-4core-amd64']
+    runs-on: ['ubuntu-latest']
 
     steps:
     - uses: actions/checkout@v4
