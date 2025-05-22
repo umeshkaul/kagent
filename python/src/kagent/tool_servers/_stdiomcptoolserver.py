@@ -23,7 +23,9 @@ class StdioMcpToolServer(ToolServer, Component[StdioMcpToolServerConfig]):
     async def discover_tools(self) -> list[Component]:
         try:
             logger.debug(f"Discovering tools from stdio server: {self.config}")
+            self.config.read_timeout_seconds=120
             tools = await mcp_server_tools(self.config)
+            logger.debug(f"Discovered tools: {tools}")
             return tools
         except Exception as e:
             raise Exception(f"Failed to discover tools: {e}") from e
