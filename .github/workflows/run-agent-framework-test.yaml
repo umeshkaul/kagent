@@ -73,7 +73,7 @@ jobs:
 
     - name: 'Build Images'
       env:
-        DOCKER_BUILD_ARGS: "--push --platform linux/amd64"
+        DOCKER_BUILD_ARGS: "--platform linux/amd64"
         DOCKER_BUILDER: "docker buildx"
         BUILD_ARGS: "--platform linux/amd64"
       run: |
