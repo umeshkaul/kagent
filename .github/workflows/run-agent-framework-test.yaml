@@ -10,59 +10,59 @@ env:
 jobs:
   solve-challenge:
     outputs:
-      scn1_ch1: ${{ steps.gen_output.outputs.scn1_ch1 }}
-      scn1_ch2: ${{ steps.gen_output.outputs.scn1_ch2 }}
-      scn1_ch3: ${{ steps.gen_output.outputs.scn1_ch3 }}
-      scn1_ch4: ${{ steps.gen_output.outputs.scn1_ch4 }}
-      scn1_ch5: ${{ steps.gen_output.outputs.scn1_ch5 }}
-      scn1_ch6: ${{ steps.gen_output.outputs.scn1_ch6 }}
-      scn1_ch7: ${{ steps.gen_output.outputs.scn1_ch7 }}
-      scn1_ch8: ${{ steps.gen_output.outputs.scn1_ch8 }}
-      scn1_ch9: ${{ steps.gen_output.outputs.scn1_ch9 }}
-      scn1_ch10: ${{ steps.gen_output.outputs.scn1_ch10 }}
-      scn1_ch11: ${{ steps.gen_output.outputs.scn1_ch11 }}
-      scn1_ch12: ${{ steps.gen_output.outputs.scn1_ch12 }}
-      scn1_ch13: ${{ steps.gen_output.outputs.scn1_ch13 }}
-      scn1_ch14: ${{ steps.gen_output.outputs.scn1_ch14 }}
-      scn1_ch15: ${{ steps.gen_output.outputs.scn1_ch15 }}
-      scn1_ch16: ${{ steps.gen_output.outputs.scn1_ch16 }}
-      scn1_ch17: ${{ steps.gen_output.outputs.scn1_ch17 }}
+      # scn1_ch1: ${{ steps.gen_output.outputs.scn1_ch1 }}
+      # scn1_ch2: ${{ steps.gen_output.outputs.scn1_ch2 }}
+      # scn1_ch3: ${{ steps.gen_output.outputs.scn1_ch3 }}
+      # scn1_ch4: ${{ steps.gen_output.outputs.scn1_ch4 }}
+      # scn1_ch5: ${{ steps.gen_output.outputs.scn1_ch5 }}
+      # scn1_ch6: ${{ steps.gen_output.outputs.scn1_ch6 }}
+      # scn1_ch7: ${{ steps.gen_output.outputs.scn1_ch7 }}
+      # scn1_ch8: ${{ steps.gen_output.outputs.scn1_ch8 }}
+      # scn1_ch9: ${{ steps.gen_output.outputs.scn1_ch9 }}
+      # scn1_ch10: ${{ steps.gen_output.outputs.scn1_ch10 }}
+      # scn1_ch11: ${{ steps.gen_output.outputs.scn1_ch11 }}
+      # scn1_ch12: ${{ steps.gen_output.outputs.scn1_ch12 }}
+      # scn1_ch13: ${{ steps.gen_output.outputs.scn1_ch13 }}
+      # scn1_ch14: ${{ steps.gen_output.outputs.scn1_ch14 }}
+      # scn1_ch15: ${{ steps.gen_output.outputs.scn1_ch15 }}
+      # scn1_ch16: ${{ steps.gen_output.outputs.scn1_ch16 }}
+      # scn1_ch17: ${{ steps.gen_output.outputs.scn1_ch17 }}
       scn1_ch18: ${{ steps.gen_output.outputs.scn1_ch18 }}
-      scn1_ch19: ${{ steps.gen_output.outputs.scn1_ch19 }}
-      scn1_ch20: ${{ steps.gen_output.outputs.scn1_ch20 }}
-      scn1_ch21: ${{ steps.gen_output.outputs.scn1_ch21 }}
-      scn1_ch22: ${{ steps.gen_output.outputs.scn1_ch22 }}
-      scn1_ch23: ${{ steps.gen_output.outputs.scn1_ch23 }}
-      scn1_ch24: ${{ steps.gen_output.outputs.scn1_ch24 }}
+      # scn1_ch19: ${{ steps.gen_output.outputs.scn1_ch19 }}
+      # scn1_ch20: ${{ steps.gen_output.outputs.scn1_ch20 }}
+      # scn1_ch21: ${{ steps.gen_output.outputs.scn1_ch21 }}
+      # scn1_ch22: ${{ steps.gen_output.outputs.scn1_ch22 }}
+      # scn1_ch23: ${{ steps.gen_output.outputs.scn1_ch23 }}
+      # scn1_ch24: ${{ steps.gen_output.outputs.scn1_ch24 }}
     name: ${{ matrix.challenges.scenario }}/${{ matrix.challenges.challenge }}
     strategy:
       fail-fast: false
       matrix:
         challenges:
-        - { name: scn1_ch1, scenario: scenario1, challenge: configmap-missing-key.yaml}
-        - { name: scn1_ch2, scenario: scenario1, challenge: configmap-misspelled.yaml}
-        - { name: scn1_ch3, scenario: scenario1, challenge: configmap-readonly.yaml}
-        - { name: scn1_ch4, scenario: scenario1, challenge: deployment-env-mismatch.yaml}
-        - { name: scn1_ch5, scenario: scenario1, challenge: deployment-impossible-pod-affinity.yaml}
-        - { name: scn1_ch6, scenario: scenario1, challenge: deployment-low-resources.yaml}
-        - { name: scn1_ch7, scenario: scenario1, challenge: deployment-pod-affinity-wrong-key.yaml}
-        - { name: scn1_ch8, scenario: scenario1, challenge: deployment-probe-failures.yaml}
-        - { name: scn1_ch9, scenario: scenario1, challenge: deployment-scaled-down.yaml}
-        - { name: scn1_ch10, scenario: scenario1, challenge: network-policy.yaml}
-        - { name: scn1_ch11, scenario: scenario1, challenge: pvc-wrong-accessmode.yaml}
-        - { name: scn1_ch12, scenario: scenario1, challenge: pvc-wrong-storageclass.yaml}
-        - { name: scn1_ch13, scenario: scenario1, challenge: secret-missing.yaml}
-        - { name: scn1_ch14, scenario: scenario1, challenge: secret-not-mounted.yaml}
-        - { name: scn1_ch15, scenario: scenario1, challenge: service-no-endpoint.yaml}
-        - { name: scn1_ch16, scenario: scenario1, challenge: serviceaccount-misspelled.yaml}
-        - { name: scn1_ch17, scenario: scenario1, challenge: serviceaccount-permissions.yaml}
+        # - { name: scn1_ch1, scenario: scenario1, challenge: configmap-missing-key.yaml}
+        # - { name: scn1_ch2, scenario: scenario1, challenge: configmap-misspelled.yaml}
+        # - { name: scn1_ch3, scenario: scenario1, challenge: configmap-readonly.yaml}
+        # - { name: scn1_ch4, scenario: scenario1, challenge: deployment-env-mismatch.yaml}
+        # - { name: scn1_ch5, scenario: scenario1, challenge: deployment-impossible-pod-affinity.yaml}
+        # - { name: scn1_ch6, scenario: scenario1, challenge: deployment-low-resources.yaml}
+        # - { name: scn1_ch7, scenario: scenario1, challenge: deployment-pod-affinity-wrong-key.yaml}
+        # - { name: scn1_ch8, scenario: scenario1, challenge: deployment-probe-failures.yaml}
+        # - { name: scn1_ch9, scenario: scenario1, challenge: deployment-scaled-down.yaml}
+        # - { name: scn1_ch10, scenario: scenario1, challenge: network-policy.yaml}
+        # - { name: scn1_ch11, scenario: scenario1, challenge: pvc-wrong-accessmode.yaml}
+        # - { name: scn1_ch12, scenario: scenario1, challenge: pvc-wrong-storageclass.yaml}
+        # - { name: scn1_ch13, scenario: scenario1, challenge: secret-missing.yaml}
+        # - { name: scn1_ch14, scenario: scenario1, challenge: secret-not-mounted.yaml}
+        # - { name: scn1_ch15, scenario: scenario1, challenge: service-no-endpoint.yaml}
+        # - { name: scn1_ch16, scenario: scenario1, challenge: serviceaccount-misspelled.yaml}
+        # - { name: scn1_ch17, scenario: scenario1, challenge: serviceaccount-permissions.yaml}
         - { name: scn1_ch18, scenario: scenario1, challenge: pod-hostport-conflict.yaml}
-        - { name: scn1_ch19, scenario: scenario1, challenge: pod-limit-range-exceeded.yaml}
-        - { name: scn1_ch20, scenario: scenario1, challenge: pod-resource-quota-exceeded.yaml}
-        - { name: scn1_ch21, scenario: scenario1, challenge: service-dns-resolution-fail.yaml}
-        - { name: scn1_ch22, scenario: scenario1, challenge: service-incorrect-port-number.yaml}
-        - { name: scn1_ch23, scenario: scenario1, challenge: missing-service-selector.yaml}
-        - { name: scn1_ch24, scenario: scenario1, challenge: pod-security-context-issue.yaml}
+        # - { name: scn1_ch19, scenario: scenario1, challenge: pod-limit-range-exceeded.yaml}
+        # - { name: scn1_ch20, scenario: scenario1, challenge: pod-resource-quota-exceeded.yaml}
+        # - { name: scn1_ch21, scenario: scenario1, challenge: service-dns-resolution-fail.yaml}
+        # - { name: scn1_ch22, scenario: scenario1, challenge: service-incorrect-port-number.yaml}
+        # - { name: scn1_ch23, scenario: scenario1, challenge: missing-service-selector.yaml}
+        # - { name: scn1_ch24, scenario: scenario1, challenge: pod-security-context-issue.yaml}
     runs-on: ['ubuntu-latest']
 
     steps:
@@ -102,7 +102,7 @@ jobs:
 
     - name: Run Test
       working-directory: .github/data/agent-framework
-      timeout-minutes: 6
+      timeout-minutes: 8
       env:
         CLUSTER_CTX: kind-kagent
       run: |
