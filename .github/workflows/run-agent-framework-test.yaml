@@ -1,4 +1,4 @@
-name: Run PE Test
+name: Run Kubernetes Agent Benchmark
 
 on:
   workflow_dispatch:
