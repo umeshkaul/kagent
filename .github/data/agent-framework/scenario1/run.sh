@@ -1,11 +1,8 @@
-source ./scripts/assert.sh
-# kind create cluster --name kagent
-# kubectl config rename-context kind-kind1 cluster1
 export CLUSTER_CTX=kind-kagent
 docker pull mysql:9.2.0 || true
 kind load docker-image mysql:9.2.0 --name kagent || true
 
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -86,7 +83,7 @@ EOF
 docker pull bitnami/neo4j:5.26.1 || true
 kind load docker-image bitnami/neo4j:5.26.1 --name kagent || true
 
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -144,7 +141,7 @@ EOF
 
 docker pull nicholasjackson/fake-service:v0.26.2 || true
 kind load docker-image nicholasjackson/fake-service:v0.26.2 --name kagent || true
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -204,7 +201,7 @@ spec:
           value: "Hello From backend (v1)!"
 EOF
 
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:
@@ -269,7 +266,7 @@ EOF
 docker pull node:23-alpine || true
 kind load docker-image node:23-alpine --name kagent || true
 
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -419,7 +416,7 @@ spec:
           name: backend-v3-code
 EOF
 
-kubectl apply --context ${CLUSTER_CTX} -f - <<EOF
+kubectl apply --context "${CLUSTER_CTX}" -f - <<EOF
 apiVersion: v1
 kind: Service
 metadata:

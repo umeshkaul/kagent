@@ -24,18 +24,6 @@ if ! command -v envsubst &> /dev/null; then
   fi
 fi
 
-make build-all
-make create-kind-cluster
-
-make build-cli-local
-sudo mv go/bin/kagent-local /usr/local/bin/kagent
-make kind-load-docker-images
-make helm-install
-
-# new terminal
-kubectl apply -f "${SCRIPT_DIR}/resources/agent.yaml"
-kubectl apply -f "${SCRIPT_DIR}/resources/tool-check.yaml"
-
 # Check if required environment variables are set
 if [ -z "${OPENAI_API_KEY}" ] || [ -z "${QDRANT_API_KEY}" ]; then
   echo "Error: Required environment variables are not set. Please set them before running this script."
@@ -45,6 +33,17 @@ if [ -z "${OPENAI_API_KEY}" ] || [ -z "${QDRANT_API_KEY}" ]; then
   exit 1
 fi
 
+make build-all
+make create-kind-cluster
+
+make build-cli-local
+sudo mv go/bin/kagent-local /usr/local/bin/kagent
+make kind-load-docker-images
+make helm-install
+
+kubectl apply -f "${SCRIPT_DIR}/resources/agent.yaml"
+kubectl apply -f "${SCRIPT_DIR}/resources/tool-check.yaml"
+kubectl apply -f "${SCRIPT_DIR}/resources/model.yaml"
+
 # Use environment variable substitution to create the final YAML and apply it
 envsubst < "${SCRIPT_DIR}/resources/tool-docs.template.yaml" | kubectl apply -f -
-

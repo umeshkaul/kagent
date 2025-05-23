@@ -103,7 +103,7 @@ function AgentPageContent({ isEditMode, agentId }: AgentPageContentProps) {
                 model: agentResponse.model,
                 name: agent.spec.modelConfig,
               });
-              
+
               // Set selected memories if they exist
               if (agent.spec.memory && Array.isArray(agent.spec.memory)) {
                 setSelectedMemories(agent.spec.memory);
@@ -232,129 +232,118 @@ function AgentPageContent({ isEditMode, agentId }: AgentPageContentProps) {
         <div className="max-w-6xl mx-auto">
           <h1 className="text-2xl font-bold mb-8">{isEditMode ? "Edit Agent" : "Create New Agent"}</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Basic Information & Memory */}
-            <div className="space-y-6">
-              {/* Basic Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                    <KagentLogo className="h-5 w-5" />
-                    Basic Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="text-base mb-2 block font-bold">Agent Name</label>
-                    <p className="text-xs mb-2 block text-muted-foreground">
-                      This is the name of the agent that will be displayed in the UI and used to identify the agent.
-                    </p>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      onBlur={() => validateField('name', name)}
-                      className={`${errors.name ? "border-red-500" : ""}`}
-                      placeholder="Enter agent name..."
-                      disabled={isSubmitting || isLoading || isEditMode}
-                    />
-                    {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  </div>
-
-                  <div>
-                    <label className="text-base mb-2 block font-bold">Description</label>
-                    <p className="text-xs mb-2 block text-muted-foreground">
-                      This is a description of the agent. It's for your reference only and it's not going to be used by the agent.
-                    </p>
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      onBlur={() => validateField('description', description)}
-                      className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
-                      placeholder="Describe your agent. This is for your reference only and it's not going to be used by the agent."
-                      disabled={isSubmitting || isLoading}
-                    />
-                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
-                  </div>
-
-                  <SystemPromptSection 
-                    value={systemPrompt} 
-                    onChange={(e) => setSystemPrompt(e.target.value)} 
-                    onBlur={() => validateField('systemPrompt', systemPrompt)}
-                    error={errors.systemPrompt} 
-                    disabled={isSubmitting || isLoading} 
-                  />
-
-                  <ModelSelectionSection 
-                    allModels={models} 
-                    selectedModel={selectedModel} 
-                    setSelectedModel={(model) => {
-                      setSelectedModel(model as Pick<ModelConfig, 'name' | 'model'>);
-                      validateField('model', model);
-                    }} 
-                    error={errors.model} 
-                    isSubmitting={isSubmitting || isLoading} 
-                    onBlur={() => validateField('model', selectedModel)}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Memory */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings2 className="h-5 w-5" />
-                    Memory
-                  </CardTitle>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                  <KagentLogo className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-base mb-2 block font-bold">Agent Name</label>
                   <p className="text-xs mb-2 block text-muted-foreground">
-                    The memories that the agent will use to answer the user's questions.
+                    This is the name of the agent that will be displayed in the UI and used to identify the agent.
                   </p>
-                </CardHeader>
-                <CardContent>
-                  <MemorySelectionSection
-                    availableMemories={availableMemories}
-                    selectedMemories={selectedMemories}
-                    onSelectionChange={setSelectedMemories}
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onBlur={() => validateField('name', name)}
+                    className={`${errors.name ? "border-red-500" : ""}`}
+                    placeholder="Enter agent name..."
+                    disabled={isSubmitting || isLoading || isEditMode}
+                  />
+                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                </div>
+
+                <div>
+                  <label className="text-base mb-2 block font-bold">Description</label>
+                  <p className="text-xs mb-2 block text-muted-foreground">
+                    This is a description of the agent. It's for your reference only and it's not going to be used by the agent.
+                  </p>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    onBlur={() => validateField('description', description)}
+                    className={`min-h-[100px] ${errors.description ? "border-red-500" : ""}`}
+                    placeholder="Describe your agent. This is for your reference only and it's not going to be used by the agent."
                     disabled={isSubmitting || isLoading}
                   />
-                </CardContent>
-              </Card>
-            </div>
+                  {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                </div>
 
-            {/* Right Column - Tools & Agents */}
-            <div className="lg:flex lg:flex-col">
-              <Card className="h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings2 className="h-5 w-5 text-yellow-500" />
-                    Tools & Agents
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1">
-                  <ToolsSection 
-                    allTools={tools} 
-                    selectedTools={selectedTools} 
-                    setSelectedTools={setSelectedTools} 
-                    isSubmitting={isSubmitting || isLoading} 
-                    onBlur={() => validateField('tools', selectedTools)}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                <SystemPromptSection
+                  value={systemPrompt}
+                  onChange={(e) => setSystemPrompt(e.target.value)}
+                  onBlur={() => validateField('systemPrompt', systemPrompt)}
+                  error={errors.systemPrompt}
+                  disabled={isSubmitting || isLoading}
+                />
 
-          <div className="mt-6 flex justify-end">
-            <Button className="bg-violet-500 hover:bg-violet-600" onClick={handleSaveAgent} disabled={isSubmitting || isLoading}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {isEditMode ? "Updating..." : "Creating..."}
-                </>
-              ) : isEditMode ? (
-                "Update Agent"
-              ) : (
-                "Create Agent"
-              )}
-            </Button>
+                <ModelSelectionSection
+                  allModels={models}
+                  selectedModel={selectedModel}
+                  setSelectedModel={(model) => {
+                    setSelectedModel(model as Pick<ModelConfig, 'name' | 'model'>);
+                    validateField('model', model);
+                  }}
+                  error={errors.model}
+                  isSubmitting={isSubmitting || isLoading}
+                  onBlur={() => validateField('model', selectedModel)}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5" />
+                  Memory
+                </CardTitle>
+                <p className="text-xs mb-2 block text-muted-foreground">
+                  The memories that the agent will use to answer the user's questions.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <MemorySelectionSection
+                  availableMemories={availableMemories}
+                  selectedMemories={selectedMemories}
+                  onSelectionChange={setSelectedMemories}
+                  disabled={isSubmitting || isLoading}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings2 className="h-5 w-5 text-yellow-500" />
+                  Tools & Agents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ToolsSection
+                  allTools={tools}
+                  selectedTools={selectedTools}
+                  setSelectedTools={setSelectedTools}
+                  isSubmitting={isSubmitting || isLoading}
+                  onBlur={() => validateField('tools', selectedTools)}
+                />
+              </CardContent>
+            </Card>
+            <div className="flex justify-end">
+              <Button className="bg-violet-500 hover:bg-violet-600" onClick={handleSaveAgent} disabled={isSubmitting || isLoading}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {isEditMode ? "Updating..." : "Creating..."}
+                  </>
+                ) : isEditMode ? (
+                  "Update Agent"
+                ) : (
+                  "Create Agent"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -375,10 +364,10 @@ export default function AgentPage() {
   const searchParams = useSearchParams();
   const isEditMode = searchParams.get("edit") === "true";
   const agentId = searchParams.get("id");
-  
+
   // Create a key based on the edit mode and agent ID
   const formKey = isEditMode ? `edit-${agentId}` : 'create';
-  
+
   return (
     <Suspense fallback={<LoadingState />}>
       <AgentPageContent key={formKey} isEditMode={isEditMode} agentId={agentId} />
