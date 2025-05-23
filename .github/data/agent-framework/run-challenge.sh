@@ -65,6 +65,13 @@ mkdir -p "${scenario_dir}/results"
 
 timeout --signal=INT 3m bash -c 'echo "$1" | kagent invoke --agent "k8s-agent" --task -' -- "$USER_PROMPT" > "${scenario_dir}/$NAME.thought.log" 2>&1
 
+TIMEOUT_STATUS=$?
+if [ $TIMEOUT_STATUS -eq 124 ]; then
+  log "Kagent invoke command timed out. Exiting immediately."
+  echo "TIMED OUT" >> "${scenario_dir}/results/$NAME.failure"
+  exit 1
+fi
+
 log "Testing cluster after fixing..."
 kubectl --context ${CLUSTER_CTX} get pods -A
 if mocha "${scenario_dir}/test.js" --timeout 10000; then
