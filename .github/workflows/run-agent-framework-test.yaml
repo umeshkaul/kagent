@@ -102,7 +102,7 @@ jobs:
 
     - name: Run Test
       working-directory: .github/data/agent-framework
-      timeout-minutes: 3
+      timeout-minutes: 6
       env:
         CLUSTER_CTX: kind-kagent
       run: |
@@ -133,7 +133,7 @@ jobs:
       with:
         name: ${{ matrix.challenges.scenario }}-${{ matrix.challenges.name }}-results
         path: .github/data/agent-framework/${{ matrix.challenges.scenario }}/results
-        retention-days: 1
+        retention-days: 3
         if-no-files-found: warn
 
   summarize-results:
