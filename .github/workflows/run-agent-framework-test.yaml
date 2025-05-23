@@ -127,6 +127,13 @@ jobs:
         job_outcome=$(echo '{}' | jq '. + {status: "${{ job.status }}"}' | jq --arg name "$NAME" '. + {name: $name}' | jq --arg description "$DESCRIPTION" '. + {description: $description}' | jq tostring)
         echo "${{ matrix.challenges.name }}=${job_outcome}" >> "$GITHUB_OUTPUT"
 
+    - name: Show Kagent output
+      working-directory: .github/data/agent-framework/${{ matrix.challenges.scenario }}
+      id: print_kagent_output
+      if: always()
+      run: |
+        cat results/*
+
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
