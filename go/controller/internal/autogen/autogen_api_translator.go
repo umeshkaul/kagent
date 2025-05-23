@@ -70,24 +70,12 @@ func (a *apiTranslator) TranslateToolServer(ctx context.Context, toolServer *v1a
 	}, nil
 }
 
-var aliasMap = map[string]string{
-	"npx": "bunx",
-	"npm": "bun",
-}
-
-func commandAlias(command string) string {
-	if alias, ok := aliasMap[command]; ok {
-		return alias
-	}
-	return command
-}
-
 func translateToolServerConfig(config v1alpha1.ToolServerConfig) (string, *api.ToolServerConfig, error) {
 	switch {
 	case config.Stdio != nil:
 		return "kagent.tool_servers.StdioMcpToolServer", &api.ToolServerConfig{
 			StdioMcpServerConfig: &api.StdioMcpServerConfig{
-				Command: commandAlias(config.Stdio.Command),
+				Command: config.Stdio.Command,
 				Args:    config.Stdio.Args,
 				Env:     config.Stdio.Env,
 			},
@@ -592,7 +580,7 @@ func (a *apiTranslator) translateBuiltinTool(
 		}
 	}
 	if toolNeedsOpenaiApiKey(tool.Name) {
-		if modelConfig.Spec.Provider != v1alpha1.OpenAI {
+		if (modelConfig.Spec.Provider != v1alpha1.OpenAI) && modelConfig.Spec.Provider != v1alpha1.AzureOpenAI {
 			return nil, fmt.Errorf("tool %s requires OpenAI API key, but model config is not OpenAI", tool.Name)
 		}
 		apiKey, err := a.getModelConfigApiKey(ctx, modelConfig)
@@ -837,6 +825,7 @@ func addOpenaiApiKeyToConfig(
 
 // createModelClientForProvider creates a model client component based on the model provider
 func (a *apiTranslator) createModelClientForProvider(ctx context.Context, modelConfig *v1alpha1.ModelConfig, stream bool) (*api.Component, error) {
+
 	switch modelConfig.Spec.Provider {
 	case v1alpha1.Anthropic:
 		apiKey, err := a.getModelConfigApiKey(ctx, modelConfig)
@@ -883,7 +872,7 @@ func (a *apiTranslator) createModelClientForProvider(ctx context.Context, modelC
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert Anthropic config: %w", err)
 		}
-
+		config.DefaultHeaders = modelConfig.Spec.DefaultHeaders
 		return &api.Component{
 			Provider:      "autogen_ext.models.anthropic.AnthropicChatCompletionClient",
 			ComponentType: "model",
@@ -933,7 +922,7 @@ func (a *apiTranslator) createModelClientForProvider(ctx context.Context, modelC
 				}
 			}
 		}
-
+		config.DefaultHeaders = modelConfig.Spec.DefaultHeaders
 		return &api.Component{
 			Provider:      "autogen_ext.models.openai.AzureOpenAIChatCompletionClient",
 			ComponentType: "model",
@@ -1005,6 +994,7 @@ func (a *apiTranslator) createModelClientForProvider(ctx context.Context, modelC
 			}
 		}
 
+		config.DefaultHeaders = modelConfig.Spec.DefaultHeaders
 		return &api.Component{
 			Provider:      "autogen_ext.models.openai.OpenAIChatCompletionClient",
 			ComponentType: "model",
@@ -1030,6 +1020,7 @@ func (a *apiTranslator) createModelClientForProvider(ctx context.Context, modelC
 			}
 		}
 
+		config.Headers = modelConfig.Spec.DefaultHeaders
 		return &api.Component{
 			Provider:      "autogen_ext.models.ollama.OllamaChatCompletionClient",
 			ComponentType: "model",
