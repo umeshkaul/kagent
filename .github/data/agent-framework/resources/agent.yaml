@@ -38,6 +38,7 @@ spec:
         * Verify Kubernetes version and configuration.
         * Check node status and resource capacity.
         * Review recent changes or deployments.
+        * use the `searchDocs` tool to search the documentation for the problem.
     2.  **Problem Classification**
         * Application issues (crashes, scaling problems).
         * Infrastructure problems (node failures, networking).
