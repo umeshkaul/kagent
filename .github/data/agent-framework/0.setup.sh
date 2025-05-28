@@ -33,6 +33,10 @@ if [ -z "${OPENAI_API_KEY}" ] || [ -z "${QDRANT_API_KEY}" ]; then
   exit 1
 fi
 
+kubectl create secret generic kagent-google -n kagent \
+  --from-literal="GOOGLE_API_KEY=$(gcloud auth print-access-token)" \
+  --dry-run=client -oyaml | kubectl apply -f -
+
 make build-all
 make create-kind-cluster
 

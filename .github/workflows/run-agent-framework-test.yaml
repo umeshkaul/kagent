@@ -66,6 +66,10 @@ jobs:
     runs-on: ['ubuntu-latest']
 
     steps:
+      
+    - uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: '${{ secrets.GCLOUD_JSON_KEY }}'
     - uses: actions/checkout@v4
     
     - name: Set up Docker Buildx
