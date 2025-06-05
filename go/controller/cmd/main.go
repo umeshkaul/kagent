@@ -89,6 +89,7 @@ func main() {
 	var httpServerAddr string
 	var watchNamespaces string
 	var a2aBaseUrl string
+	var databasePath string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", "0", "The address the metrics endpoint binds to. "+
 		"Use :8443 for HTTPS or :8080 for HTTP, or leave as 0 to disable the metrics service.")
@@ -114,6 +115,7 @@ func main() {
 	flag.StringVar(&defaultModelConfig.Namespace, "default-model-config-namespace", kagentNamespace, "The namespace of the default model config.")
 	flag.StringVar(&httpServerAddr, "http-server-address", ":8083", "The address the HTTP server binds to.")
 	flag.StringVar(&a2aBaseUrl, "a2a-base-url", "http://127.0.0.1:8083", "The base URL of the A2A Server endpoint, as advertised to clients.")
+	flag.StringVar(&databasePath, "database-path", "./kagent.db", "The path to the SQLite database file.")
 
 	flag.StringVar(&watchNamespaces, "watch-namespaces", "", "The namespaces to watch for .")
 
@@ -352,12 +354,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpServer := httpserver.NewHTTPServer(httpserver.ServerConfig{
+	httpServer, err := httpserver.NewHTTPServer(httpserver.ServerConfig{
 		BindAddr:      httpServerAddr,
 		AutogenClient: autogenClient,
 		KubeClient:    kubeClient,
 		A2AHandler:    a2aHandler,
+		DatabasePath:  databasePath,
 	})
+	if err != nil {
+		setupLog.Error(err, "unable to create HTTP server")
+		os.Exit(1)
+	}
 	if err := mgr.Add(httpServer); err != nil {
 		setupLog.Error(err, "unable to set up HTTP server")
 		os.Exit(1)

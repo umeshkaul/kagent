@@ -2,12 +2,14 @@ package httpserver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
+	"github.com/kagent-dev/kagent/go/controller/internal/database"
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver/handlers"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	"k8s.io/apimachinery/pkg/types"
@@ -43,6 +45,7 @@ type ServerConfig struct {
 	AutogenClient autogen_client.Client
 	KubeClient    client.Client
 	A2AHandler    a2a.A2AHandlerMux
+	DatabasePath  string // Path to SQLite database file
 }
 
 // HTTPServer is the structure that manages the HTTP server
@@ -51,15 +54,32 @@ type HTTPServer struct {
 	config     ServerConfig
 	router     *mux.Router
 	handlers   *handlers.Handlers
+	dbManager  *database.Manager
+	dbService  *database.Service
 }
 
 // NewHTTPServer creates a new HTTP server instance
-func NewHTTPServer(config ServerConfig) *HTTPServer {
-	return &HTTPServer{
-		config:   config,
-		router:   mux.NewRouter(),
-		handlers: handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig),
+func NewHTTPServer(config ServerConfig) (*HTTPServer, error) {
+	// Initialize database
+	dbManager, err := database.NewManager(config.DatabasePath)
+	if err != nil {
+		return nil, err
 	}
+
+	// Initialize database tables
+	if err := dbManager.Initialize(); err != nil {
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	dbService := database.NewService(dbManager)
+
+	return &HTTPServer{
+		config:    config,
+		router:    mux.NewRouter(),
+		handlers:  handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig, dbService),
+		dbManager: dbManager,
+		dbService: dbService,
+	}, nil
 }
 
 // Start initializes and starts the HTTP server
@@ -92,6 +112,10 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		if err := s.httpServer.Shutdown(shutdownCtx); err != nil {
 			log.Error(err, "Failed to properly shutdown HTTP server")
 		}
+		// Close database connection
+		if err := s.dbManager.Close(); err != nil {
+			log.Error(err, "Failed to close database connection")
+		}
 	}()
 
 	return nil
@@ -123,30 +147,33 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathModelConfig+"/{configName}", adaptHandler(s.handlers.ModelConfig.HandleDeleteModelConfig)).Methods(http.MethodDelete)
 	s.router.HandleFunc(APIPathModelConfig+"/{configName}", adaptHandler(s.handlers.ModelConfig.HandleUpdateModelConfig)).Methods(http.MethodPut)
 
-	// Sessions
-	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessions)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleCreateSession)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleGetSession)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/invoke", adaptHandler(s.handlers.Sessions.HandleSessionInvoke)).Methods(http.MethodPost)
+	// Sessions - using database handlers
+	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessionsDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleCreateSessionDB)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleGetSessionDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}/invoke", adaptHandler(s.handlers.Sessions.HandleSessionInvokeDB)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathSessions+"/{sessionID}/invoke/stream", adaptHandler(s.handlers.Sessions.HandleSessionInvokeStream)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/messages", adaptHandler(s.handlers.Sessions.HandleListSessionMessages)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleDeleteSession)).Methods(http.MethodDelete)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSession)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}/runs", adaptHandler(s.handlers.Sessions.HandleListSessionRunsDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleDeleteSessionDB)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSessionDB)).Methods(http.MethodPut)
 
-	// Tools
-	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListTools)).Methods(http.MethodGet)
+	// Tools - using database handlers
+	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListToolsDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleCreateToolDB)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleUpdateToolDB)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleDeleteToolDB)).Methods(http.MethodDelete)
 
 	// Tool Servers
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleListToolServers)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleCreateToolServer)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathToolServers+"/{toolServerName}", adaptHandler(s.handlers.ToolServers.HandleDeleteToolServer)).Methods(http.MethodDelete)
 
-	// Teams
-	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleListTeams)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleCreateTeam)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleUpdateTeam)).Methods(http.MethodPut)
-	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleGetTeam)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathTeams+"/{teamLabel}", adaptHandler(s.handlers.Teams.HandleDeleteTeam)).Methods(http.MethodDelete)
+	// Teams - using database handlers
+	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleListTeamsDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleCreateTeamDB)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleUpdateTeamDB)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleGetTeamDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleDeleteTeamDB)).Methods(http.MethodDelete)
 
 	// Agents
 	s.router.HandleFunc(APIPathAgents+"/{agentId}/invoke", adaptHandler(s.handlers.Invoke.HandleInvokeAgent)).Methods(http.MethodPost)
@@ -166,9 +193,9 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathMemories+"/{memoryName}", adaptHandler(s.handlers.Memory.HandleGetMemory)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathMemories+"/{memoryName}", adaptHandler(s.handlers.Memory.HandleUpdateMemory)).Methods(http.MethodPut)
 
-	// Feedback
-	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleCreateFeedback)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleListFeedback)).Methods(http.MethodGet)
+	// Feedback - using database handlers
+	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleCreateFeedbackDB)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleListFeedbackDB)).Methods(http.MethodGet)
 
 	// A2A
 	s.router.PathPrefix(APIPathA2A).Handler(s.config.A2AHandler)
