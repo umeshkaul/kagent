@@ -5,19 +5,20 @@ import (
 	"fmt"
 	"sync"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 type InMemoryAutogenClient struct {
 	mu sync.RWMutex
 
 	// Minimal storage for FetchTools functionality
-	toolsByServer map[int][]*autogen_client.Tool
+	toolsByServer map[string][]*api.Component
 }
 
 func NewInMemoryAutogenClient() *InMemoryAutogenClient {
 	return &InMemoryAutogenClient{
-		toolsByServer: make(map[int][]*autogen_client.Tool),
+		toolsByServer: make(map[string][]*api.Component),
 	}
 }
 
@@ -61,13 +62,13 @@ func (m *InMemoryAutogenClient) InvokeTaskStream(req *autogen_client.InvokeTaskR
 }
 
 // FetchTools implements the Client interface
-func (m *InMemoryAutogenClient) FetchTools(toolServer *autogen_client.ToolServer) ([]*autogen_client.Tool, error) {
+func (m *InMemoryAutogenClient) FetchTools(req *autogen_client.ToolServerRequest) ([]*api.Component, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	tools, exists := m.toolsByServer[toolServer.Id]
+	tools, exists := m.toolsByServer[req.Component.Label]
 	if !exists {
-		return []*autogen_client.Tool{}, nil
+		return []*api.Component{}, nil
 	}
 
 	return tools, nil
@@ -83,9 +84,9 @@ func (m *InMemoryAutogenClient) Validate(req *autogen_client.ValidationRequest) 
 }
 
 // Helper method to add tools for testing purposes (not part of the interface)
-func (m *InMemoryAutogenClient) AddToolsForServer(serverID int, tools []*autogen_client.Tool) {
+func (m *InMemoryAutogenClient) AddToolsForServer(serverLabel string, tools []*api.Component) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.toolsByServer[serverID] = tools
+	m.toolsByServer[serverLabel] = tools
 }

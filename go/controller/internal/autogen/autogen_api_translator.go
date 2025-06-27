@@ -10,7 +10,7 @@ import (
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/database"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,14 +37,14 @@ type ApiTranslator interface {
 	TranslateGroupChatForTeam(
 		ctx context.Context,
 		team *v1alpha1.Team,
-	) (*autogen_client.Team, error)
+	) (*database.Team, error)
 
 	TranslateGroupChatForAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-	) (*autogen_client.Team, error)
+	) (*database.Team, error)
 
-	TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*autogen_client.ToolServer, error)
+	TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*database.ToolServer, error)
 }
 
 type apiTranslator struct {
@@ -52,15 +52,15 @@ type apiTranslator struct {
 	defaultModelConfig types.NamespacedName
 }
 
-func (a *apiTranslator) TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*autogen_client.ToolServer, error) {
+func (a *apiTranslator) TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*database.ToolServer, error) {
 	// provder = "kagent.tool_servers.StdioMcpToolServer" || "kagent.tool_servers.SseMcpToolServer"
 	provider, toolServerConfig, err := a.translateToolServerConfig(ctx, toolServer.Spec.Config, toolServer.Namespace)
 	if err != nil {
 		return nil, err
 	}
 
-	return &autogen_client.ToolServer{
-		UserID: common.GetGlobalUserID(),
+	return &database.ToolServer{
+		Name: common.GetObjectRef(toolServer),
 		Component: api.Component{
 			Provider:      provider,
 			ComponentType: "tool_server",
@@ -263,7 +263,7 @@ func NewAutogenApiTranslator(
 	}
 }
 
-func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*autogen_client.Team, error) {
+func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*database.Team, error) {
 	stream := true
 	if agent.Spec.Stream != nil {
 		stream = *agent.Spec.Stream
@@ -277,7 +277,7 @@ func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v
 func (a *apiTranslator) TranslateGroupChatForTeam(
 	ctx context.Context,
 	team *v1alpha1.Team,
-) (*autogen_client.Team, error) {
+) (*database.Team, error) {
 	return a.translateGroupChatForTeam(ctx, team, defaultTeamOptions(), &tState{})
 }
 
@@ -317,7 +317,7 @@ func (a *apiTranslator) translateGroupChatForAgent(
 	agent *v1alpha1.Agent,
 	opts *teamOptions,
 	state *tState,
-) (*autogen_client.Team, error) {
+) (*database.Team, error) {
 	simpleTeam, err := a.simpleRoundRobinTeam(ctx, agent)
 	if err != nil {
 		return nil, err
@@ -331,7 +331,7 @@ func (a *apiTranslator) translateGroupChatForTeam(
 	team *v1alpha1.Team,
 	opts *teamOptions,
 	state *tState,
-) (*autogen_client.Team, error) {
+) (*database.Team, error) {
 	// get model config
 	roundRobinTeamConfig := team.Spec.RoundRobinTeamConfig
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
@@ -471,11 +471,8 @@ func (a *apiTranslator) translateGroupChatForTeam(
 
 	teamConfig.Label = common.GetObjectRef(team)
 
-	return &autogen_client.Team{
-		Component: teamConfig,
-		BaseObject: autogen_client.BaseObject{
-			UserID: common.GetGlobalUserID(), // always use global id
-		},
+	return &database.Team{
+		Component: *teamConfig,
 	}, nil
 }
 
@@ -610,7 +607,7 @@ func (a *apiTranslator) translateAssistantAgent(
 				Config: api.MustToConfig(&api.TeamToolConfig{
 					Name:        common.ConvertToPythonIdentifier(toolAgentRef),
 					Description: toolAgent.Spec.Description,
-					Team:        autogenTool.Component,
+					Team:        &autogenTool.Component,
 				}),
 			}
 

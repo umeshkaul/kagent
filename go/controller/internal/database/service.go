@@ -6,8 +6,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewClient(manager *Manager) *Client {
-	return &Client{
+func NewServiceWrapper(manager *Manager) *ServiceWrapper {
+	return &ServiceWrapper{
 		Team:         NewService[Team](manager),
 		Session:      NewService[Session](manager),
 		Run:          NewService[Run](manager),
@@ -25,7 +25,7 @@ type Model interface {
 	TableName() string
 }
 
-type Client struct {
+type ServiceWrapper struct {
 	Team         *Service[Team]
 	Session      *Service[Session]
 	Run          *Service[Run]
@@ -48,18 +48,35 @@ func NewService[T Model](manager *Manager) *Service[T] {
 	return &Service[T]{db: manager.db}
 }
 
-func (s *Service[T]) List(userID string) ([]T, error) {
+type Clause struct {
+	Key   string
+	Value interface{}
+}
+
+func (s *Service[T]) List(clauses ...Clause) ([]T, error) {
 	var models []T
-	err := s.db.Where("user_id = ?", userID).Order("created_at DESC").Find(&models).Error
+	query := s.db
+
+	for _, clause := range clauses {
+		query = query.Where(fmt.Sprintf("%s = ?", clause.Key), clause.Value)
+	}
+
+	err := query.Order("created_at DESC").Find(&models).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to list models: %w", err)
 	}
 	return models, nil
 }
 
-func (s *Service[T]) Get(id uint, userID string) (*T, error) {
+func (s *Service[T]) Get(clauses ...Clause) (*T, error) {
 	var model T
-	err := s.db.Where("id = ? AND user_id = ?", id, userID).First(&model).Error
+	query := s.db
+
+	for _, clause := range clauses {
+		query = query.Where(fmt.Sprintf("%s = ?", clause.Key), clause.Value)
+	}
+
+	err := query.First(&model).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get model: %w", err)
 	}
@@ -82,11 +99,29 @@ func (s *Service[T]) Update(model *T) error {
 	return nil
 }
 
-func (s *Service[T]) Delete(id uint, userID string) error {
+func (s *Service[T]) Delete(clauses ...Clause) error {
 	t := new(T)
-	result := s.db.Where("id = ? AND user_id = ?", id, userID).Delete(t)
+	query := s.db
+
+	for _, clause := range clauses {
+		query = query.Where(fmt.Sprintf("%s = ?", clause.Key), clause.Value)
+	}
+
+	result := query.Delete(t)
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete model: %w", result.Error)
 	}
 	return nil
+}
+
+// BuildWhereClause is deprecated, use individual Where clauses instead
+func BuildWhereClause(clauses ...Clause) string {
+	clausesStr := ""
+	for idx, clause := range clauses {
+		if idx > 0 {
+			clausesStr += " AND "
+		}
+		clausesStr += fmt.Sprintf("%s = %v", clause.Key, clause.Value)
+	}
+	return clausesStr
 }

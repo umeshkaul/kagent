@@ -29,11 +29,11 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
-	"github.com/kagent-dev/kagent/go/controller/internal/utils/syncutils"
+	"github.com/kagent-dev/kagent/go/controller/internal/database"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver"
 	utils_internal "github.com/kagent-dev/kagent/go/controller/internal/utils"
@@ -243,13 +243,25 @@ func main() {
 		// LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to create manager")
 		os.Exit(1)
 	}
 
-	// TODO(ilackarms): aliases for builtin autogen tools
-	builtinTools := syncutils.NewAtomicMap[string, string]()
-	builtinTools.Set("k8s-get-pod", "k8s.get_pod")
+	// Initialize database
+	dbManager, err := database.NewManager(databasePath)
+	if err != nil {
+		setupLog.Error(err, "unable to initialize database")
+		os.Exit(1)
+	}
+
+	// Initialize database tables
+	if err := dbManager.Initialize(); err != nil {
+		setupLog.Error(err, "unable to initialize database")
+		os.Exit(1)
+	}
+
+	dbService := database.NewServiceWrapper(dbManager)
+	dbClient := database.NewClient(dbService)
 
 	autogenClient := autogen_client.New(
 		autogenStudioBaseURL,
@@ -274,12 +286,14 @@ func main() {
 		autogenClient,
 		a2aHandler,
 		a2aBaseUrl+httpserver.APIPathA2A,
+		dbClient,
 	)
 
 	autogenReconciler := autogen.NewAutogenReconciler(
 		apiTranslator,
 		kubeClient,
 		autogenClient,
+		dbClient,
 		defaultModelConfig,
 		a2aReconciler,
 	)
@@ -364,7 +378,7 @@ func main() {
 		KubeClient:        kubeClient,
 		A2AHandler:        a2aHandler,
 		WatchedNamespaces: watchNamespacesList,
-		DatabasePath:      databasePath,
+		DbClient:          dbClient,
 	})
 	if err := mgr.Add(httpServer); err != nil {
 		setupLog.Error(err, "unable to set up HTTP server")

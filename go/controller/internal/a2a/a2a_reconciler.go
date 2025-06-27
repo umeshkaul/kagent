@@ -3,8 +3,9 @@ package a2a
 import (
 	"context"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/database"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -35,9 +36,10 @@ func NewAutogenReconciler(
 	autogenClient autogen_client.Client,
 	a2aHandler A2AHandlerMux,
 	a2aBaseUrl string,
+	dbService database.Client,
 ) A2AReconciler {
 	return &a2aReconciler{
-		a2aTranslator: NewAutogenA2ATranslator(a2aBaseUrl, autogenClient),
+		a2aTranslator: NewAutogenA2ATranslator(a2aBaseUrl, autogenClient, dbService),
 		autogenClient: autogenClient,
 		a2aHandler:    a2aHandler,
 	}

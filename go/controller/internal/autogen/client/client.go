@@ -22,7 +22,7 @@ type Client interface {
 	GetVersion(ctx context.Context) (string, error)
 	InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error)
 	InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, error)
-	FetchTools(toolServer *ToolServer) ([]*Tool, error)
+	FetchTools(req *ToolServerRequest) ([]*api.Component, error)
 	Validate(req *ValidationRequest) (*ValidationResponse, error)
 }
 
@@ -156,9 +156,17 @@ func (c *client) InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, err
 	return ch, nil
 }
 
-func (c *client) FetchTools(toolServer *ToolServer) ([]*Tool, error) {
-	var tools []*Tool
-	err := c.doRequest(context.Background(), "GET", fmt.Sprintf("/toolservers/%d/tools", toolServer.Id), nil, &tools)
+type ToolServerRequest struct {
+	Component *api.Component `json:"component"`
+}
+
+func (c *client) FetchTools(req *ToolServerRequest) ([]*api.Component, error) {
+	var tools []*api.Component
+	err := c.doRequest(context.Background(), "POST", "/toolservers/refresh", req, &tools)
+	if err != nil {
+		return nil, err
+	}
+
 	return tools, err
 }
 

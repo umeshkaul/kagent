@@ -2,13 +2,12 @@ package httpserver
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/internal/database"
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver/handlers"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
@@ -47,7 +46,7 @@ type ServerConfig struct {
 	KubeClient        client.Client
 	A2AHandler        a2a.A2AHandlerMux
 	WatchedNamespaces []string
-	DatabasePath      string // Path to SQLite database file
+	DbClient          database.Client
 }
 
 // HTTPServer is the structure that manages the HTTP server
@@ -57,30 +56,17 @@ type HTTPServer struct {
 	router     *mux.Router
 	handlers   *handlers.Handlers
 	dbManager  *database.Manager
-	dbService  *database.Client
+	dbClient   database.Client
 }
 
 // NewHTTPServer creates a new HTTP server instance
 func NewHTTPServer(config ServerConfig) (*HTTPServer, error) {
 	// Initialize database
-	dbManager, err := database.NewManager(config.DatabasePath)
-	if err != nil {
-		return nil, err
-	}
-
-	// Initialize database tables
-	if err := dbManager.Initialize(); err != nil {
-		return nil, fmt.Errorf("failed to initialize database: %w", err)
-	}
-
-	dbService := database.NewClient(dbManager)
 
 	return &HTTPServer{
-		config:    config,
-		router:    mux.NewRouter(),
-		handlers:  handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig, dbService, config.WatchedNamespaces),
-		dbManager: dbManager,
-		dbService: dbService,
+		config:   config,
+		router:   mux.NewRouter(),
+		handlers: handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig, config.DbClient, config.WatchedNamespaces),
 	}, nil
 }
 

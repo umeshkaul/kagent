@@ -20,11 +20,13 @@ import (
 	"context"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
+	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	v1 "k8s.io/api/core/v1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -47,6 +49,9 @@ func (r *AutogenSecretReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 // SetupWithManager sets up the controller with the Manager.
 func (r *AutogenSecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{
+			NeedLeaderElection: common.MakePtr(true),
+		}).
 		For(&v1.Secret{}).
 		Named("autogenapikeysecret").
 		Complete(r)

@@ -20,10 +20,12 @@ import (
 	"context"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
+	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	agentv1alpha1 "github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
@@ -48,6 +50,9 @@ func (r *AutogenModelConfigReconciler) Reconcile(ctx context.Context, req ctrl.R
 // SetupWithManager sets up the controller with the Manager.
 func (r *AutogenModelConfigReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
+		WithOptions(controller.Options{
+			NeedLeaderElection: common.MakePtr(true),
+		}).
 		For(&agentv1alpha1.ModelConfig{}).
 		Named("autogenmodelconfig").
 		Complete(r)

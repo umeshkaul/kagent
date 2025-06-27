@@ -34,7 +34,7 @@ func (h *SessionsHandler) HandleListSessionsDB(w ErrorResponseWriter, r *http.Re
 	log = log.WithValues("userID", userID)
 
 	log.V(1).Info("Listing sessions from database")
-	sessions, err := h.DatabaseService.Session.List(userID)
+	sessions, err := h.DatabaseService.ListSessions(userID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to list sessions", err))
 		return

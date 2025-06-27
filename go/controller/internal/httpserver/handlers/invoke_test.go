@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
-	"github.com/kagent-dev/kagent/go/autogen/client/fake"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/client/fake"
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver/handlers"
 )
 

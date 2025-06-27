@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/database"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	"trpc.group/trpc-go/trpc-a2a-go/server"
 )
@@ -24,6 +25,7 @@ type AutogenA2ATranslator interface {
 type autogenA2ATranslator struct {
 	a2aBaseUrl    string
 	autogenClient autogen_client.Client
+	dbService     database.Client
 }
 
 var _ AutogenA2ATranslator = &autogenA2ATranslator{}
@@ -31,10 +33,12 @@ var _ AutogenA2ATranslator = &autogenA2ATranslator{}
 func NewAutogenA2ATranslator(
 	a2aBaseUrl string,
 	autogenClient autogen_client.Client,
+	dbService database.Client,
 ) AutogenA2ATranslator {
 	return &autogenA2ATranslator{
 		a2aBaseUrl:    a2aBaseUrl,
 		autogenClient: autogenClient,
+		dbService:     dbService,
 	}
 }
 
@@ -103,13 +107,22 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 	return func(ctx context.Context, task string, sessionID *string) (string, error) {
 		var taskResult *autogen_client.TaskResult
 		if sessionID != nil && *sessionID != "" {
-			session, err := a.autogenClient.GetSession(*sessionID, common.GetGlobalUserID())
+			session, err := a.dbService.Session.Get(database.Clause{
+				Key:   "user_id",
+				Value: common.GetGlobalUserID(),
+			}, database.Clause{
+				Key:   "name",
+				Value: *sessionID,
+			})
+			if err != nil {
+				return "", fmt.Errorf("failed to get session: %w", err)
+			}
 			if err != nil {
 				if errors.Is(err, autogen_client.NotFoundError) {
-					session, err = a.autogenClient.CreateSession(&autogen_client.CreateSession{
-						Name:   *sessionID,
-						UserID: common.GetGlobalUserID(),
-					})
+					session = &database.Session{
+						Name: *sessionID,
+					}
+					err := a.dbService.Session.Create(session)
 					if err != nil {
 						return "", fmt.Errorf("failed to create session: %w", err)
 					}
@@ -117,7 +130,7 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 					return "", fmt.Errorf("failed to get session: %w", err)
 				}
 			}
-			resp, err := a.autogenClient.InvokeSession(session.ID, common.GetGlobalUserID(), &autogen_client.InvokeRequest{
+			resp, err := a.autogenClient.InvokeTask(session.ID, common.GetGlobalUserID(), &autogen_client.InvokeRequest{
 				Task:       task,
 				TeamConfig: autogenTeam.Component,
 			})
