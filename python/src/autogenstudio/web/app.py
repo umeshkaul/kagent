@@ -16,14 +16,10 @@ from .config import settings
 from .deps import cleanup_managers, init_auth_manager, init_managers, register_auth_dependencies
 from .initialization import AppInitializer
 from .routes import (
-    feedback,
     invoke,
     models,
-    runs,
     sessions,
-    teams,
     tool_servers,
-    tools,
     validation,
 )
 
@@ -101,30 +97,9 @@ api.include_router(
 )
 
 api.include_router(
-    runs.router,
-    prefix="/runs",
-    tags=["runs"],
-    responses={404: {"description": "Not found"}},
-)
-
-api.include_router(
-    teams.router,
-    prefix="/teams",
-    tags=["teams"],
-    responses={404: {"description": "Not found"}},
-)
-
-api.include_router(
     validation.router,
     prefix="/validate",
     tags=["validation"],
-    responses={404: {"description": "Not found"}},
-)
-
-api.include_router(
-    tools.router,
-    prefix="/tools",
-    tags=["tools"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -146,13 +121,6 @@ api.include_router(
     invoke.router,
     prefix="/invoke",
     tags=["invoke"],
-    responses={404: {"description": "Not found"}},
-)
-
-api.include_router(
-    feedback.router,
-    prefix="/feedback",
-    tags=["feedback"],
     responses={404: {"description": "Not found"}},
 )
 
