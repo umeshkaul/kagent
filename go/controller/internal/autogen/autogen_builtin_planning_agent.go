@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
 )
 
 // embed planning-agent-system-prompt.txt

@@ -358,7 +358,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpServer := httpserver.NewHTTPServer(httpserver.ServerConfig{
+	httpServer, err := httpserver.NewHTTPServer(httpserver.ServerConfig{
 		BindAddr:          httpServerAddr,
 		AutogenClient:     autogenClient,
 		KubeClient:        kubeClient,
@@ -366,10 +366,6 @@ func main() {
 		WatchedNamespaces: watchNamespacesList,
 		DatabasePath:      databasePath,
 	})
-	if err != nil {
-		setupLog.Error(err, "unable to create HTTP server")
-		os.Exit(1)
-	}
 	if err := mgr.Add(httpServer); err != nil {
 		setupLog.Error(err, "unable to set up HTTP server")
 		os.Exit(1)

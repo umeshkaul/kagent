@@ -57,7 +57,7 @@ type HTTPServer struct {
 	router     *mux.Router
 	handlers   *handlers.Handlers
 	dbManager  *database.Manager
-	dbService  *database.Service
+	dbService  *database.Client
 }
 
 // NewHTTPServer creates a new HTTP server instance
@@ -73,12 +73,12 @@ func NewHTTPServer(config ServerConfig) (*HTTPServer, error) {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
-	dbService := database.NewService(dbManager)
+	dbService := database.NewClient(dbManager)
 
 	return &HTTPServer{
 		config:    config,
 		router:    mux.NewRouter(),
-		handlers:  handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig, dbService),
+		handlers:  handlers.NewHandlers(config.KubeClient, config.AutogenClient, defaultModelConfig, dbService, config.WatchedNamespaces),
 		dbManager: dbManager,
 		dbService: dbService,
 	}, nil

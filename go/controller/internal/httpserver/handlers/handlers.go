@@ -29,11 +29,11 @@ type Base struct {
 	KubeClient         client.Client
 	AutogenClient      autogen_client.Client
 	DefaultModelConfig types.NamespacedName
-	DatabaseService    *database.Service
+	DatabaseService    *database.Client
 }
 
 // NewHandlers creates a new Handlers instance with all handler components
-func NewHandlers(kubeClient client.Client, autogenClient autogen_client.Client, defaultModelConfig types.NamespacedName, dbService *database.Service, watchedNamespaces []string) *Handlers {
+func NewHandlers(kubeClient client.Client, autogenClient autogen_client.Client, defaultModelConfig types.NamespacedName, dbService *database.Client, watchedNamespaces []string) *Handlers {
 	base := &Base{
 		KubeClient:         kubeClient,
 		AutogenClient:      autogenClient,

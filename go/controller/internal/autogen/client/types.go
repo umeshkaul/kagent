@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
 )
 
 type BaseObject struct {

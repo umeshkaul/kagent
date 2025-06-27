@@ -1,17 +1,45 @@
 package api
 
 import (
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 )
 
+// JSONMap is a custom type for handling JSON columns in GORM
+type JSONMap map[string]interface{}
+
+// Scan implements the sql.Scanner interface
+func (j *JSONMap) Scan(value interface{}) error {
+	if value == nil {
+		*j = make(JSONMap)
+		return nil
+	}
+
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan JSONMap: value is not []byte")
+	}
+
+	return json.Unmarshal(bytes, j)
+}
+
+// Value implements the driver.Valuer interface
+func (j JSONMap) Value() (driver.Value, error) {
+	if j == nil {
+		return nil, nil
+	}
+	return json.Marshal(j)
+}
+
 type Component struct {
-	Provider         string                 `json:"provider"`
-	ComponentType    string                 `json:"component_type"`
-	Version          int                    `json:"version"`
-	ComponentVersion int                    `json:"component_version"`
-	Description      string                 `json:"description"`
-	Label            string                 `json:"label"`
-	Config           map[string]interface{} `json:"config"`
+	Provider         string  `json:"provider"`
+	ComponentType    string  `json:"component_type"`
+	Version          int     `json:"version"`
+	ComponentVersion int     `json:"component_version"`
+	Description      string  `json:"description"`
+	Label            string  `json:"label"`
+	Config           JSONMap `gorm:"type:json" json:"config"`
 }
 
 func (c *Component) ToConfig() (map[string]interface{}, error) {

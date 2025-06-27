@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
 )
 
 type client struct {
@@ -19,42 +19,10 @@ type client struct {
 }
 
 type Client interface {
-	CreateFeedback(feedback *FeedbackSubmission) error
-	CreateRun(req *CreateRunRequest) (*CreateRunResult, error)
-	CreateSession(session *CreateSession) (*Session, error)
-	CreateTeam(team *Team) error
-	CreateToolServer(toolServer *ToolServer, userID string) (*ToolServer, error)
-	DeleteRun(runID uuid.UUID) error
-	DeleteSession(sessionID int, userID string) error
-	DeleteTeam(teamID int, userID string) error
-	DeleteToolServer(serverID *int, userID string) error
-	GetRun(runID int) (*Run, error)
-	GetRunMessages(runID uuid.UUID) ([]*RunMessage, error)
-	GetSession(sessionLabel string, userID string) (*Session, error)
-	GetSessionById(sessionID int, userID string) (*Session, error)
-	GetTeam(teamLabel string, userID string) (*Team, error)
-	GetTeamByID(teamID int, userID string) (*Team, error)
-	GetTool(provider string, userID string) (*Tool, error)
-	GetToolServer(serverID int, userID string) (*ToolServer, error)
-	GetToolServerByLabel(toolServerLabel string, userID string) (*ToolServer, error)
 	GetVersion(ctx context.Context) (string, error)
-	InvokeSession(sessionID int, userID string, request *InvokeRequest) (*TeamResult, error)
-	InvokeSessionStream(sessionID int, userID string, request *InvokeRequest) (<-chan *SseEvent, error)
 	InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error)
 	InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, error)
-	ListFeedback(userID string) ([]*FeedbackSubmission, error)
-	ListRuns(userID string) ([]*Run, error)
-	ListSessionRuns(sessionID int, userID string) ([]*Run, error)
-	ListSessions(userID string) ([]*Session, error)
-	ListSupportedModels() (*ProviderModels, error)
-	ListTeams(userID string) ([]*Team, error)
-	ListToolServers(userID string) ([]*ToolServer, error)
-	ListTools(userID string) ([]*Tool, error)
-	ListToolsForServer(serverID *int, userID string) ([]*Tool, error)
-	RefreshToolServer(serverID int, userID string) error
-	RefreshTools(serverID *int, userID string) error
-	UpdateSession(sessionID int, userID string, session *Session) (*Session, error)
-	UpdateToolServer(server *ToolServer, userID string) error
+	FetchTools(toolServer *ToolServer) ([]*Tool, error)
 	Validate(req *ValidationRequest) (*ValidationResponse, error)
 }
 
@@ -160,4 +128,82 @@ func (c *client) doRequest(ctx context.Context, method, path string, body interf
 	}
 
 	return nil
+}
+
+type InvokeTaskRequest struct {
+	Task       string         `json:"task"`
+	TeamConfig *api.Component `json:"team_config"`
+}
+
+type InvokeTaskResult struct {
+	Duration   float64    `json:"duration"`
+	TaskResult TaskResult `json:"task_result"`
+	Usage      string     `json:"usage"`
+}
+
+func (c *client) InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error) {
+	var invoke InvokeTaskResult
+	err := c.doRequest(context.Background(), "POST", "/invoke", req, &invoke)
+	return &invoke, err
+}
+
+func (c *client) InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, error) {
+	resp, err := c.startRequest(context.Background(), "POST", "/invoke/stream", req)
+	if err != nil {
+		return nil, err
+	}
+	ch := streamSseResponse(resp.Body)
+	return ch, nil
+}
+
+func (c *client) FetchTools(toolServer *ToolServer) ([]*Tool, error) {
+	var tools []*Tool
+	err := c.doRequest(context.Background(), "GET", fmt.Sprintf("/toolservers/%d/tools", toolServer.Id), nil, &tools)
+	return tools, err
+}
+
+type ValidationRequest struct {
+	Component *api.Component `json:"component"`
+}
+
+type ValidationError struct {
+	Field      string  `json:"field"`
+	Error      string  `json:"error"`
+	Suggestion *string `json:"suggestion,omitempty"`
+}
+
+type ValidationResponse struct {
+	IsValid  bool               `json:"is_valid"`
+	Errors   []*ValidationError `json:"errors"`
+	Warnings []*ValidationError `json:"warnings"`
+}
+
+func (r ValidationResponse) ErrorMsg() string {
+	var msg string
+	for _, e := range r.Errors {
+		msg += fmt.Sprintf("Error: %s\n [%s]\n", e.Error, e.Field)
+		if e.Suggestion != nil {
+			msg += fmt.Sprintf("Suggestion: %s\n", *e.Suggestion)
+		}
+	}
+	for _, w := range r.Warnings {
+		msg += fmt.Sprintf("Warning: %s\n [%s]\n", w.Error, w.Field)
+		if w.Suggestion != nil {
+			msg += fmt.Sprintf("Suggestion: %s\n", *w.Suggestion)
+		}
+	}
+
+	return msg
+}
+
+func (c *client) Validate(req *ValidationRequest) (*ValidationResponse, error) {
+	var resp ValidationResponse
+	err := c.doRequest(context.Background(), "POST", "/validate", req, &resp)
+	return &resp, err
+}
+
+func (c *client) ListSupportedModels() (*ProviderModels, error) {
+	var models ProviderModels
+	err := c.doRequest(context.Background(), "GET", "/models", nil, &models)
+	return &models, err
 }

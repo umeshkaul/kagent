@@ -8,8 +8,8 @@ import (
 
 	"github.com/abiosoft/ishell/v2"
 	"github.com/abiosoft/readline"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 	"github.com/spf13/pflag"
 )
 

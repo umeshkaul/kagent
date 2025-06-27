@@ -34,7 +34,7 @@ func (h *SessionsHandler) HandleListSessionsDB(w ErrorResponseWriter, r *http.Re
 	log = log.WithValues("userID", userID)
 
 	log.V(1).Info("Listing sessions from database")
-	sessions, err := h.DatabaseService.ListSessions(userID)
+	sessions, err := h.DatabaseService.Session.List(userID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to list sessions", err))
 		return
@@ -82,7 +82,7 @@ func (h *SessionsHandler) HandleCreateSessionDB(w ErrorResponseWriter, r *http.R
 		"teamID", sessionRequest.TeamID,
 		"name", sessionRequest.Name)
 
-	if err := h.DatabaseService.CreateSession(session); err != nil {
+	if err := h.DatabaseService.Session.Create(session); err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to create session", err))
 		return
 	}
@@ -114,7 +114,7 @@ func (h *SessionsHandler) HandleGetSessionDB(w ErrorResponseWriter, r *http.Requ
 	log = log.WithValues("userID", userID)
 
 	log.V(1).Info("Getting session from database")
-	session, err := h.DatabaseService.GetSession(uint(sessionID), userID)
+	session, err := h.DatabaseService.Session.Get(uint(sessionID), userID)
 	if err != nil {
 		w.RespondWithError(errors.NewNotFoundError("Session not found", err))
 		return
@@ -152,7 +152,7 @@ func (h *SessionsHandler) HandleUpdateSessionDB(w ErrorResponseWriter, r *http.R
 	}
 
 	// Get existing session
-	session, err := h.DatabaseService.GetSession(uint(sessionID), userID)
+	session, err := h.DatabaseService.Session.Get(uint(sessionID), userID)
 	if err != nil {
 		w.RespondWithError(errors.NewNotFoundError("Session not found", err))
 		return
@@ -166,7 +166,7 @@ func (h *SessionsHandler) HandleUpdateSessionDB(w ErrorResponseWriter, r *http.R
 		session.TeamState = database.JSONMap(sessionRequest.TeamState)
 	}
 
-	if err := h.DatabaseService.UpdateSession(session); err != nil {
+	if err := h.DatabaseService.Session.Update(session); err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to update session", err))
 		return
 	}
@@ -197,7 +197,7 @@ func (h *SessionsHandler) HandleDeleteSessionDB(w ErrorResponseWriter, r *http.R
 	}
 	log = log.WithValues("sessionID", sessionID)
 
-	if err := h.DatabaseService.DeleteSession(uint(sessionID), userID); err != nil {
+	if err := h.DatabaseService.Session.Delete(uint(sessionID), userID); err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to delete session", err))
 		return
 	}
@@ -228,7 +228,7 @@ func (h *SessionsHandler) HandleListSessionRunsDB(w ErrorResponseWriter, r *http
 	log = log.WithValues("userID", userID)
 
 	log.V(1).Info("Getting session runs from database")
-	runs, err := h.DatabaseService.GetSessionRuns(uint(sessionID), userID)
+	runs, err := h.DatabaseService.Run.List(uint(sessionID), userID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to get session runs", err))
 		return
@@ -286,7 +286,7 @@ func (h *SessionsHandler) HandleSessionInvokeDB(w ErrorResponseWriter, r *http.R
 	}
 
 	// Verify session exists and belongs to user
-	session, err := h.DatabaseService.GetSession(uint(sessionID), userID)
+	session, err := h.DatabaseService.Session.Get(uint(sessionID), userID)
 	if err != nil {
 		w.RespondWithError(errors.NewNotFoundError("Session not found", err))
 		return
