@@ -95,7 +95,7 @@ service:
   ports:
     ui:
       port: 80
-      targetPort: 80
+      targetPort: 8080
     app:
       port: 8081
       targetPort: 8081
@@ -163,5 +163,11 @@ argo-rollouts-agent:
 helm-agent:
   enabled: true
 
-cilium-crd-agent:
+cilium-policy-agent:
+  enabled: true
+
+cilium-manager-agent:
+  enabled: true
+
+cilium-debug-agent:
   enabled: true

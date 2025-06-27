@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 
+	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/controller/internal/httpserver/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -36,13 +36,23 @@ func (h *SessionsHandler) HandleSessionInvokeStream(w ErrorResponseWriter, r *ht
 	}
 	log = log.WithValues("userID", userID)
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to read request body", err))
+	var invokeRequest *autogen_client.InvokeRequest
+	if err := DecodeJSONBody(r, &invokeRequest); err != nil {
+		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
 	}
 
-	ch, err := h.AutogenClient.InvokeSessionStream(sessionID, userID, string(body))
+	if invokeRequest.Task == "" {
+		w.RespondWithError(errors.NewBadRequestError("task is required", nil))
+		return
+	}
+
+	if invokeRequest.TeamConfig == nil {
+		w.RespondWithError(errors.NewBadRequestError("team_config is required", nil))
+		return
+	}
+
+	ch, err := h.AutogenClient.InvokeSessionStream(sessionID, userID, invokeRequest)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to invoke session", err))
 		return

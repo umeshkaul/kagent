@@ -30,6 +30,7 @@ const (
 	APIPathProviders   = "/api/providers"
 	APIPathModels      = "/api/models"
 	APIPathMemories    = "/api/memories"
+	APIPathNamespaces  = "/api/namespaces"
 	APIPathA2A         = "/api/a2a"
 	APIPathFeedback    = "/api/feedback"
 )
@@ -41,11 +42,12 @@ var defaultModelConfig = types.NamespacedName{
 
 // ServerConfig holds the configuration for the HTTP server
 type ServerConfig struct {
-	BindAddr      string
-	AutogenClient autogen_client.Client
-	KubeClient    client.Client
-	A2AHandler    a2a.A2AHandlerMux
-	DatabasePath  string // Path to SQLite database file
+	BindAddr          string
+	AutogenClient     autogen_client.Client
+	KubeClient        client.Client
+	A2AHandler        a2a.A2AHandlerMux
+	WatchedNamespaces []string
+	DatabasePath      string // Path to SQLite database file
 }
 
 // HTTPServer is the structure that manages the HTTP server
@@ -142,10 +144,10 @@ func (s *HTTPServer) setupRoutes() {
 
 	// Model configs
 	s.router.HandleFunc(APIPathModelConfig, adaptHandler(s.handlers.ModelConfig.HandleListModelConfigs)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathModelConfig+"/{configName}", adaptHandler(s.handlers.ModelConfig.HandleGetModelConfig)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathModelConfig+"/{namespace}/{configName}", adaptHandler(s.handlers.ModelConfig.HandleGetModelConfig)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathModelConfig, adaptHandler(s.handlers.ModelConfig.HandleCreateModelConfig)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathModelConfig+"/{configName}", adaptHandler(s.handlers.ModelConfig.HandleDeleteModelConfig)).Methods(http.MethodDelete)
-	s.router.HandleFunc(APIPathModelConfig+"/{configName}", adaptHandler(s.handlers.ModelConfig.HandleUpdateModelConfig)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathModelConfig+"/{namespace}/{configName}", adaptHandler(s.handlers.ModelConfig.HandleDeleteModelConfig)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathModelConfig+"/{namespace}/{configName}", adaptHandler(s.handlers.ModelConfig.HandleUpdateModelConfig)).Methods(http.MethodPut)
 
 	// Sessions - using database handlers
 	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessionsDB)).Methods(http.MethodGet)
@@ -166,7 +168,7 @@ func (s *HTTPServer) setupRoutes() {
 	// Tool Servers
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleListToolServers)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleCreateToolServer)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathToolServers+"/{toolServerName}", adaptHandler(s.handlers.ToolServers.HandleDeleteToolServer)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathToolServers+"/{namespace}/{toolServerName}", adaptHandler(s.handlers.ToolServers.HandleDeleteToolServer)).Methods(http.MethodDelete)
 
 	// Teams - using database handlers
 	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleListTeamsDB)).Methods(http.MethodGet)
@@ -189,9 +191,12 @@ func (s *HTTPServer) setupRoutes() {
 	// Memories
 	s.router.HandleFunc(APIPathMemories, adaptHandler(s.handlers.Memory.HandleListMemories)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathMemories, adaptHandler(s.handlers.Memory.HandleCreateMemory)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathMemories+"/{memoryName}", adaptHandler(s.handlers.Memory.HandleDeleteMemory)).Methods(http.MethodDelete)
-	s.router.HandleFunc(APIPathMemories+"/{memoryName}", adaptHandler(s.handlers.Memory.HandleGetMemory)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathMemories+"/{memoryName}", adaptHandler(s.handlers.Memory.HandleUpdateMemory)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathMemories+"/{namespace}/{memoryName}", adaptHandler(s.handlers.Memory.HandleDeleteMemory)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathMemories+"/{namespace}/{memoryName}", adaptHandler(s.handlers.Memory.HandleGetMemory)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathMemories+"/{namespace}/{memoryName}", adaptHandler(s.handlers.Memory.HandleUpdateMemory)).Methods(http.MethodPut)
+
+	// Namespaces
+	s.router.HandleFunc(APIPathNamespaces, adaptHandler(s.handlers.Namespaces.HandleListNamespaces)).Methods(http.MethodGet)
 
 	// Feedback - using database handlers
 	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleCreateFeedbackDB)).Methods(http.MethodPost)

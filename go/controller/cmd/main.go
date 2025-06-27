@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
 	"fmt"
@@ -216,6 +217,9 @@ func main() {
 		})
 	}
 
+	// filter out invalid namespaces from the watchNamespaces flag (comma separated list)
+	watchNamespacesList := filterValidNamespaces(strings.Split(watchNamespaces, ","))
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		Metrics:                metricsServerOptions,
@@ -224,7 +228,7 @@ func main() {
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "0e9f6799.kagent.dev",
 		Cache: cache.Options{
-			DefaultNamespaces: ConfigureNamespaceWatching(watchNamespaces),
+			DefaultNamespaces: configureNamespaceWatching(watchNamespacesList),
 		},
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
@@ -252,7 +256,7 @@ func main() {
 	)
 
 	// wait for autogen to become ready on port 8081 before starting the manager
-	if err := waitForAutogenReady(setupLog, autogenClient, time.Minute*5, time.Second*5); err != nil {
+	if err := waitForAutogenReady(context.Background(), setupLog, autogenClient, time.Minute*5, time.Second*5); err != nil {
 		setupLog.Error(err, "failed to wait for autogen to become ready")
 		os.Exit(1)
 	}
@@ -354,12 +358,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpServer, err := httpserver.NewHTTPServer(httpserver.ServerConfig{
-		BindAddr:      httpServerAddr,
-		AutogenClient: autogenClient,
-		KubeClient:    kubeClient,
-		A2AHandler:    a2aHandler,
-		DatabasePath:  databasePath,
+	httpServer := httpserver.NewHTTPServer(httpserver.ServerConfig{
+		BindAddr:          httpServerAddr,
+		AutogenClient:     autogenClient,
+		KubeClient:        kubeClient,
+		A2AHandler:        a2aHandler,
+		WatchedNamespaces: watchNamespacesList,
+		DatabasePath:      databasePath,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create HTTP server")
@@ -378,13 +383,14 @@ func main() {
 }
 
 func waitForAutogenReady(
+	ctx context.Context,
 	log logr.Logger,
 	client autogen_client.Client,
 	timeout, interval time.Duration,
 ) error {
 	log.Info("waiting for autogen to become ready")
 	return waitForReady(func() error {
-		version, err := client.GetVersion()
+		version, err := client.GetVersion(ctx)
 		if err != nil {
 			log.Error(err, "autogen is not ready")
 			return err
@@ -408,11 +414,10 @@ func waitForReady(f func() error, timeout, interval time.Duration) error {
 	}
 }
 
-// ConfigureNamespaceWatching sets up the controller manager to watch specific namespaces
+// configureNamespaceWatching sets up the controller manager to watch specific namespaces
 // based on the provided configuration. It returns the list of namespaces being watched,
 // or nil if watching all namespaces.
-func ConfigureNamespaceWatching(watchNamespaces string) map[string]cache.Config {
-	watchNamespacesList := filterValidNamespaces(strings.Split(watchNamespaces, ","))
+func configureNamespaceWatching(watchNamespacesList []string) map[string]cache.Config {
 	if len(watchNamespacesList) == 0 {
 		setupLog.Info("Watching all namespaces (no valid namespaces specified)")
 		return map[string]cache.Config{"": {}}
