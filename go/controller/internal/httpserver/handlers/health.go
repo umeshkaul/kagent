@@ -20,5 +20,5 @@ func (h *HealthHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	log.V(1).Info("Handling health check request")
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	w.Write([]byte("OK")) //nolint:errcheck
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"os"
 	"strings"
 
@@ -341,7 +341,7 @@ func (k *K8sTool) handleCheckServiceConnectivity(ctx context.Context, request mc
 
 	// This is a complex operation to perform natively, involving creating a temporary pod.
 	// We'll keep the kubectl approach for this tool for now.
-	podName := fmt.Sprintf("curl-test-%d", rand.Intn(10000))
+	podName := fmt.Sprintf("curl-test-%d", rand.Int32N(10000))
 	defer k.runKubectlCommand(ctx, []string{"delete", "pod", podName, "-n", namespace, "--ignore-not-found"})
 
 	_, err := k.runKubectlCommand(ctx, []string{"run", podName, "--image=curlimages/curl", "-n", namespace, "--restart=Never", "--", "sleep", "3600"})

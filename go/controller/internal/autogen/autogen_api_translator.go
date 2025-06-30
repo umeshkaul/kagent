@@ -185,12 +185,12 @@ func (a *apiTranslator) translateToolServerConfig(ctx context.Context, config v1
 
 		var timeout *float64
 		if config.Sse.Timeout != nil {
-			timeout = common.MakePtr(config.Sse.Timeout.Duration.Seconds())
+			timeout = common.MakePtr(config.Sse.Timeout.Seconds())
 		}
 
 		var sseReadTimeout *float64
 		if config.Sse.SseReadTimeout != nil {
-			sseReadTimeout = common.MakePtr(config.Sse.SseReadTimeout.Duration.Seconds())
+			sseReadTimeout = common.MakePtr(config.Sse.SseReadTimeout.Seconds())
 		}
 
 		return "kagent.tool_servers.SseMcpToolServer", &api.SseMcpServerConfig{
@@ -224,14 +224,14 @@ func (a *apiTranslator) translateToolServerConfig(ctx context.Context, config v1
 
 		var timeout *float64
 		if config.StreamableHttp.Timeout != nil {
-			timeout = common.MakePtr(config.StreamableHttp.Timeout.Duration.Seconds())
+			timeout = common.MakePtr(config.StreamableHttp.Timeout.Seconds())
 		}
 		var sseReadTimeout *float64
 		if config.StreamableHttp.SseReadTimeout != nil {
-			sseReadTimeout = common.MakePtr(config.StreamableHttp.SseReadTimeout.Duration.Seconds())
+			sseReadTimeout = common.MakePtr(config.StreamableHttp.SseReadTimeout.Seconds())
 		}
 
-		return "kagent.tool_servers.StreamableHttpMcpToolServer", &api.StreamableHttpServerConfig{
+		return "kagent.tool_servers.StreamableHttpMcpToolServer", &api.StreamableHTTPServerConfig{
 			URL:              config.StreamableHttp.URL,
 			Headers:          headers,
 			Timeout:          timeout,
@@ -884,23 +884,6 @@ func translateTerminationCondition(terminationCondition v1alpha1.TerminationCond
 	}
 
 	return nil, fmt.Errorf("unsupported termination condition")
-}
-
-func addModelClientToConfig(
-	modelClient *api.Component,
-	toolConfig *map[string]interface{},
-) error {
-	if *toolConfig == nil {
-		*toolConfig = make(map[string]interface{})
-	}
-
-	cfg, err := modelClient.ToConfig()
-	if err != nil {
-		return err
-	}
-
-	(*toolConfig)["model_client"] = cfg
-	return nil
 }
 
 func addOpenaiApiKeyToConfig(

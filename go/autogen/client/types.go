@@ -16,7 +16,7 @@ type BaseObject struct {
 	UpdatedAt string         `json:"updated_at,omitempty"`
 	UserID    string         `json:"user_id"`
 	Version   string         `json:"version,omitempty"`
-	Id        int            `json:"id,omitempty"`
+	ID        int            `json:"id,omitempty"`
 }
 
 type Team struct {
@@ -177,7 +177,7 @@ func streamSseResponse(r io.ReadCloser) chan *SseEvent {
 	ch := make(chan *SseEvent)
 	go func() {
 		defer close(ch)
-		defer r.Close()
+		defer r.Close() //nolint:errcheck
 		currentEvent := &SseEvent{}
 		for scanner.Scan() {
 			line := scanner.Bytes()

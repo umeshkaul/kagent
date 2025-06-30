@@ -36,7 +36,7 @@ func GetAgentCmd(cfg *config.Config, resourceName string) {
 			return
 		}
 		byt, _ := json.MarshalIndent(agent, "", "  ")
-		fmt.Fprintln(os.Stdout, string(byt))
+		fmt.Fprintln(os.Stdout, string(byt)) //nolint:errcheck
 	}
 }
 
@@ -129,7 +129,7 @@ func printTools(tools []*autogen_client.Tool) error {
 	for i, tool := range tools {
 		rows[i] = []string{
 			strconv.Itoa(i + 1),
-			strconv.Itoa(tool.Id),
+			strconv.Itoa(tool.ID),
 			tool.Component.Provider,
 			tool.Component.Label,
 			tool.CreatedAt,
@@ -176,7 +176,7 @@ func printTeams(teams []*autogen_client.Team) error {
 		rows[i] = []string{
 			strconv.Itoa(i + 1),
 			team.Component.Label,
-			strconv.Itoa(team.Id),
+			strconv.Itoa(team.ID),
 			team.CreatedAt,
 		}
 	}

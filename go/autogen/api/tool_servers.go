@@ -30,7 +30,7 @@ func (c *SseMcpServerConfig) FromConfig(config map[string]interface{}) error {
 	return fromConfig(c, config)
 }
 
-type StreamableHttpServerConfig struct {
+type StreamableHTTPServerConfig struct {
 	URL              string                 `json:"url"`
 	Headers          map[string]interface{} `json:"headers,omitempty"`
 	Timeout          *float64               `json:"timeout,omitempty"`
@@ -38,11 +38,11 @@ type StreamableHttpServerConfig struct {
 	TerminateOnClose bool                   `json:"terminate_on_close,omitempty"`
 }
 
-func (c *StreamableHttpServerConfig) ToConfig() (map[string]interface{}, error) {
+func (c *StreamableHTTPServerConfig) ToConfig() (map[string]interface{}, error) {
 	return toConfig(c)
 }
 
-func (c *StreamableHttpServerConfig) FromConfig(config map[string]interface{}) error {
+func (c *StreamableHTTPServerConfig) FromConfig(config map[string]interface{}) error {
 	return fromConfig(c, config)
 }
 

@@ -57,7 +57,7 @@ func setupTestHandler(objects ...client.Object) (*TeamsHandler, string) {
 
 	userID := common.GetGlobalUserID()
 	autogenClient := autogen_fake.NewInMemoryAutogenClient()
-	
+
 	base := &Base{
 		KubeClient:    kubeClient,
 		AutogenClient: autogenClient,
@@ -66,14 +66,14 @@ func setupTestHandler(objects ...client.Object) (*TeamsHandler, string) {
 			Namespace: "default",
 		},
 	}
-	
+
 	return NewTeamsHandler(base), userID
 }
 
 func createAutogenTeam(client *autogen_fake.InMemoryAutogenClient, userID string, agent *v1alpha1.Agent) {
 	autogenTeam := &autogen_client.Team{
 		BaseObject: autogen_client.BaseObject{
-			Id:     1,
+			ID:     1,
 			UserID: userID,
 		},
 		Component: &api.Component{
@@ -87,9 +87,9 @@ func TestHandleGetTeam(t *testing.T) {
 	t.Run("gets team successfully", func(t *testing.T) {
 		modelConfig := createTestModelConfig()
 		team := createTestAgent("test-team", modelConfig)
-		
+
 		handler, userID := setupTestHandler(team, modelConfig)
-		createAutogenTeam(handler.Base.AutogenClient.(*autogen_fake.InMemoryAutogenClient), userID, team)
+		createAutogenTeam(handler.AutogenClient.(*autogen_fake.InMemoryAutogenClient), userID, team)
 
 		req := httptest.NewRequest("GET", fmt.Sprintf("/api/teams/1?user_id=%s", userID), nil)
 		req = mux.SetURLVars(req, map[string]string{"teamID": "1"})
@@ -98,7 +98,7 @@ func TestHandleGetTeam(t *testing.T) {
 		handler.HandleGetTeam(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response TeamResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -141,7 +141,7 @@ func TestHandleUpdateTeam(t *testing.T) {
 		handler.HandleUpdateTeam(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response v1alpha1.Agent
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -170,9 +170,9 @@ func TestHandleListTeams(t *testing.T) {
 	t.Run("lists teams successfully", func(t *testing.T) {
 		modelConfig := createTestModelConfig()
 		team := createTestAgent("test-team", modelConfig)
-		
+
 		handler, userID := setupTestHandler(team, modelConfig)
-		createAutogenTeam(handler.Base.AutogenClient.(*autogen_fake.InMemoryAutogenClient), userID, team)
+		createAutogenTeam(handler.AutogenClient.(*autogen_fake.InMemoryAutogenClient), userID, team)
 
 		req := httptest.NewRequest("GET", fmt.Sprintf("/api/teams?user_id=%s", userID), nil)
 		w := httptest.NewRecorder()
@@ -180,7 +180,7 @@ func TestHandleListTeams(t *testing.T) {
 		handler.HandleListTeams(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var response []TeamResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -190,7 +190,7 @@ func TestHandleListTeams(t *testing.T) {
 
 	t.Run("returns 400 for missing user ID", func(t *testing.T) {
 		handler, _ := setupTestHandler()
-		
+
 		req := httptest.NewRequest("GET", "/api/teams", nil)
 		w := httptest.NewRecorder()
 
@@ -221,7 +221,7 @@ func TestHandleCreateTeam(t *testing.T) {
 			ObjectMeta: metav1.ObjectMeta{Name: "test-team", Namespace: "default"},
 			Spec: v1alpha1.AgentSpec{
 				ModelConfig:   common.GetObjectRef(modelConfig),
-				SystemMessage: "You are an imagenary agent",
+				SystemMessage: "You are an imaginary agent",
 				Description:   "Test team description",
 			},
 		}
@@ -234,7 +234,7 @@ func TestHandleCreateTeam(t *testing.T) {
 		handler.HandleCreateTeam(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
-		
+
 		var response v1alpha1.Agent
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
@@ -247,7 +247,7 @@ func TestHandleDeleteTeam(t *testing.T) {
 		team := &v1alpha1.Agent{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-team", Namespace: "default"},
 		}
-		
+
 		handler, _ := setupTestHandler(team)
 
 		req := httptest.NewRequest("DELETE", "/api/teams/default/test-team", nil)

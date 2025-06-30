@@ -13,10 +13,6 @@ import (
 
 // Cilium tools using cilium CLI
 
-func runCiliumCli(args ...string) (string, error) {
-	return utils.RunCommand("cilium", args)
-}
-
 func runCiliumCliWithContext(ctx context.Context, args ...string) (string, error) {
 	return utils.RunCommandWithContext(ctx, "cilium", args)
 }
@@ -335,12 +331,6 @@ func RegisterCiliumTools(s *server.MCPServer) {
 		mcp.WithString("states", mcp.Description("The states to update the service with")),
 		mcp.WithString("node_name", mcp.Description("The name of the node to update the service on")),
 	), handleUpdateService)
-}
-
-// -- Debug Tools --
-
-func getCiliumPodName(nodeName string) (string, error) {
-	return getCiliumPodNameWithContext(context.Background(), nodeName)
 }
 
 func getCiliumPodNameWithContext(ctx context.Context, nodeName string) (string, error) {

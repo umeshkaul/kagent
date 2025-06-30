@@ -20,7 +20,7 @@ import (
 func createMockAutogenTeam(id int, label string) *autogen_client.Team {
 	return &autogen_client.Team{
 		BaseObject: autogen_client.BaseObject{
-			Id: id,
+			ID: id,
 		},
 		Component: &api.Component{
 			Provider:      "test.provider",

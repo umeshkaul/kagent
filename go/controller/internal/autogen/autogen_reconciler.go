@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/kagent-dev/kagent/go/autogen/api"
-	"k8s.io/apimachinery/pkg/api/errors"
 	k8s_errors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,19 +95,19 @@ func (a *autogenReconciler) handleAgentDeletion(req ctrl.Request) error {
 	// }
 
 	// remove a2a handler if it exists
-	a.a2aReconciler.ReconcileAutogenAgentDeletion(req.NamespacedName.String())
+	a.a2aReconciler.ReconcileAutogenAgentDeletion(req.String())
 
 	// TODO(sbx0r): temporary mock on GlobalUserID.
 	//              This block will be removed after resolving previous TODO
-	team, err := a.autogenClient.GetTeam(req.NamespacedName.String(), common.GetGlobalUserID())
+	team, err := a.autogenClient.GetTeam(req.String(), common.GetGlobalUserID())
 	if err != nil {
 		return fmt.Errorf("failed to get agent on agent deletion %s/%s: %w",
 			req.Namespace, req.Name, err)
 	}
 
-	if err = a.autogenClient.DeleteTeam(team.Id, team.UserID); err != nil {
+	if err = a.autogenClient.DeleteTeam(team.ID, team.UserID); err != nil {
 		return fmt.Errorf("failed to delete agent %s: %w",
-			req.NamespacedName.String(), err)
+			req.String(), err)
 	}
 
 	reconcileLog.Info("Agent was deleted", "namespace", req.Namespace, "name", req.Name)
@@ -392,7 +391,7 @@ func (a *autogenReconciler) reconcileToolServerStatus(
 func (a *autogenReconciler) ReconcileAutogenMemory(ctx context.Context, req ctrl.Request) error {
 	memory := &v1alpha1.Memory{}
 	if err := a.kube.Get(ctx, req.NamespacedName, memory); err != nil {
-		if errors.IsNotFound(err) {
+		if k8s_errors.IsNotFound(err) {
 			return a.handleMemoryDeletion(req)
 		}
 
@@ -538,7 +537,7 @@ func (a *autogenReconciler) upsertTeam(team *autogen_client.Team) error {
 		return fmt.Errorf("failed to get existing team %s: %v", team.Component.Label, err)
 	}
 	if existingTeam != nil {
-		team.Id = existingTeam.Id
+		team.ID = existingTeam.ID
 	}
 
 	return a.autogenClient.CreateTeam(team)
@@ -561,7 +560,7 @@ func (a *autogenReconciler) upsertToolServer(toolServer *autogen_client.ToolServ
 			return 0, fmt.Errorf("failed to delete existing toolServer %s: %v", toolServer.Component.Label, err)
 		}
 	} else {
-		existingToolServer, err = a.autogenClient.CreateToolServer(toolServer, common.GetGlobalUserID())
+		_, err = a.autogenClient.CreateToolServer(toolServer, common.GetGlobalUserID())
 		if err != nil {
 			return 0, fmt.Errorf("failed to create toolServer %s: %v", toolServer.Component.Label, err)
 		}

@@ -72,7 +72,7 @@ func main() {
 	invokeCmd.Flags().StringVarP(&invokeCfg.Session, "session", "s", "", "Session")
 	invokeCmd.Flags().StringVarP(&invokeCfg.Agent, "agent", "a", "", "Agent")
 	invokeCmd.Flags().BoolVarP(&invokeCfg.Stream, "stream", "S", false, "Stream the response")
-	invokeCmd.MarkFlagRequired("task")
+	invokeCmd.MarkFlagRequired("task") //nolint:errcheck
 
 	bugReportCmd := &cobra.Command{
 		Use:   "bug-report",
@@ -135,7 +135,7 @@ func main() {
 		Long:  `Get a kagent resource`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Fprintf(os.Stderr, "No resource type provided\n\n")
-			cmd.Help()
+			cmd.Help() //nolint:errcheck
 			os.Exit(1)
 		},
 	}

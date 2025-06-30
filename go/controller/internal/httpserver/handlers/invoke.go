@@ -108,7 +108,7 @@ func (h *InvokeHandler) HandleInvokeAgentStream(w ErrorResponseWriter, r *http.R
 	w.WriteHeader(http.StatusOK)
 
 	for event := range ch {
-		w.Write([]byte(fmt.Sprintf("event: %s\ndata: %s\n\n", event.Event, event.Data)))
+		fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Event, event.Data)
 	}
 }
 

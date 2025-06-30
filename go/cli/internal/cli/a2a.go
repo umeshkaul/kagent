@@ -65,7 +65,7 @@ func A2ARun(ctx context.Context, cfg *A2ACfg) {
 					text += textPart.Text
 				}
 			}
-			fmt.Fprintln(os.Stdout, text)
+			fmt.Fprintln(os.Stdout, text) //nolint:errcheck
 		}
 	}
 }

@@ -33,7 +33,7 @@ func TestInvokeHandler(t *testing.T) {
 		// Create a team in the in-memory client instead of setting a function
 		team := &autogen_client.Team{
 			BaseObject: autogen_client.BaseObject{
-				Id: 1,
+				ID: 1,
 			},
 			Component: &api.Component{
 				Label:    "test-team",

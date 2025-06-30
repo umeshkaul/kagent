@@ -90,7 +90,7 @@ func handleIstioGenerateManifest(ctx context.Context, request mcp.CallToolReques
 // Istio analyze
 func handleIstioAnalyzeClusterConfiguration(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	namespace := mcp.ParseString(request, "namespace", "")
-	allNamespaces := mcp.ParseString(request, "all_namespaces", "") == "true"
+	allNamespaces := mcp.ParseBoolean(request, "all_namespaces", false)
 
 	args := []string{"analyze"}
 
@@ -141,7 +141,7 @@ func handleIstioRemoteClusters(ctx context.Context, request mcp.CallToolRequest)
 // Waypoint list
 func handleWaypointList(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	namespace := mcp.ParseString(request, "namespace", "")
-	allNamespaces := mcp.ParseString(request, "all_namespaces", "") == "true"
+	allNamespaces := mcp.ParseBoolean(request, "all_namespaces", false)
 
 	args := []string{"waypoint", "list"}
 
@@ -192,7 +192,7 @@ func handleWaypointGenerate(ctx context.Context, request mcp.CallToolRequest) (*
 // Waypoint apply
 func handleWaypointApply(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	namespace := mcp.ParseString(request, "namespace", "")
-	enrollNamespace := mcp.ParseString(request, "enroll_namespace", "") == "true"
+	enrollNamespace := mcp.ParseBoolean(request, "enroll_namespace", false)
 
 	if namespace == "" {
 		return mcp.NewToolResultError("namespace parameter is required"), nil
@@ -216,7 +216,7 @@ func handleWaypointApply(ctx context.Context, request mcp.CallToolRequest) (*mcp
 func handleWaypointDelete(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	namespace := mcp.ParseString(request, "namespace", "")
 	names := mcp.ParseString(request, "names", "")
-	all := mcp.ParseString(request, "all", "") == "true"
+	all := mcp.ParseBoolean(request, "all", false)
 
 	if namespace == "" {
 		return mcp.NewToolResultError("namespace parameter is required"), nil
@@ -320,7 +320,7 @@ func RegisterIstioTools(s *server.MCPServer) {
 	s.AddTool(mcp.NewTool("istio_analyze_cluster_configuration",
 		mcp.WithDescription("Analyze live cluster configuration for potential issues"),
 		mcp.WithString("namespace", mcp.Description("Namespace to analyze")),
-		mcp.WithString("all_namespaces", mcp.Description("Analyze all namespaces (true/false)")),
+		mcp.WithBoolean("all_namespaces", mcp.Description("Analyze all namespaces (true/false)")),
 	), handleIstioAnalyzeClusterConfiguration)
 
 	// Istio version
@@ -338,7 +338,7 @@ func RegisterIstioTools(s *server.MCPServer) {
 	s.AddTool(mcp.NewTool("istio_list_waypoints",
 		mcp.WithDescription("List managed waypoint configurations in the cluster"),
 		mcp.WithString("namespace", mcp.Description("Namespace to list waypoints for")),
-		mcp.WithString("all_namespaces", mcp.Description("List waypoints for all namespaces (true/false)")),
+		mcp.WithBoolean("all_namespaces", mcp.Description("List waypoints for all namespaces (true/false)")),
 	), handleWaypointList)
 
 	// Waypoint generate
@@ -353,7 +353,7 @@ func RegisterIstioTools(s *server.MCPServer) {
 	s.AddTool(mcp.NewTool("istio_apply_waypoint",
 		mcp.WithDescription("Apply a waypoint configuration to a cluster"),
 		mcp.WithString("namespace", mcp.Description("Namespace to apply the waypoint to"), mcp.Required()),
-		mcp.WithString("enroll_namespace", mcp.Description("Label the namespace with the waypoint name (true/false)")),
+		mcp.WithBoolean("enroll_namespace", mcp.Description("Label the namespace with the waypoint name (true/false)")),
 	), handleWaypointApply)
 
 	// Waypoint delete
@@ -361,7 +361,7 @@ func RegisterIstioTools(s *server.MCPServer) {
 		mcp.WithDescription("Delete waypoint configurations from a cluster"),
 		mcp.WithString("namespace", mcp.Description("Namespace to delete waypoints from"), mcp.Required()),
 		mcp.WithString("names", mcp.Description("Comma-separated list of waypoint names to delete")),
-		mcp.WithString("all", mcp.Description("Delete all waypoints in the namespace (true/false)")),
+		mcp.WithBoolean("all", mcp.Description("Delete all waypoints in the namespace (true/false)")),
 	), handleWaypointDelete)
 
 	// Waypoint status

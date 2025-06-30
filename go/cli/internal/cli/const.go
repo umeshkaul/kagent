@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"os"
 	"strings"
+
+	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
 const (

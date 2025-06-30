@@ -328,7 +328,7 @@ func TestAutogenClient(t *testing.T) {
 		// check the autogen team that was created is returned
 		found := false
 		for _, team := range list {
-			if team.Id == autogenTeam.Id {
+			if team.ID == autogenTeam.ID {
 				assert.Equal(t, autogenTeam.Component.Label, team.Component.Label)
 				assert.Equal(t, autogenTeam.Component.Provider, team.Component.Provider)
 				assert.Equal(t, autogenTeam.Component.Version, team.Component.Version)

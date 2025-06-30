@@ -185,7 +185,7 @@ func (h *SessionsHandler) HandleSessionInvokeStream(w ErrorResponseWriter, r *ht
 	}
 
 	for event := range ch {
-		w.Write([]byte(fmt.Sprintf("event: %s\ndata: %s\n\n", event.Event, event.Data)))
+		fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Event, event.Data)
 	}
 }
 

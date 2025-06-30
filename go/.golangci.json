@@ -1,0 +1,42 @@
+{
+  "formatters": {
+    "enable": [
+      "gofmt",
+      "goimports"
+    ],
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ]
+    }
+  },
+  "linters": {
+    "enable": [
+      "dupl",
+      "goconst",
+      "gocyclo",
+      "gosec",
+      "misspell",
+      "revive",
+      "unconvert"
+    ],
+    "exclusions": {
+      "generated": "lax",
+      "paths": [
+        "third_party$",
+        "builtin$",
+        "examples$"
+      ],
+      "presets": [
+        "comments",
+        "common-false-positives",
+        "legacy",
+        "std-error-handling"
+      ]
+    }
+  },
+  "version": "2"
+}

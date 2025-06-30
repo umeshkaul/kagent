@@ -33,7 +33,7 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	w.Write(response)
+	w.Write(response) //nolint:errcheck
 
 	log.V(2).Info("Sent JSON response", "statusCode", code, "responseSize", len(response))
 }

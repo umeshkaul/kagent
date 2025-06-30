@@ -3,11 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/kagent-dev/kagent/go/internal/version"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/kagent-dev/kagent/go/internal/version"
 
 	"github.com/briandowns/spinner"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
@@ -78,9 +79,7 @@ func InstallCmd(ctx context.Context, cfg *config.Config) {
 
 	// split helmExtraArgs by "--set" to get additional values
 	extraValues := strings.Split(helmExtraArgs, "--set")
-	for _, hev := range extraValues {
-		values = append(values, hev)
-	}
+	values = append(values, extraValues...)
 
 	// spinner for installation progress
 	s := spinner.New(spinner.CharSets[35], 100*time.Millisecond)

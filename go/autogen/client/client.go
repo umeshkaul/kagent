@@ -140,22 +140,22 @@ func (c *client) doRequest(ctx context.Context, method, path string, body interf
 	if err := decoder.Decode(&apiResp); err != nil {
 		// Trying the base value
 		return json.Unmarshal(b, result)
-	} else {
-		// Check response status
-		if !apiResp.Status {
-			return fmt.Errorf("api error: [%+v]", apiResp)
+	}
+
+	// Check response status
+	if !apiResp.Status {
+		return fmt.Errorf("api error: [%+v]", apiResp)
+	}
+
+	// If caller wants the result, marshal the Data field into their result type
+	if result != nil {
+		dataBytes, err := json.Marshal(apiResp.Data)
+		if err != nil {
+			return fmt.Errorf("error re-marshaling data: %w", err)
 		}
 
-		// If caller wants the result, marshal the Data field into their result type
-		if result != nil {
-			dataBytes, err := json.Marshal(apiResp.Data)
-			if err != nil {
-				return fmt.Errorf("error re-marshaling data: %w", err)
-			}
-
-			if err := json.Unmarshal(dataBytes, result); err != nil {
-				return fmt.Errorf("error unmarshaling into result: %w", err)
-			}
+		if err := json.Unmarshal(dataBytes, result); err != nil {
+			return fmt.Errorf("error unmarshaling into result: %w", err)
 		}
 	}
 

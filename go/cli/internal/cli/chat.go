@@ -3,7 +3,6 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"slices"
 
 	"github.com/abiosoft/ishell/v2"
@@ -150,11 +149,4 @@ func ChatCmd(c *ishell.Context) {
 
 		StreamEvents(ch, usage, verbose)
 	}
-}
-
-// Yes, this is AI generated, and so is this comment.
-var thinkingVerbs = []string{"thinking", "processing", "mulling over", "pondering", "reflecting", "evaluating", "analyzing", "synthesizing", "interpreting", "inferring", "deducing", "reasoning", "evaluating", "synthesizing", "interpreting", "inferring", "deducing", "reasoning"}
-
-func getThinkingVerb() string {
-	return thinkingVerbs[rand.Intn(len(thinkingVerbs))]
 }

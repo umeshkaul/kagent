@@ -3,9 +3,10 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"github.com/kagent-dev/kagent/go/internal/version"
 	"os"
 	"time"
+
+	"github.com/kagent-dev/kagent/go/internal/version"
 
 	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"

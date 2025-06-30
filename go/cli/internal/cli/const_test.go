@@ -1,9 +1,10 @@
 package cli
 
 import (
-	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"os"
 	"testing"
+
+	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 )
 
 func TestGetModelProvider(t *testing.T) {

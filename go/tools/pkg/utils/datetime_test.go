@@ -24,27 +24,23 @@ func TestHandleGetCurrentDateTimeTool(t *testing.T) {
 		t.Fatal("Expected non-nil result")
 	}
 
-	if result.Content == nil || len(result.Content) == 0 {
+	if len(result.Content) == 0 {
 		t.Fatal("Expected content in result")
 	}
 
 	// Verify the result is a valid RFC3339 timestamp (ISO 8601 format)
-	if len(result.Content) > 0 {
-		if textContent, ok := result.Content[0].(mcp.TextContent); ok {
-			_, err := time.Parse(time.RFC3339, textContent.Text)
-			if err != nil {
-				t.Errorf("Result is not valid RFC3339 timestamp: %v", err)
-			}
-			// Additional check: ensure it's a recent timestamp (within last minute)
-			parsed, _ := time.Parse(time.RFC3339, textContent.Text)
-			if time.Since(parsed) > time.Minute {
-				t.Errorf("Timestamp seems too old: %s", textContent.Text)
-			}
-		} else {
-			t.Error("Expected TextContent in result")
+	if textContent, ok := result.Content[0].(mcp.TextContent); ok {
+		_, err := time.Parse(time.RFC3339, textContent.Text)
+		if err != nil {
+			t.Errorf("Result is not valid RFC3339 timestamp: %v", err)
+		}
+		// Additional check: ensure it's a recent timestamp (within last minute)
+		parsed, _ := time.Parse(time.RFC3339, textContent.Text)
+		if time.Since(parsed) > time.Minute {
+			t.Errorf("Timestamp seems too old: %s", textContent.Text)
 		}
 	} else {
-		t.Error("Expected content in result")
+		t.Error("Expected TextContent in result")
 	}
 }
 

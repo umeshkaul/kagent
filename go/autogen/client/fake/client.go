@@ -97,7 +97,7 @@ func (m *InMemoryAutogenClient) CreateRun(req *autogen_client.CreateRunRequest) 
 	}, nil
 }
 
-func (m *InMemoryAutogenClient) GetTeamByID(teamID int, userID string) (*autogen_client.Team, error) {
+func (m *InMemoryAutogenClient) GetTeamByID(teamID int, _ string) (*autogen_client.Team, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -122,7 +122,7 @@ func (m *InMemoryAutogenClient) InvokeTask(req *autogen_client.InvokeTaskRequest
 	}, nil
 }
 
-func (m *InMemoryAutogenClient) GetSession(sessionLabel string, userID string) (*autogen_client.Session, error) {
+func (m *InMemoryAutogenClient) GetSession(sessionLabel string, _ string) (*autogen_client.Session, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -133,7 +133,7 @@ func (m *InMemoryAutogenClient) GetSession(sessionLabel string, userID string) (
 	return session, nil
 }
 
-func (m *InMemoryAutogenClient) InvokeSession(sessionID int, userID string, request *autogen_client.InvokeRequest) (*autogen_client.TeamResult, error) {
+func (m *InMemoryAutogenClient) InvokeSession(sessionID int, _ string, request *autogen_client.InvokeRequest) (*autogen_client.TeamResult, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -166,12 +166,12 @@ func (m *InMemoryAutogenClient) CreateTeam(team *autogen_client.Team) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if team.Id == 0 {
-		team.Id = m.nextTeamID
+	if team.ID == 0 {
+		team.ID = m.nextTeamID
 		m.nextTeamID++
 	}
 
-	m.teams[team.Id] = team
+	m.teams[team.ID] = team
 	if team.Component != nil && team.Component.Label != "" {
 		m.teamsByLabel[team.Component.Label] = team
 	}
@@ -518,7 +518,7 @@ func (m *InMemoryAutogenClient) RefreshToolServer(serverID int, userID string) e
 	return nil
 }
 
-func (m *InMemoryAutogenClient) RefreshTools(serverID *int, userID string) error {
+func (m *InMemoryAutogenClient) RefreshTools(serverID *int, _ string) error {
 	// In-memory implementation: refresh is a no-op
 	return nil
 }

@@ -83,7 +83,7 @@ func TestHandleGetAvailableAPIResources(t *testing.T) {
 		clientset := fake.NewSimpleClientset()
 
 		// Mock the discovery client
-		clientset.Fake.PrependReactor("get", "*", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+		clientset.PrependReactor("get", "*", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 			return true, &corev1.PodList{}, nil
 		})
 
@@ -101,7 +101,7 @@ func TestHandleGetAvailableAPIResources(t *testing.T) {
 
 	t.Run("error handling", func(t *testing.T) {
 		clientset := fake.NewSimpleClientset()
-		clientset.Fake.PrependReactor("*", "*", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+		clientset.PrependReactor("*", "*", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 			return true, nil, assert.AnError
 		})
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/kagent-dev/kagent/go/tools/pkg/utils"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/kagent-dev/kagent/go/tools/pkg/utils"
 
 	"github.com/kagent-dev/kagent/go/internal/version"
 	"github.com/kagent-dev/kagent/go/tools/pkg/logger"

@@ -140,7 +140,7 @@ func (h *TeamsHandler) HandleListTeams(w ErrorResponseWriter, r *http.Request) {
 		}
 
 		teamsWithID = append(teamsWithID, TeamResponse{
-			Id:             autogenTeam.Id,
+			Id:             autogenTeam.ID,
 			Agent:          &team,
 			Component:      autogenTeam.Component,
 			ModelProvider:  modelConfig.Spec.Provider,
@@ -414,7 +414,7 @@ func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
 
 	// Create a new object that contains the Team information from Team and the ID from the autogenTeam
 	teamWithID := &TeamResponse{
-		Id:             autogenTeam.Id,
+		Id:             autogenTeam.ID,
 		Agent:          team,
 		Component:      autogenTeam.Component,
 		ModelProvider:  modelConfig.Spec.Provider,
