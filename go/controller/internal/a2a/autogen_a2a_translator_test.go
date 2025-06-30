@@ -7,11 +7,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/kagent-dev/kagent/go/autogen/api"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
-	"github.com/kagent-dev/kagent/go/autogen/client/fake"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/client/fake"
 	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 func CheckServerConnection(client autogen_client.Client) error {

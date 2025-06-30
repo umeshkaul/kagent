@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/abiosoft/ishell/v2"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/cli"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	"github.com/spf13/cobra"

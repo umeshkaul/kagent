@@ -6,22 +6,17 @@ import (
 	"os"
 	"time"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
-	"github.com/kagent-dev/kagent/go/cli/internal/config"
-)
+	"github.com/kagent-dev/kagent/go/internal/version"
 
-var (
-	// These variables should be set during build time using -ldflags
-	Version   = "dev"
-	GitCommit = "none"
-	BuildDate = "unknown"
+	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 func VersionCmd(cfg *config.Config) {
 	versionInfo := map[string]string{
-		"kagent_version": Version,
-		"git_commit":     GitCommit,
-		"build_date":     BuildDate,
+		"kagent_version": version.Version,
+		"git_commit":     version.GitCommit,
+		"build_date":     version.BuildDate,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

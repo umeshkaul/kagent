@@ -4,8 +4,8 @@ import (
 	"strconv"
 
 	"github.com/abiosoft/ishell/v2"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 func DeleteCmd(c *ishell.Context) {

@@ -37,7 +37,7 @@ func Init() error {
 	pflag.StringVar(&configFile, "config", configFile, "config file (default is $HOME/.kagent/config.yaml)")
 
 	// Set default values
-	viper.SetDefault("api_url", "http://localhost:8081/api")
+	viper.SetDefault("api_url", "http://localhost:8083/api")
 	viper.SetDefault("user_id", "admin@kagent.dev")
 	viper.SetDefault("output_format", "table")
 	viper.SetDefault("namespace", "kagent")

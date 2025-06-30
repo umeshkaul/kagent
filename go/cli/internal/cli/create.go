@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/abiosoft/ishell/v2"
-	"github.com/kagent-dev/kagent/go/autogen/api"
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 func CreateCmd(c *ishell.Context) {

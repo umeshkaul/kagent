@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	autogen_client "github.com/kagent-dev/kagent/go/autogen/client"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
 )
 
 func GetAgentCmd(cfg *config.Config, resourceName string) {
