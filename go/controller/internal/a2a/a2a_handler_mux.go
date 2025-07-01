@@ -6,14 +6,14 @@ import (
 	"strings"
 	"sync"
 
-	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	common "github.com/kagent-dev/kagent/go/internal/utils"
 	"trpc.group/trpc-go/trpc-a2a-go/server"
 	"trpc.group/trpc-go/trpc-a2a-go/taskmanager"
 )
 
 type A2AHandlerParams struct {
-	AgentCard  server.AgentCard
-	HandleTask TaskHandler
+	AgentCard   server.AgentCard
+	TaskHandler MessageHandler
 }
 
 // A2AHandlerMux is an interface that defines methods for adding, getting, and removing agentic task handlers.
@@ -47,7 +47,7 @@ func (a *handlerMux) SetAgentHandler(
 	agentRef string,
 	params *A2AHandlerParams,
 ) error {
-	processor := newA2ATaskProcessor(params.HandleTask)
+	processor := newA2AMessageProcessor(params.TaskHandler)
 
 	// Create task manager and inject processor.
 	taskManager, err := taskmanager.NewMemoryTaskManager(processor)
@@ -109,9 +109,6 @@ func (a *handlerMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-
-	// update the request URL to the remaining path
-	r.URL.Path = "/" + remainingPath
 
 	handlerHandler.ServeHTTP(w, r)
 }

@@ -11,7 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,8 +53,8 @@ func TestE2E(t *testing.T) {
 	// Initialize fresh test start time for unique sessions on each run
 	testStartTime := time.Now().String()
 
-	createOrFetchAgentSession := func(agentName string) (*autogen_client.Session, *autogen_client.Team) {
-		agentTeam, err := agentClient.GetTeam(agentName, GlobalUserID)
+	createOrFetchAgentSession := func(agentName string) (*database.Session, *database.Team) {
+		agentTeam, err := dbService.GetTeam(agentName, GlobalUserID)
 		require.NoError(t, err)
 
 		// reuse existing sessions if available
@@ -84,7 +85,15 @@ func TestE2E(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		return result.TaskResult.Messages[len(result.TaskResult.Messages)-1]["content"].(string)
+		events := make([]autogen_client.Event, len(result.TaskResult.Messages))
+		for i, msg := range result.TaskResult.Messages {
+			parsedEvent, err := autogen_client.ParseEvent(msg)
+			if err != nil {
+				require.NoError(t, err)
+			}
+			events[i] = parsedEvent
+		}
+		return autogen_client.GetLastStringMessage(events)
 	}
 
 	// Helper to check if a namespace exists

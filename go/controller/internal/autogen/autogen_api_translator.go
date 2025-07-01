@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
@@ -15,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -185,12 +185,12 @@ func (a *apiTranslator) translateToolServerConfig(ctx context.Context, config v1
 
 		var timeout *float64
 		if config.Sse.Timeout != nil {
-			timeout = common.MakePtr(config.Sse.Timeout.Duration.Seconds())
+			timeout = ptr.To(config.Sse.Timeout.Duration.Seconds())
 		}
 
 		var sseReadTimeout *float64
 		if config.Sse.SseReadTimeout != nil {
-			sseReadTimeout = common.MakePtr(config.Sse.SseReadTimeout.Duration.Seconds())
+			sseReadTimeout = ptr.To(config.Sse.SseReadTimeout.Duration.Seconds())
 		}
 
 		return "kagent.tool_servers.SseMcpToolServer", &api.SseMcpServerConfig{
@@ -224,11 +224,11 @@ func (a *apiTranslator) translateToolServerConfig(ctx context.Context, config v1
 
 		var timeout *float64
 		if config.StreamableHttp.Timeout != nil {
-			timeout = common.MakePtr(config.StreamableHttp.Timeout.Duration.Seconds())
+			timeout = ptr.To(config.StreamableHttp.Timeout.Duration.Seconds())
 		}
 		var sseReadTimeout *float64
 		if config.StreamableHttp.SseReadTimeout != nil {
-			sseReadTimeout = common.MakePtr(config.StreamableHttp.SseReadTimeout.Duration.Seconds())
+			sseReadTimeout = ptr.To(config.StreamableHttp.SseReadTimeout.Duration.Seconds())
 		}
 
 		return "kagent.tool_servers.StreamableHttpMcpToolServer", &api.StreamableHttpServerConfig{
@@ -521,17 +521,6 @@ func (a *apiTranslator) translateAssistantAgent(
 	for _, tool := range agent.Spec.Tools {
 		// Skip tools that are not applicable to the model provider
 		switch {
-		case tool.Builtin != nil:
-			autogenTool, err := a.translateBuiltinTool(
-				ctx,
-				modelClientWithoutStreaming,
-				modelConfig,
-				tool.Builtin,
-			)
-			if err != nil {
-				return nil, err
-			}
-			tools = append(tools, autogenTool)
 		case tool.McpServer != nil:
 			for _, toolName := range tool.McpServer.ToolNames {
 				autogenTool, err := translateToolServerTool(
@@ -686,30 +675,6 @@ func (a *apiTranslator) translateMemory(ctx context.Context, memoryRef string, d
 	}
 
 	return nil, fmt.Errorf("unsupported memory provider: %s", memoryObj.Spec.Provider)
-}
-
-func (a *apiTranslator) translateBuiltinTool(
-	ctx context.Context,
-	modelClient *api.Component,
-	modelConfig *v1alpha1.ModelConfig,
-	tool *v1alpha1.BuiltinTool,
-) (*api.Component, error) {
-
-	toolConfig, err := convertMapFromAnytype(tool.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	providerParts := strings.Split(tool.Name, ".")
-	toolLabel := providerParts[len(providerParts)-1]
-
-	return &api.Component{
-		Provider:      tool.Name,
-		ComponentType: "tool",
-		Version:       1,
-		Config:        toolConfig,
-		Label:         toolLabel,
-	}, nil
 }
 
 func translateToolServerTool(

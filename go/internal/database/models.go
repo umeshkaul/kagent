@@ -43,15 +43,11 @@ type Team struct {
 	Component api.Component `gorm:"type:json;not null" json:"component"`
 }
 
-type UserModel struct {
-	gorm.Model
-	UserID string `gorm:"primaryKey" json:"user_id"`
-}
-
 // Session represents a conversation session
 type Session struct {
-	UserModel
-	Name string `gorm:"unique;not null" json:"name"`
+	gorm.Model
+	UserID string `gorm:"primaryKey;not null" json:"user_id"`
+	Name   string `gorm:"unique;not null" json:"name"`
 
 	// Relationships
 	Runs []Run `gorm:"foreignKey:SessionName;constraint:OnDelete:CASCADE" json:"runs,omitempty"`
@@ -72,8 +68,8 @@ const (
 
 // Run represents a single execution run within a session
 type Run struct {
-	UserModel
-	ID           uint      `gorm:"primaryKey" json:"id"`
+	gorm.Model
+	UserID       string    `gorm:"primaryKey;not null" json:"user_id"`
 	SessionName  string    `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"session_name"`
 	Status       RunStatus `gorm:"default:created" json:"status"`
 	Task         JSONMap   `gorm:"type:json;not null" json:"task"`
@@ -81,22 +77,19 @@ type Run struct {
 	ErrorMessage *string   `json:"error_message,omitempty"`
 
 	// Relationships
-	Session      Session   `gorm:"foreignKey:SessionName" json:"session,omitempty"`
 	MessageItems []Message `gorm:"foreignKey:RunID;constraint:OnDelete:CASCADE" json:"message_items,omitempty"`
 }
 
 // Message represents a message in a conversation
 type Message struct {
-	UserModel
-	ID          uint    `gorm:"primaryKey" json:"id"`
+	gorm.Model
+	UserID      string  `gorm:"primaryKey;not null" json:"user_id"`
 	Config      JSONMap `gorm:"type:json;not null" json:"config"`
 	SessionName string  `gorm:"index;constraint:OnDelete:SET NULL" json:"session_name,omitempty"`
 	RunID       uint    `gorm:"index;constraint:OnDelete:CASCADE" json:"run_id,omitempty"`
 	MessageMeta JSONMap `gorm:"type:json" json:"message_meta,omitempty"`
 
 	// Relationships
-	Session  *Session   `gorm:"foreignKey:SessionName" json:"session,omitempty"`
-	Run      *Run       `gorm:"foreignKey:RunID" json:"run,omitempty"`
 	Feedback []Feedback `gorm:"foreignKey:MessageID;constraint:OnDelete:CASCADE" json:"feedback,omitempty"`
 }
 
@@ -112,14 +105,12 @@ const (
 
 // Feedback represents user feedback on agent responses
 type Feedback struct {
-	UserModel
+	gorm.Model
+	UserID       string             `gorm:"primaryKey;not null" json:"user_id"`
+	MessageID    uint               `gorm:"index;constraint:OnDelete:CASCADE" json:"message_id"`
 	IsPositive   bool               `gorm:"default:false" json:"is_positive"`
 	FeedbackText string             `gorm:"not null" json:"feedback_text"`
 	IssueType    *FeedbackIssueType `json:"issue_type,omitempty"`
-	MessageID    *uint              `gorm:"index;constraint:OnDelete:CASCADE" json:"message_id,omitempty"`
-
-	// Relationships
-	Message *Message `gorm:"foreignKey:MessageID" json:"message,omitempty"`
 }
 
 // Tool represents a single tool that can be used by an agent
@@ -146,8 +137,8 @@ type ToolServer struct {
 
 // EvalTask represents an evaluation task
 type EvalTask struct {
-	UserModel
-	ID          uint          `gorm:"primaryKey" json:"id"`
+	gorm.Model
+	UserID      string        `gorm:"primaryKey;not null" json:"user_id"`
 	Name        string        `gorm:"default:'Unnamed Task'" json:"name"`
 	Description string        `json:"description"`
 	Config      api.Component `gorm:"type:json;not null" json:"config"`
@@ -174,8 +165,8 @@ const (
 
 // EvalRun represents an evaluation run
 type EvalRun struct {
-	UserModel
-	ID              uint            `gorm:"primaryKey" json:"id"`
+	gorm.Model
+	UserID          string          `gorm:"primaryKey;not null" json:"user_id"`
 	Name            string          `gorm:"default:'Unnamed Evaluation Run'" json:"name"`
 	Description     string          `json:"description"`
 	TaskID          *uint           `gorm:"index;constraint:OnDelete:SET NULL" json:"task_id,omitempty"`

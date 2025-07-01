@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
@@ -241,90 +240,5 @@ func (h *SessionsHandler) HandleListSessionRunsDB(w ErrorResponseWriter, r *http
 	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
 		"status": true,
 		"data":   map[string]interface{}{"runs": runData},
-	})
-}
-
-// HandleSessionInvokeDB handles POST /api/sessions/{sessionID}/invoke requests using database
-func (h *SessionsHandler) HandleSessionInvokeDB(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "invoke-db")
-
-	sessionID, err := GetIntPathParam(r, "sessionID")
-	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get session ID from path", err))
-		return
-	}
-	log = log.WithValues("sessionID", sessionID)
-
-	userID, err := GetUserID(r)
-	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get user ID", err))
-		return
-	}
-	log = log.WithValues("userID", userID)
-
-	var runRequest RunRequest
-	if err := DecodeJSONBody(r, &runRequest); err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
-		return
-	}
-
-	// Verify session exists and belongs to user
-	session, err := h.DatabaseService.Session.Get(uint(sessionID), userID)
-	if err != nil {
-		w.RespondWithError(errors.NewNotFoundError("Session not found", err))
-		return
-	}
-
-	// Create a new run
-	run := &database.Run{
-		BaseModel: database.BaseModel{
-			UserID: &userID,
-		},
-		SessionID: session.ID,
-		Status:    database.RunStatusCreated,
-		Task: database.JSONMap{
-			"content": runRequest.Task,
-			"source":  "user",
-		},
-		TeamResult: database.JSONMap{},
-		Messages:   database.JSONMap{},
-	}
-
-	if err := h.DatabaseService.CreateRun(run); err != nil {
-		w.RespondWithError(errors.NewInternalServerError("Failed to create run", err))
-		return
-	}
-
-	// For now, we'll still use the autogen client for the actual execution
-	// but store the results in the database
-	result, err := h.AutogenClient.InvokeSession(sessionID, userID, runRequest.Task)
-	if err != nil {
-		// Update run status to error
-		run.Status = database.RunStatusError
-		errMsg := err.Error()
-		run.ErrorMessage = &errMsg
-		h.DatabaseService.UpdateRun(run)
-
-		w.RespondWithError(errors.NewInternalServerError("Failed to invoke session", err))
-		return
-	}
-
-	// Update run with results
-	run.Status = database.RunStatusComplete
-	if result != nil {
-		resultBytes, _ := json.Marshal(result)
-		var resultMap map[string]interface{}
-		json.Unmarshal(resultBytes, &resultMap)
-		run.TeamResult = database.JSONMap(resultMap)
-	}
-
-	if err := h.DatabaseService.UpdateRun(run); err != nil {
-		log.Error(err, "Failed to update run with results")
-	}
-
-	log.Info("Successfully invoked session", "runID", run.ID)
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   result,
 	})
 }

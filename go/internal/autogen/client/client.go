@@ -20,11 +20,11 @@ type client struct {
 
 type Client interface {
 	GetVersion(ctx context.Context) (string, error)
-	InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error)
-	InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, error)
-	FetchTools(req *ToolServerRequest) ([]*api.Component, error)
-	Validate(req *ValidationRequest) (*ValidationResponse, error)
-	ListSupportedModels() (*ProviderModels, error)
+	InvokeTask(ctx context.Context, req *InvokeTaskRequest) (*InvokeTaskResult, error)
+	InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *SseEvent, error)
+	FetchTools(ctx context.Context, req *ToolServerRequest) ([]*api.Component, error)
+	Validate(ctx context.Context, req *ValidationRequest) (*ValidationResponse, error)
+	ListSupportedModels(ctx context.Context) (*ProviderModels, error)
 }
 
 func New(baseURL string) Client {
@@ -142,14 +142,14 @@ type InvokeTaskResult struct {
 	Usage      string     `json:"usage"`
 }
 
-func (c *client) InvokeTask(req *InvokeTaskRequest) (*InvokeTaskResult, error) {
+func (c *client) InvokeTask(ctx context.Context, req *InvokeTaskRequest) (*InvokeTaskResult, error) {
 	var invoke InvokeTaskResult
-	err := c.doRequest(context.Background(), "POST", "/invoke", req, &invoke)
+	err := c.doRequest(ctx, "POST", "/invoke", req, &invoke)
 	return &invoke, err
 }
 
-func (c *client) InvokeTaskStream(req *InvokeTaskRequest) (<-chan *SseEvent, error) {
-	resp, err := c.startRequest(context.Background(), "POST", "/invoke/stream", req)
+func (c *client) InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *SseEvent, error) {
+	resp, err := c.startRequest(ctx, "POST", "/invoke/stream", req)
 	if err != nil {
 		return nil, err
 	}
@@ -161,9 +161,9 @@ type ToolServerRequest struct {
 	Component *api.Component `json:"component"`
 }
 
-func (c *client) FetchTools(req *ToolServerRequest) ([]*api.Component, error) {
+func (c *client) FetchTools(ctx context.Context, req *ToolServerRequest) ([]*api.Component, error) {
 	var tools []*api.Component
-	err := c.doRequest(context.Background(), "POST", "/toolservers/refresh", req, &tools)
+	err := c.doRequest(ctx, "POST", "/toolservers/refresh", req, &tools)
 	if err != nil {
 		return nil, err
 	}
@@ -205,14 +205,14 @@ func (r ValidationResponse) ErrorMsg() string {
 	return msg
 }
 
-func (c *client) Validate(req *ValidationRequest) (*ValidationResponse, error) {
+func (c *client) Validate(ctx context.Context, req *ValidationRequest) (*ValidationResponse, error) {
 	var resp ValidationResponse
-	err := c.doRequest(context.Background(), "POST", "/validate", req, &resp)
+	err := c.doRequest(ctx, "POST", "/validate", req, &resp)
 	return &resp, err
 }
 
-func (c *client) ListSupportedModels() (*ProviderModels, error) {
+func (c *client) ListSupportedModels(ctx context.Context) (*ProviderModels, error) {
 	var models ProviderModels
-	err := c.doRequest(context.Background(), "GET", "/models", nil, &models)
+	err := c.doRequest(ctx, "GET", "/models", nil, &models)
 	return &models, err
 }

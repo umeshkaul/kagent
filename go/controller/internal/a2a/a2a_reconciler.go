@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
-	"github.com/kagent-dev/kagent/go/controller/internal/database"
-	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
+	common "github.com/kagent-dev/kagent/go/internal/utils"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
@@ -18,7 +18,7 @@ type A2AReconciler interface {
 	ReconcileAutogenAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-		autogenTeam *autogen_client.Team,
+		autogenTeam *database.Team,
 	) error
 
 	ReconcileAutogenAgentDeletion(
@@ -48,7 +48,7 @@ func NewAutogenReconciler(
 func (a *a2aReconciler) ReconcileAutogenAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
-	autogenTeam *autogen_client.Team,
+	autogenTeam *database.Team,
 ) error {
 	params, err := a.a2aTranslator.TranslateHandlerForAgent(ctx, agent, autogenTeam)
 	if err != nil {

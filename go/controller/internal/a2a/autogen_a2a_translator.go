@@ -2,14 +2,15 @@ package a2a
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
-	"github.com/kagent-dev/kagent/go/controller/internal/database"
-	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
+	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"k8s.io/utils/ptr"
 	"trpc.group/trpc-go/trpc-a2a-go/server"
 )
 
@@ -18,7 +19,7 @@ type AutogenA2ATranslator interface {
 	TranslateHandlerForAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-		autogenTeam *autogen_client.Team,
+		autogenTeam *database.Team,
 	) (*A2AHandlerParams, error)
 }
 
@@ -45,7 +46,7 @@ func NewAutogenA2ATranslator(
 func (a *autogenA2ATranslator) TranslateHandlerForAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
-	autogenTeam *autogen_client.Team,
+	autogenTeam *database.Team,
 ) (*A2AHandlerParams, error) {
 	card, err := a.translateCardForAgent(agent)
 	if err != nil {
@@ -61,8 +62,8 @@ func (a *autogenA2ATranslator) TranslateHandlerForAgent(
 	}
 
 	return &A2AHandlerParams{
-		AgentCard:  *card,
-		HandleTask: handler,
+		AgentCard:   *card,
+		TaskHandler: handler,
 	}, nil
 }
 
@@ -88,13 +89,15 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 
 	return &server.AgentCard{
 		Name:        agentRef,
-		Description: common.MakePtr(agent.Spec.Description),
+		Description: agent.Spec.Description,
 		URL:         fmt.Sprintf("%s/%s", a.a2aBaseUrl, agentRef),
 		//Provider:           nil,
 		Version: fmt.Sprintf("%v", agent.Generation),
 		//DocumentationURL:   nil,
-		//Capabilities:       server.AgentCapabilities{},
 		//Authentication:     nil,
+		Capabilities: server.AgentCapabilities{
+			Streaming: ptr.To(true),
+		},
 		DefaultInputModes:  []string{"text"},
 		DefaultOutputModes: []string{"text"},
 		Skills:             convertedSkills,
@@ -102,68 +105,133 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 }
 
 func (a *autogenA2ATranslator) makeHandlerForTeam(
-	autogenTeam *autogen_client.Team,
-) (TaskHandler, error) {
-	return func(ctx context.Context, task string, sessionID *string) (string, error) {
-		var taskResult *autogen_client.TaskResult
-		if sessionID != nil && *sessionID != "" {
-			session, err := a.dbService.Session.Get(database.Clause{
-				Key:   "user_id",
-				Value: common.GetGlobalUserID(),
-			}, database.Clause{
-				Key:   "name",
-				Value: *sessionID,
-			})
-			if err != nil {
-				return "", fmt.Errorf("failed to get session: %w", err)
-			}
-			if err != nil {
-				if errors.Is(err, autogen_client.NotFoundError) {
-					session = &database.Session{
-						Name: *sessionID,
-					}
-					err := a.dbService.Session.Create(session)
-					if err != nil {
-						return "", fmt.Errorf("failed to create session: %w", err)
-					}
-				} else {
-					return "", fmt.Errorf("failed to get session: %w", err)
-				}
-			}
-			resp, err := a.autogenClient.InvokeTask(session.ID, common.GetGlobalUserID(), &autogen_client.InvokeRequest{
-				Task:       task,
-				TeamConfig: autogenTeam.Component,
-			})
-			if err != nil {
-				return "", fmt.Errorf("failed to invoke task: %w", err)
-			}
-			taskResult = &resp.TaskResult
-		} else {
-
-			resp, err := a.autogenClient.InvokeTask(&autogen_client.InvokeTaskRequest{
-				Task:       task,
-				TeamConfig: autogenTeam.Component,
-			})
-			if err != nil {
-				return "", fmt.Errorf("failed to invoke task: %w", err)
-			}
-			taskResult = &resp.TaskResult
-		}
-
-		var lastMessageContent string
-		for _, msg := range taskResult.Messages {
-			switch msg["content"].(type) {
-			case string:
-				lastMessageContent = msg["content"].(string)
-			default:
-				b, err := json.Marshal(msg["content"])
-				if err != nil {
-					return "", fmt.Errorf("failed to marshal message content: %w", err)
-				}
-				lastMessageContent = string(b)
-			}
-		}
-
-		return lastMessageContent, nil
+	autogenTeam *database.Team,
+) (MessageHandler, error) {
+	return &taskHandler{
+		team:   autogenTeam,
+		client: a.autogenClient,
 	}, nil
+}
+
+type taskHandler struct {
+	team      *database.Team
+	client    autogen_client.Client
+	dbService database.Client
+}
+
+func (t *taskHandler) HandleMessage(ctx context.Context, task string, contextID string) ([]autogen_client.Event, error) {
+	var taskResult *autogen_client.TaskResult
+	if contextID != "" {
+		_, err := t.getOrCreateSession(ctx, contextID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get or create session: %w", err)
+		}
+		resp, err := t.client.InvokeTask(ctx, &autogen_client.InvokeTaskRequest{
+			Task:       task,
+			TeamConfig: &t.team.Component,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to invoke task: %w", err)
+		}
+		taskResult = &resp.TaskResult
+	} else {
+
+		resp, err := t.client.InvokeTask(ctx, &autogen_client.InvokeTaskRequest{
+			Task:       task,
+			TeamConfig: &t.team.Component,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to invoke task: %w", err)
+		}
+		taskResult = &resp.TaskResult
+	}
+
+	events := make([]autogen_client.Event, len(taskResult.Messages))
+	for i, msg := range taskResult.Messages {
+		parsedEvent, err := autogen_client.ParseEvent(msg)
+		if err != nil {
+			log.Printf("failed to parse event: %v", err)
+			continue
+		}
+		events[i] = parsedEvent
+	}
+
+	return events, nil
+}
+
+// getOrCreateSession gets a session from the database or creates a new one if it doesn't exist
+func (t *taskHandler) getOrCreateSession(ctx context.Context, contextID string) (*database.Session, error) {
+	session, err := t.dbService.GetSession(contextID, common.GetGlobalUserID())
+	if err != nil {
+		if errors.Is(err, autogen_client.NotFoundError) {
+			session = &database.Session{
+				Name:   contextID,
+				UserID: common.GetGlobalUserID(),
+				TeamID: ptr.To(uint(t.team.ID)),
+			}
+			err := t.dbService.CreateSession(session)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create session: %w", err)
+			}
+		} else {
+			return nil, fmt.Errorf("failed to get session: %w", err)
+		}
+	}
+	return session, nil
+}
+
+func (t *taskHandler) HandleMessageStream(ctx context.Context, task string, contextID string) (<-chan autogen_client.Event, error) {
+	if contextID != "" {
+		_, err := t.getOrCreateSession(ctx, contextID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get session: %w", err)
+		}
+
+		stream, err := t.client.InvokeTaskStream(ctx, &autogen_client.InvokeTaskRequest{
+			Task:       task,
+			TeamConfig: &t.team.Component,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to invoke task: %w", err)
+		}
+
+		events := make(chan autogen_client.Event)
+		go func() {
+			defer close(events)
+			for event := range stream {
+				parsedEvent, err := autogen_client.ParseEvent(event.Data)
+				if err != nil {
+					log.Printf("failed to parse event: %v", err)
+					continue
+				}
+				events <- parsedEvent
+			}
+		}()
+
+		return events, nil
+	} else {
+
+		stream, err := t.client.InvokeTaskStream(ctx, &autogen_client.InvokeTaskRequest{
+			Task:       task,
+			TeamConfig: &t.team.Component,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to invoke task: %w", err)
+		}
+
+		events := make(chan autogen_client.Event, 10)
+		go func() {
+			defer close(events)
+			for event := range stream {
+				parsedEvent, err := autogen_client.ParseEvent(event.Data)
+				if err != nil {
+					log.Printf("failed to parse event: %v", err)
+					continue
+				}
+				events <- parsedEvent
+			}
+		}()
+
+		return events, nil
+	}
 }

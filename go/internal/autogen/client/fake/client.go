@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -33,22 +34,19 @@ func (m *InMemoryAutogenClient) GetVersion(_ context.Context) (string, error) {
 }
 
 // InvokeTask implements the Client interface
-func (m *InMemoryAutogenClient) InvokeTask(req *autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error) {
+func (m *InMemoryAutogenClient) InvokeTask(ctx context.Context, req *autogen_client.InvokeTaskRequest) (*autogen_client.InvokeTaskResult, error) {
 	// For in-memory implementation, return a basic result
 	return &autogen_client.InvokeTaskResult{
 		TaskResult: autogen_client.TaskResult{
-			Messages: []autogen_client.TaskMessageMap{
-				{
-					"role":    "assistant",
-					"content": fmt.Sprintf("Task completed: %s", req.Task),
-				},
+			Messages: []json.RawMessage{
+				json.RawMessage(fmt.Sprintf(`{"role": "assistant", "content": "Task completed: %s"}`, req.Task)),
 			},
 		},
 	}, nil
 }
 
 // InvokeTaskStream implements the Client interface
-func (m *InMemoryAutogenClient) InvokeTaskStream(req *autogen_client.InvokeTaskRequest) (<-chan *autogen_client.SseEvent, error) {
+func (m *InMemoryAutogenClient) InvokeTaskStream(ctx context.Context, req *autogen_client.InvokeTaskRequest) (<-chan *autogen_client.SseEvent, error) {
 	ch := make(chan *autogen_client.SseEvent, 1)
 	go func() {
 		defer close(ch)
@@ -62,7 +60,7 @@ func (m *InMemoryAutogenClient) InvokeTaskStream(req *autogen_client.InvokeTaskR
 }
 
 // FetchTools implements the Client interface
-func (m *InMemoryAutogenClient) FetchTools(req *autogen_client.ToolServerRequest) ([]*api.Component, error) {
+func (m *InMemoryAutogenClient) FetchTools(ctx context.Context, req *autogen_client.ToolServerRequest) ([]*api.Component, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -75,7 +73,7 @@ func (m *InMemoryAutogenClient) FetchTools(req *autogen_client.ToolServerRequest
 }
 
 // Validate implements the Client interface
-func (m *InMemoryAutogenClient) Validate(req *autogen_client.ValidationRequest) (*autogen_client.ValidationResponse, error) {
+func (m *InMemoryAutogenClient) Validate(ctx context.Context, req *autogen_client.ValidationRequest) (*autogen_client.ValidationResponse, error) {
 	return &autogen_client.ValidationResponse{
 		IsValid:  true,
 		Errors:   []*autogen_client.ValidationError{},
@@ -91,7 +89,7 @@ func (m *InMemoryAutogenClient) AddToolsForServer(serverLabel string, tools []*a
 	m.toolsByServer[serverLabel] = tools
 }
 
-func (m *InMemoryAutogenClient) ListSupportedModels() (*autogen_client.ProviderModels, error) {
+func (m *InMemoryAutogenClient) ListSupportedModels(ctx context.Context) (*autogen_client.ProviderModels, error) {
 	return &autogen_client.ProviderModels{
 		"openai": {
 			{

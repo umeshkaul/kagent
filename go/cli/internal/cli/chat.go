@@ -137,7 +137,7 @@ func ChatCmd(c *ishell.Context) {
 			continue
 		}
 
-		usage := &autogen_client.ModelsUsage{}
+		usage := &client.ModelsUsage{}
 
 		ch, err := client.InvokeSessionStream(session.ID, cfg.UserID, &autogen_client.InvokeRequest{
 			Task:       task,
