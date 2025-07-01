@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/internal/a2a"
 	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
@@ -29,12 +30,12 @@ type A2AReconciler interface {
 type a2aReconciler struct {
 	a2aTranslator AutogenA2ATranslator
 	autogenClient autogen_client.Client
-	a2aHandler    A2AHandlerMux
+	a2aHandler    a2a.A2AHandlerMux
 }
 
 func NewAutogenReconciler(
 	autogenClient autogen_client.Client,
-	a2aHandler A2AHandlerMux,
+	a2aHandler a2a.A2AHandlerMux,
 	a2aBaseUrl string,
 	dbService database.Client,
 ) A2AReconciler {

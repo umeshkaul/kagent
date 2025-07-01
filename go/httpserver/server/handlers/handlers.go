@@ -18,7 +18,6 @@ type Handlers struct {
 	Teams       *TeamsHandler
 	Tools       *ToolsHandler
 	ToolServers *ToolServersHandler
-	Invoke      *InvokeHandler
 	Memory      *MemoryHandler
 	Feedback    *FeedbackHandler
 	Namespaces  *NamespacesHandler
@@ -50,7 +49,6 @@ func NewHandlers(kubeClient client.Client, autogenClient autogen_client.Client, 
 		Teams:       NewTeamsHandler(base),
 		Tools:       NewToolsHandler(base),
 		ToolServers: NewToolServersHandler(base),
-		Invoke:      NewInvokeHandler(base),
 		Memory:      NewMemoryHandler(base),
 		Feedback:    NewFeedbackHandler(base),
 		Namespaces:  NewNamespacesHandler(base, watchedNamespaces),

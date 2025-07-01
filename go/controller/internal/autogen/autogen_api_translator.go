@@ -8,9 +8,9 @@ import (
 	"strconv"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/controller/internal/autogen/api"
-	"github.com/kagent-dev/kagent/go/controller/internal/database"
-	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+	"github.com/kagent-dev/kagent/go/internal/database"
+	common "github.com/kagent-dev/kagent/go/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -326,7 +326,6 @@ func (a *apiTranslator) translateGroupChatForTeam(
 	roundRobinTeamConfig := team.Spec.RoundRobinTeamConfig
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
 	magenticOneTeamConfig := team.Spec.MagenticOneTeamConfig
-	swarmTeamConfig := team.Spec.SwarmTeamConfig
 
 	modelConfigObj, err := common.GetModelConfig(
 		ctx,
@@ -388,19 +387,6 @@ func (a *apiTranslator) translateGroupChatForTeam(
 		participants = append(participants, participant)
 	}
 
-	if swarmTeamConfig != nil {
-		planningAgent := MakeBuiltinPlanningAgent(
-			"planning_agent",
-			participants,
-			modelClientWithStreaming,
-		)
-		// prepend builtin planning agent when using swarm mode
-		participants = append(
-			[]*api.Component{planningAgent},
-			participants...,
-		)
-	}
-
 	terminationCondition, err := translateTerminationCondition(team.Spec.TerminationCondition)
 	if err != nil {
 		return nil, err
@@ -443,16 +429,6 @@ func (a *apiTranslator) translateGroupChatForTeam(
 				CommonTeamConfig:  commonTeamConfig,
 				MaxStalls:         magenticOneTeamConfig.MaxStalls,
 				FinalAnswerPrompt: magenticOneTeamConfig.FinalAnswerPrompt,
-			}),
-		}
-	} else if swarmTeamConfig != nil {
-		teamConfig = &api.Component{
-			Provider:      "autogen_agentchat.teams.SwarmTeam",
-			ComponentType: "team",
-			Version:       1,
-			Description:   team.Spec.Description,
-			Config: api.MustToConfig(&api.SwarmTeamConfig{
-				CommonTeamConfig: commonTeamConfig,
 			}),
 		}
 	} else {

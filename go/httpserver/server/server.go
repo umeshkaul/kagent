@@ -136,20 +136,18 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathModelConfig+"/{namespace}/{configName}", adaptHandler(s.handlers.ModelConfig.HandleUpdateModelConfig)).Methods(http.MethodPut)
 
 	// Sessions - using database handlers
-	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessionsDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleCreateSessionDB)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleGetSessionDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/invoke", adaptHandler(s.handlers.Sessions.HandleSessionInvokeDB)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/invoke/stream", adaptHandler(s.handlers.Sessions.HandleSessionInvokeStream)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/runs", adaptHandler(s.handlers.Sessions.HandleListSessionRunsDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleDeleteSessionDB)).Methods(http.MethodDelete)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSessionDB)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessions)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleCreateSession)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleGetSession)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}/runs", adaptHandler(s.handlers.Sessions.HandleListSessionRuns)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleDeleteSession)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSession)).Methods(http.MethodPut)
 
 	// Tools - using database handlers
-	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListToolsDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleCreateToolDB)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleUpdateToolDB)).Methods(http.MethodPut)
-	s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleDeleteToolDB)).Methods(http.MethodDelete)
+	// s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListToolsDB)).Methods(http.MethodGet)
+	// s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleCreateToolDB)).Methods(http.MethodPost)
+	// s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleUpdateToolDB)).Methods(http.MethodPut)
+	// s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleDeleteToolDB)).Methods(http.MethodDelete)
 
 	// Tool Servers
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleListToolServers)).Methods(http.MethodGet)
@@ -157,15 +155,11 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathToolServers+"/{namespace}/{toolServerName}", adaptHandler(s.handlers.ToolServers.HandleDeleteToolServer)).Methods(http.MethodDelete)
 
 	// Teams - using database handlers
-	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleListTeamsDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleCreateTeamDB)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleUpdateTeamDB)).Methods(http.MethodPut)
-	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleGetTeamDB)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleDeleteTeamDB)).Methods(http.MethodDelete)
-
-	// Agents
-	s.router.HandleFunc(APIPathAgents+"/{agentId}/invoke", adaptHandler(s.handlers.Invoke.HandleInvokeAgent)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathAgents+"/{agentId}/invoke/stream", adaptHandler(s.handlers.Invoke.HandleInvokeAgentStream)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleListTeams)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTeams, adaptHandler(s.handlers.Teams.HandleCreateTeam)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleUpdateTeam)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleGetTeam)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathTeams+"/{teamID}", adaptHandler(s.handlers.Teams.HandleDeleteTeam)).Methods(http.MethodDelete)
 
 	// Providers
 	s.router.HandleFunc(APIPathProviders+"/models", adaptHandler(s.handlers.Provider.HandleListSupportedModelProviders)).Methods(http.MethodGet)
@@ -185,8 +179,8 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathNamespaces, adaptHandler(s.handlers.Namespaces.HandleListNamespaces)).Methods(http.MethodGet)
 
 	// Feedback - using database handlers
-	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleCreateFeedbackDB)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleListFeedbackDB)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleCreateFeedback)).Methods(http.MethodPost)
+	s.router.HandleFunc(APIPathFeedback, adaptHandler(s.handlers.Feedback.HandleListFeedback)).Methods(http.MethodGet)
 
 	// A2A
 	s.router.PathPrefix(APIPathA2A).Handler(s.config.A2AHandler)

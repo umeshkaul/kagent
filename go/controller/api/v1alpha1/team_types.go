@@ -37,10 +37,8 @@ type TeamSpec struct {
 	SelectorTeamConfig *SelectorTeamConfig `json:"selectorTeamConfig"`
 	// +kubebuilder:validation:Optional
 	MagenticOneTeamConfig *MagenticOneTeamConfig `json:"magenticOneTeamConfig"`
-	// +kubebuilder:validation:Optional
-	SwarmTeamConfig      *SwarmTeamConfig     `json:"swarmTeamConfig"`
-	TerminationCondition TerminationCondition `json:"terminationCondition"`
-	MaxTurns             int64                `json:"maxTurns"`
+	TerminationCondition  TerminationCondition   `json:"terminationCondition"`
+	MaxTurns              int64                  `json:"maxTurns"`
 }
 
 type RoundRobinTeamConfig struct{}

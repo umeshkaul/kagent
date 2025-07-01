@@ -26,8 +26,8 @@ type TeamRequest struct {
 	Component api.Component `json:"component"`
 }
 
-// HandleListTeamsDB handles GET /api/teams requests using database
-func (h *TeamsHandler) HandleListTeamsDB(w ErrorResponseWriter, r *http.Request) {
+// HandleListTeams handles GET /api/teams requests using database
+func (h *TeamsHandler) HandleListTeams(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "list-db")
 
 	userID, err := GetUserID(r)
@@ -51,8 +51,8 @@ func (h *TeamsHandler) HandleListTeamsDB(w ErrorResponseWriter, r *http.Request)
 	})
 }
 
-// HandleGetTeamDB handles GET /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleGetTeamDB(w ErrorResponseWriter, r *http.Request) {
+// HandleGetTeam handles GET /api/teams/{agent_name}/{agent_namespace} requests using database
+func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "get-db")
 
 	userID, err := GetUserID(r)
@@ -90,8 +90,8 @@ func (h *TeamsHandler) HandleGetTeamDB(w ErrorResponseWriter, r *http.Request) {
 	})
 }
 
-// HandleCreateTeamDB handles POST /api/teams requests using database
-func (h *TeamsHandler) HandleCreateTeamDB(w ErrorResponseWriter, r *http.Request) {
+// HandleCreateTeam handles POST /api/teams requests using database
+func (h *TeamsHandler) HandleCreateTeam(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "create-db")
 
 	var teamRequest TeamRequest
@@ -119,8 +119,8 @@ func (h *TeamsHandler) HandleCreateTeamDB(w ErrorResponseWriter, r *http.Request
 	})
 }
 
-// HandleUpdateTeamDB handles PUT /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleUpdateTeamDB(w ErrorResponseWriter, r *http.Request) {
+// HandleUpdateTeam handles PUT /api/teams/{agent_name}/{agent_namespace} requests using database
+func (h *TeamsHandler) HandleUpdateTeam(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "update-db")
 
 	agentName, err := GetPathParam(r, "agent_name")
@@ -172,8 +172,8 @@ func (h *TeamsHandler) HandleUpdateTeamDB(w ErrorResponseWriter, r *http.Request
 	})
 }
 
-// HandleDeleteTeamDB handles DELETE /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleDeleteTeamDB(w ErrorResponseWriter, r *http.Request) {
+// HandleDeleteTeam handles DELETE /api/teams/{agent_name}/{agent_namespace} requests using database
+func (h *TeamsHandler) HandleDeleteTeam(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "delete-db")
 
 	userID, err := GetUserID(r)

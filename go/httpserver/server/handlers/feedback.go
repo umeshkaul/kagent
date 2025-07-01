@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
-	"github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -35,7 +35,7 @@ func (h *FeedbackHandler) HandleCreateFeedback(w ErrorResponseWriter, r *http.Re
 	}
 
 	// Parse the feedback submission request
-	var feedbackReq client.FeedbackSubmission
+	var feedbackReq database.Feedback
 	if err := json.Unmarshal(body, &feedbackReq); err != nil {
 		log.Error(err, "Failed to parse feedback data")
 		w.RespondWithError(errors.NewBadRequestError("Invalid feedback data format", err))
@@ -49,7 +49,7 @@ func (h *FeedbackHandler) HandleCreateFeedback(w ErrorResponseWriter, r *http.Re
 		return
 	}
 
-	err = h.AutogenClient.CreateFeedback(&feedbackReq)
+	err = h.DatabaseService.CreateFeedback(&feedbackReq)
 	if err != nil {
 		log.Error(err, "Failed to create feedback")
 		w.RespondWithError(errors.NewInternalServerError("Failed to create feedback", err))
@@ -72,7 +72,7 @@ func (h *FeedbackHandler) HandleListFeedback(w ErrorResponseWriter, r *http.Requ
 		return
 	}
 
-	feedback, err := h.AutogenClient.ListFeedback(userID)
+	feedback, err := h.DatabaseService.ListFeedback(userID)
 	if err != nil {
 		log.Error(err, "Failed to list feedback")
 		w.RespondWithError(errors.NewInternalServerError("Failed to list feedback", err))

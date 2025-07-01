@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/internal/a2a"
 	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
@@ -20,7 +21,7 @@ type AutogenA2ATranslator interface {
 		ctx context.Context,
 		agent *v1alpha1.Agent,
 		autogenTeam *database.Team,
-	) (*A2AHandlerParams, error)
+	) (*a2a.A2AHandlerParams, error)
 }
 
 type autogenA2ATranslator struct {
@@ -47,7 +48,7 @@ func (a *autogenA2ATranslator) TranslateHandlerForAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
 	autogenTeam *database.Team,
-) (*A2AHandlerParams, error) {
+) (*a2a.A2AHandlerParams, error) {
 	card, err := a.translateCardForAgent(agent)
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (a *autogenA2ATranslator) TranslateHandlerForAgent(
 		return nil, err
 	}
 
-	return &A2AHandlerParams{
+	return &a2a.A2AHandlerParams{
 		AgentCard:   *card,
 		TaskHandler: handler,
 	}, nil
@@ -106,7 +107,7 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 
 func (a *autogenA2ATranslator) makeHandlerForTeam(
 	autogenTeam *database.Team,
-) (MessageHandler, error) {
+) (a2a.MessageHandler, error) {
 	return &taskHandler{
 		team:   autogenTeam,
 		client: a.autogenClient,

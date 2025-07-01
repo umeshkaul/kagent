@@ -30,8 +30,8 @@ type RunRequest struct {
 	Task string `json:"task"`
 }
 
-// HandleListSessionsDB handles GET /api/sessions requests using database
-func (h *SessionsHandler) HandleListSessionsDB(w ErrorResponseWriter, r *http.Request) {
+// HandleListSessions handles GET /api/sessions requests using database
+func (h *SessionsHandler) HandleListSessions(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "list-db")
 
 	userID, err := GetUserID(r)
@@ -55,8 +55,8 @@ func (h *SessionsHandler) HandleListSessionsDB(w ErrorResponseWriter, r *http.Re
 	})
 }
 
-// HandleCreateSessionDB handles POST /api/sessions requests using database
-func (h *SessionsHandler) HandleCreateSessionDB(w ErrorResponseWriter, r *http.Request) {
+// HandleCreateSession handles POST /api/sessions requests using database
+func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "create-db")
 
 	var sessionRequest SessionRequest
@@ -72,9 +72,7 @@ func (h *SessionsHandler) HandleCreateSessionDB(w ErrorResponseWriter, r *http.R
 	log = log.WithValues("userID", sessionRequest.UserID)
 
 	session := &database.Session{
-		UserModel: database.UserModel{
-			UserID: sessionRequest.UserID,
-		},
+		UserID: sessionRequest.UserID,
 		TeamID: sessionRequest.TeamID,
 		Name:   sessionRequest.Name,
 	}
@@ -96,8 +94,8 @@ func (h *SessionsHandler) HandleCreateSessionDB(w ErrorResponseWriter, r *http.R
 	})
 }
 
-// HandleGetSessionDB handles GET /api/sessions/{sessionName} requests using database
-func (h *SessionsHandler) HandleGetSessionDB(w ErrorResponseWriter, r *http.Request) {
+// HandleGetSession handles GET /api/sessions/{sessionName} requests using database
+func (h *SessionsHandler) HandleGetSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "get-db")
 
 	sessionName, err := GetPathParam(r, "session_name")
@@ -128,8 +126,8 @@ func (h *SessionsHandler) HandleGetSessionDB(w ErrorResponseWriter, r *http.Requ
 	})
 }
 
-// HandleUpdateSessionDB handles PUT /api/sessions requests using database
-func (h *SessionsHandler) HandleUpdateSessionDB(w ErrorResponseWriter, r *http.Request) {
+// HandleUpdateSession handles PUT /api/sessions requests using database
+func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "update-db")
 
 	var sessionRequest SessionRequest
@@ -161,8 +159,8 @@ func (h *SessionsHandler) HandleUpdateSessionDB(w ErrorResponseWriter, r *http.R
 	})
 }
 
-// HandleDeleteSessionDB handles DELETE /api/sessions/{sessionName} requests using database
-func (h *SessionsHandler) HandleDeleteSessionDB(w ErrorResponseWriter, r *http.Request) {
+// HandleDeleteSession handles DELETE /api/sessions/{sessionName} requests using database
+func (h *SessionsHandler) HandleDeleteSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "delete-db")
 
 	userID, err := GetUserID(r)
@@ -191,8 +189,8 @@ func (h *SessionsHandler) HandleDeleteSessionDB(w ErrorResponseWriter, r *http.R
 	})
 }
 
-// HandleListSessionRunsDB handles GET /api/sessions/{sessionName}/runs requests using database
-func (h *SessionsHandler) HandleListSessionRunsDB(w ErrorResponseWriter, r *http.Request) {
+// HandleListSessionRuns handles GET /api/sessions/{sessionName}/runs requests using database
+func (h *SessionsHandler) HandleListSessionRuns(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "list-runs-db")
 
 	sessionName, err := GetPathParam(r, "session_name")

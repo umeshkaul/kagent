@@ -21,9 +21,9 @@ import (
 	"time"
 
 	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
-	common "github.com/kagent-dev/kagent/go/controller/internal/utils"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -56,7 +56,7 @@ func (r *ToolServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *ToolServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{
-			NeedLeaderElection: common.MakePtr(true),
+			NeedLeaderElection: ptr.To(true),
 		}).
 		For(&agentv1alpha1.ToolServer{}).
 		Named("toolserver").

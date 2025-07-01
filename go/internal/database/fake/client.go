@@ -7,8 +7,8 @@ import (
 	"github.com/kagent-dev/kagent/go/internal/database"
 )
 
-// Client is a fake implementation of database.Client for testing
-type Client struct {
+// InMemmoryFakeClient is a fake implementation of database.InMemmoryFakeClient for testing
+type InMemmoryFakeClient struct {
 	mu             sync.RWMutex
 	feedback       map[string]*database.Feedback
 	runs           map[int]*database.Run
@@ -23,7 +23,7 @@ type Client struct {
 
 // NewClient creates a new fake database client
 func NewClient() database.Client {
-	return &Client{
+	return &InMemmoryFakeClient{
 		feedback:       make(map[string]*database.Feedback),
 		runs:           make(map[int]*database.Run),
 		sessions:       make(map[string]*database.Session),
@@ -36,12 +36,12 @@ func NewClient() database.Client {
 	}
 }
 
-func (c *Client) sessionKey(name, userID string) string {
+func (c *InMemmoryFakeClient) sessionKey(name, userID string) string {
 	return fmt.Sprintf("%s_%s", name, userID)
 }
 
 // CreateFeedback creates a new feedback record
-func (c *Client) CreateFeedback(feedback *database.Feedback) error {
+func (c *InMemmoryFakeClient) CreateFeedback(feedback *database.Feedback) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -56,7 +56,7 @@ func (c *Client) CreateFeedback(feedback *database.Feedback) error {
 }
 
 // CreateRun creates a new run record
-func (c *Client) CreateRun(req *database.Run) error {
+func (c *InMemmoryFakeClient) CreateRun(req *database.Run) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -70,7 +70,7 @@ func (c *Client) CreateRun(req *database.Run) error {
 }
 
 // CreateSession creates a new session record
-func (c *Client) CreateSession(session *database.Session) error {
+func (c *InMemmoryFakeClient) CreateSession(session *database.Session) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -80,7 +80,7 @@ func (c *Client) CreateSession(session *database.Session) error {
 }
 
 // CreateTeam creates a new team record
-func (c *Client) CreateTeam(team *database.Team) error {
+func (c *InMemmoryFakeClient) CreateTeam(team *database.Team) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -89,7 +89,7 @@ func (c *Client) CreateTeam(team *database.Team) error {
 }
 
 // UpsertTeam upserts a team record
-func (c *Client) UpsertTeam(team *database.Team) error {
+func (c *InMemmoryFakeClient) UpsertTeam(team *database.Team) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -98,7 +98,7 @@ func (c *Client) UpsertTeam(team *database.Team) error {
 }
 
 // CreateToolServer creates a new tool server record
-func (c *Client) CreateToolServer(toolServer *database.ToolServer) (*database.ToolServer, error) {
+func (c *InMemmoryFakeClient) CreateToolServer(toolServer *database.ToolServer) (*database.ToolServer, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -107,7 +107,7 @@ func (c *Client) CreateToolServer(toolServer *database.ToolServer) (*database.To
 }
 
 // DeleteRun deletes a run by ID
-func (c *Client) DeleteRun(runID int) error {
+func (c *InMemmoryFakeClient) DeleteRun(runID int) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -117,7 +117,7 @@ func (c *Client) DeleteRun(runID int) error {
 }
 
 // DeleteSession deletes a session by name and user ID
-func (c *Client) DeleteSession(sessionName string, userID string) error {
+func (c *InMemmoryFakeClient) DeleteSession(sessionName string, userID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -127,7 +127,7 @@ func (c *Client) DeleteSession(sessionName string, userID string) error {
 }
 
 // DeleteTeam deletes a team by name
-func (c *Client) DeleteTeam(teamName string) error {
+func (c *InMemmoryFakeClient) DeleteTeam(teamName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -136,7 +136,7 @@ func (c *Client) DeleteTeam(teamName string) error {
 }
 
 // DeleteToolServer deletes a tool server by name
-func (c *Client) DeleteToolServer(serverName string) error {
+func (c *InMemmoryFakeClient) DeleteToolServer(serverName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -145,7 +145,7 @@ func (c *Client) DeleteToolServer(serverName string) error {
 }
 
 // GetRun retrieves a run by ID
-func (c *Client) GetRun(runID int) (*database.Run, error) {
+func (c *InMemmoryFakeClient) GetRun(runID int) (*database.Run, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -157,7 +157,7 @@ func (c *Client) GetRun(runID int) (*database.Run, error) {
 }
 
 // GetRunMessages retrieves messages for a specific run
-func (c *Client) GetRunMessages(runID int) ([]*database.Message, error) {
+func (c *InMemmoryFakeClient) GetRunMessages(runID int) ([]*database.Message, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -169,7 +169,7 @@ func (c *Client) GetRunMessages(runID int) ([]*database.Message, error) {
 }
 
 // GetSession retrieves a session by name and user ID
-func (c *Client) GetSession(sessionLabel string, userID string) (*database.Session, error) {
+func (c *InMemmoryFakeClient) GetSession(sessionLabel string, userID string) (*database.Session, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -182,7 +182,7 @@ func (c *Client) GetSession(sessionLabel string, userID string) (*database.Sessi
 }
 
 // GetTeam retrieves a team by name
-func (c *Client) GetTeam(teamLabel string) (*database.Team, error) {
+func (c *InMemmoryFakeClient) GetTeam(teamLabel string) (*database.Team, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -194,7 +194,7 @@ func (c *Client) GetTeam(teamLabel string) (*database.Team, error) {
 }
 
 // GetTool retrieves a tool by provider
-func (c *Client) GetTool(provider string) (*database.Tool, error) {
+func (c *InMemmoryFakeClient) GetTool(provider string) (*database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -206,7 +206,7 @@ func (c *Client) GetTool(provider string) (*database.Tool, error) {
 }
 
 // GetToolServer retrieves a tool server by name
-func (c *Client) GetToolServer(serverName string) (*database.ToolServer, error) {
+func (c *InMemmoryFakeClient) GetToolServer(serverName string) (*database.ToolServer, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -218,7 +218,7 @@ func (c *Client) GetToolServer(serverName string) (*database.ToolServer, error) 
 }
 
 // ListFeedback lists all feedback for a user
-func (c *Client) ListFeedback(userID string) ([]*database.Feedback, error) {
+func (c *InMemmoryFakeClient) ListFeedback(userID string) ([]*database.Feedback, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -232,7 +232,7 @@ func (c *Client) ListFeedback(userID string) ([]*database.Feedback, error) {
 }
 
 // ListRuns lists all runs for a user
-func (c *Client) ListRuns(userID string) ([]*database.Run, error) {
+func (c *InMemmoryFakeClient) ListRuns(userID string) ([]*database.Run, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -246,7 +246,7 @@ func (c *Client) ListRuns(userID string) ([]*database.Run, error) {
 }
 
 // ListSessionRuns lists all runs for a specific session
-func (c *Client) ListSessionRuns(sessionName string, userID string) ([]*database.Run, error) {
+func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string) ([]*database.Run, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -260,7 +260,7 @@ func (c *Client) ListSessionRuns(sessionName string, userID string) ([]*database
 }
 
 // ListSessions lists all sessions for a user
-func (c *Client) ListSessions(userID string) ([]*database.Session, error) {
+func (c *InMemmoryFakeClient) ListSessions(userID string) ([]*database.Session, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -274,7 +274,7 @@ func (c *Client) ListSessions(userID string) ([]*database.Session, error) {
 }
 
 // ListTeams lists all teams for a user
-func (c *Client) ListTeams(userID string) ([]*database.Team, error) {
+func (c *InMemmoryFakeClient) ListTeams(userID string) ([]*database.Team, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -286,7 +286,7 @@ func (c *Client) ListTeams(userID string) ([]*database.Team, error) {
 }
 
 // ListToolServers lists all tool servers
-func (c *Client) ListToolServers() ([]*database.ToolServer, error) {
+func (c *InMemmoryFakeClient) ListToolServers() ([]*database.ToolServer, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -298,7 +298,7 @@ func (c *Client) ListToolServers() ([]*database.ToolServer, error) {
 }
 
 // ListTools lists all tools for a user
-func (c *Client) ListTools(userID string) ([]*database.Tool, error) {
+func (c *InMemmoryFakeClient) ListTools(userID string) ([]*database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -310,7 +310,7 @@ func (c *Client) ListTools(userID string) ([]*database.Tool, error) {
 }
 
 // ListToolsForServer lists all tools for a specific server
-func (c *Client) ListToolsForServer(serverName string) ([]*database.Tool, error) {
+func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]*database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -324,7 +324,7 @@ func (c *Client) ListToolsForServer(serverName string) ([]*database.Tool, error)
 }
 
 // ListMessagesForRun retrieves messages for a specific run
-func (c *Client) ListMessagesForRun(runID uint) ([]database.Message, error) {
+func (c *InMemmoryFakeClient) ListMessagesForRun(runID uint) ([]database.Message, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -342,7 +342,7 @@ func (c *Client) ListMessagesForRun(runID uint) ([]database.Message, error) {
 }
 
 // UpdateSession updates a session
-func (c *Client) UpdateSession(session *database.Session) error {
+func (c *InMemmoryFakeClient) UpdateSession(session *database.Session) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -352,7 +352,7 @@ func (c *Client) UpdateSession(session *database.Session) error {
 }
 
 // UpdateToolServer updates a tool server
-func (c *Client) UpdateToolServer(server *database.ToolServer) error {
+func (c *InMemmoryFakeClient) UpdateToolServer(server *database.ToolServer) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -361,7 +361,7 @@ func (c *Client) UpdateToolServer(server *database.ToolServer) error {
 }
 
 // UpdateRun updates a run record
-func (c *Client) UpdateRun(run *database.Run) error {
+func (c *InMemmoryFakeClient) UpdateRun(run *database.Run) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -370,7 +370,7 @@ func (c *Client) UpdateRun(run *database.Run) error {
 }
 
 // UpdateTeam updates a team record
-func (c *Client) UpdateTeam(team *database.Team) error {
+func (c *InMemmoryFakeClient) UpdateTeam(team *database.Team) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -381,7 +381,7 @@ func (c *Client) UpdateTeam(team *database.Team) error {
 // Helper methods for testing
 
 // AddMessage adds a message to a run for testing purposes
-func (c *Client) AddMessage(runID int, message *database.Message) {
+func (c *InMemmoryFakeClient) AddMessage(runID int, message *database.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -392,7 +392,7 @@ func (c *Client) AddMessage(runID int, message *database.Message) {
 }
 
 // AddTool adds a tool for testing purposes
-func (c *Client) AddTool(tool *database.Tool) {
+func (c *InMemmoryFakeClient) AddTool(tool *database.Tool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -400,7 +400,7 @@ func (c *Client) AddTool(tool *database.Tool) {
 }
 
 // Clear clears all data for testing purposes
-func (c *Client) Clear() {
+func (c *InMemmoryFakeClient) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

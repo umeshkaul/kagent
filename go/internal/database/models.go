@@ -116,7 +116,7 @@ type Feedback struct {
 // Tool represents a single tool that can be used by an agent
 type Tool struct {
 	gorm.Model
-	Name       string        `gorm:"primaryKey" json:"name"`
+	Name       string        `gorm:"unique" json:"name"`
 	Component  api.Component `gorm:"type:json;not null" json:"component"`
 	ServerName string        `gorm:"index;constraint:OnDelete:SET NULL" json:"server_name,omitempty"`
 

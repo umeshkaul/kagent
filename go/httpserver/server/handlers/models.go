@@ -22,7 +22,7 @@ func (h *ModelHandler) HandleListSupportedModels(w ErrorResponseWriter, r *http.
 
 	log.Info("Listing supported models")
 
-	models, err := h.AutogenClient.ListSupportedModels()
+	models, err := h.AutogenClient.ListSupportedModels(r.Context())
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to list supported models", err))
 		return
