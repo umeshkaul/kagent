@@ -144,16 +144,20 @@ wheels = [
 
 [[package]]
 name = "autogen-agentchat"
-version = "0.6.1"
-source = { git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=c5b893d3f814185c326c8ff95767d2375d95818d#c5b893d3f814185c326c8ff95767d2375d95818d" }
+version = "0.6.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autogen-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/96/ac/cf7d5955230e3f2f6c828f32b52ce3487b577d26586f33920af1897c5dac/autogen_agentchat-0.6.2.tar.gz", hash = "sha256:a3965bb28a1b6a3813c3c6783e8f037bad572546d0ee4e275f3429ab6988983c", size = 136738, upload-time = "2025-06-30T23:35:08.785Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/83/b1/0a59299d68d5cae53e90b9a9ef9eeae5f0a4695c78fbf03a19cba490a45c/autogen_agentchat-0.6.2-py3-none-any.whl", hash = "sha256:283009bc12154832ee50918eccce61b507bdb6bc7de73dc58ca48be5567daa27", size = 114401, upload-time = "2025-06-30T23:35:07.146Z" },
 ]
 
 [[package]]
 name = "autogen-core"
-version = "0.6.1"
-source = { git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-core&rev=c5b893d3f814185c326c8ff95767d2375d95818d#c5b893d3f814185c326c8ff95767d2375d95818d" }
+version = "0.6.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonref" },
     { name = "opentelemetry-api" },
@@ -163,13 +167,21 @@ dependencies = [
     { name = "pydantic" },
     { name = "typing-extensions" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/27/09/270cfd85434561f97df3ca665ff7a55b55195dddba55b811a6d27cf4c221/autogen_core-0.6.2.tar.gz", hash = "sha256:88d4c0c6f08ef09dd31dac8ade904580a1e86a9832e29759ab553858536bd450", size = 2459291, upload-time = "2025-06-30T23:34:59.357Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/00/b51bff88db1ea42dae2706ec4cc316792e96f0c345e5360ea5182d3ac6bd/autogen_core-0.6.2-py3-none-any.whl", hash = "sha256:bd29e9714a75bb71c6d2defdd96e4256827f150db6f74c9834b57d7fcbf732db", size = 100308, upload-time = "2025-06-30T23:34:58.154Z" },
+]
 
 [[package]]
 name = "autogen-ext"
-version = "0.6.1"
-source = { git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-ext&rev=c5b893d3f814185c326c8ff95767d2375d95818d#c5b893d3f814185c326c8ff95767d2375d95818d" }
+version = "0.6.2"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "autogen-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/93/55/600d8237c9591876eb59f95edc9fdfe9070537baa26ab21b9be4ad4b19f3/autogen_ext-0.6.2.tar.gz", hash = "sha256:fd7a8aa5b7ced37d5fb50632b3db1c3d15347ab515c436fca254b8617567725a", size = 365135, upload-time = "2025-06-30T23:35:11.179Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/78/06ae792e6fad469583f3cdf6a7e50a64ea919f83ecc5c294e33b7db179f4/autogen_ext-0.6.2-py3-none-any.whl", hash = "sha256:f8b483416525b0cecfdc3b1622ee58e5cf28ad6975bba24f205b3fc6b86b7abd", size = 315413, upload-time = "2025-06-30T23:35:09.737Z" },
 ]
 
 [package.optional-dependencies]
@@ -1054,9 +1066,9 @@ test = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.11.0" },
     { name = "anthropic", extras = ["vertex"], specifier = ">=0.49.0" },
-    { name = "autogen-agentchat", git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-agentchat&rev=c5b893d3f814185c326c8ff95767d2375d95818d" },
-    { name = "autogen-core", git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-core&rev=c5b893d3f814185c326c8ff95767d2375d95818d" },
-    { name = "autogen-ext", extras = ["anthropic", "azure", "mcp", "ollama", "openai"], git = "https://github.com/Microsoft/autogen?subdirectory=python%2Fpackages%2Fautogen-ext&rev=c5b893d3f814185c326c8ff95767d2375d95818d" },
+    { name = "autogen-agentchat", specifier = "==0.6.2" },
+    { name = "autogen-core", specifier = "==0.6.2" },
+    { name = "autogen-ext", extras = ["anthropic", "azure", "mcp", "ollama", "openai"], specifier = "==0.6.2" },
     { name = "bs4", specifier = ">=0.0.2" },
     { name = "fastapi", specifier = ">=0.103.1" },
     { name = "google-auth", specifier = ">=2.40.2" },
