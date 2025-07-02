@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"

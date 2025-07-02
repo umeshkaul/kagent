@@ -568,13 +568,13 @@ func (a *autogenReconciler) upsertToolServer(ctx context.Context, toolServer *da
 	}
 
 	tools, err := a.autogenClient.FetchTools(ctx, &autogen_client.ToolServerRequest{
-		Component: &existingToolServer.Component,
+		Server: &existingToolServer.Component,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("failed to fetch tools for toolServer %s: %v", toolServer.Component.Label, err)
 	}
 
-	if err := a.dbClient.RefreshToolsForServer(toolServer.Component.Label, tools); err != nil {
+	if err := a.dbClient.RefreshToolsForServer(toolServer.Component.Label, tools.Tools); err != nil {
 		return 0, fmt.Errorf("failed to refresh tools for toolServer %s: %v", toolServer.Component.Label, err)
 	}
 
@@ -866,7 +866,7 @@ func (a *autogenReconciler) getDiscoveredMCPTools(ctx context.Context, serverID 
 	var discoveredTools []*v1alpha1.MCPTool
 	for _, tool := range allTools {
 		if tool.ServerID == serverID {
-			mcpTool, err := convertTool(tool)
+			mcpTool, err := convertTool(&tool)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert tool: %v", err)
 			}

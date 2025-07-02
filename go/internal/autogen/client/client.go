@@ -22,7 +22,7 @@ type Client interface {
 	GetVersion(ctx context.Context) (string, error)
 	InvokeTask(ctx context.Context, req *InvokeTaskRequest) (*InvokeTaskResult, error)
 	InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *SseEvent, error)
-	FetchTools(ctx context.Context, req *ToolServerRequest) ([]*api.Component, error)
+	FetchTools(ctx context.Context, req *ToolServerRequest) (*ToolServerResponse, error)
 	Validate(ctx context.Context, req *ValidationRequest) (*ValidationResponse, error)
 	ListSupportedModels(ctx context.Context) (*ProviderModels, error)
 }
@@ -158,17 +158,26 @@ func (c *client) InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (
 }
 
 type ToolServerRequest struct {
+	Server *api.Component `json:"server"`
+}
+
+type NamedTool struct {
+	Name      string         `json:"name"`
 	Component *api.Component `json:"component"`
 }
 
-func (c *client) FetchTools(ctx context.Context, req *ToolServerRequest) ([]*api.Component, error) {
-	var tools []*api.Component
+type ToolServerResponse struct {
+	Tools []*NamedTool `json:"tools"`
+}
+
+func (c *client) FetchTools(ctx context.Context, req *ToolServerRequest) (*ToolServerResponse, error) {
+	var tools ToolServerResponse
 	err := c.doRequest(ctx, "POST", "/toolservers/refresh", req, &tools)
 	if err != nil {
 		return nil, err
 	}
 
-	return tools, err
+	return &tools, err
 }
 
 type ValidationRequest struct {

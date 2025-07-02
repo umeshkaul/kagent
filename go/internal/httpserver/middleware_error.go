@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
-	"github.com/kagent-dev/kagent/go/httpserver/server/handlers"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 

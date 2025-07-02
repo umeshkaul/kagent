@@ -31,14 +31,14 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	autogen "github.com/kagent-dev/kagent/go/controller/internal/autogen"
+	"github.com/kagent-dev/kagent/go/internal/a2a"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
 
-	"github.com/kagent-dev/kagent/go/controller/internal/a2a"
-	"github.com/kagent-dev/kagent/go/controller/internal/autogen"
-	"github.com/kagent-dev/kagent/go/controller/internal/database"
-
-	"github.com/kagent-dev/kagent/go/controller/internal/httpserver"
-	utils_internal "github.com/kagent-dev/kagent/go/controller/internal/utils"
+	a2a_reconciler "github.com/kagent-dev/kagent/go/controller/internal/a2a"
+	"github.com/kagent-dev/kagent/go/internal/httpserver"
+	common "github.com/kagent-dev/kagent/go/internal/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -65,7 +65,7 @@ import (
 var (
 	scheme          = runtime.NewScheme()
 	setupLog        = ctrl.Log.WithName("setup")
-	kagentNamespace = utils_internal.GetResourceNamespace()
+	kagentNamespace = common.GetResourceNamespace()
 
 	// These variables should be set during build time using -ldflags
 	Version   = version.Version
@@ -291,7 +291,7 @@ func main() {
 
 	a2aHandler := a2a.NewA2AHttpMux(httpserver.APIPathA2A)
 
-	a2aReconciler := a2a.NewAutogenReconciler(
+	a2aReconciler := a2a_reconciler.NewAutogenReconciler(
 		autogenClient,
 		a2aHandler,
 		a2aBaseUrl+httpserver.APIPathA2A,

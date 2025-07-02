@@ -6,11 +6,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kagent-dev/kagent/go/httpserver/server/handlers"
 	"github.com/kagent-dev/kagent/go/internal/a2a"
 	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/internal/version"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -19,6 +20,7 @@ import (
 const (
 	// API Path constants
 	APIPathHealth      = "/health"
+	APIPathVersion     = "/version"
 	APIPathModelConfig = "/api/modelconfigs"
 	APIPathRuns        = "/api/runs"
 	APIPathSessions    = "/api/sessions"
@@ -128,6 +130,15 @@ func (s *HTTPServer) setupRoutes() {
 	// Health check endpoint
 	s.router.HandleFunc(APIPathHealth, adaptHealthHandler(s.handlers.Health.HandleHealth)).Methods(http.MethodGet)
 
+	// Version
+	s.router.HandleFunc(APIPathVersion, adaptHandler(func(erw handlers.ErrorResponseWriter, r *http.Request) {
+		handlers.RespondWithJSON(erw, http.StatusOK, map[string]string{
+			"kagent_version": version.Version,
+			"git_commit":     version.GitCommit,
+			"build_date":     version.BuildDate,
+		})
+	})).Methods(http.MethodGet)
+
 	// Model configs
 	s.router.HandleFunc(APIPathModelConfig, adaptHandler(s.handlers.ModelConfig.HandleListModelConfigs)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathModelConfig+"/{namespace}/{configName}", adaptHandler(s.handlers.ModelConfig.HandleGetModelConfig)).Methods(http.MethodGet)
@@ -144,10 +155,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSession)).Methods(http.MethodPut)
 
 	// Tools - using database handlers
-	// s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListToolsDB)).Methods(http.MethodGet)
-	// s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleCreateToolDB)).Methods(http.MethodPost)
-	// s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleUpdateToolDB)).Methods(http.MethodPut)
-	// s.router.HandleFunc(APIPathTools+"/{toolID}", adaptHandler(s.handlers.Tools.HandleDeleteToolDB)).Methods(http.MethodDelete)
+	s.router.HandleFunc(APIPathTools, adaptHandler(s.handlers.Tools.HandleListToolsDB)).Methods(http.MethodGet)
 
 	// Tool Servers
 	s.router.HandleFunc(APIPathToolServers, adaptHandler(s.handlers.ToolServers.HandleListToolServers)).Methods(http.MethodGet)

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/kagent-dev/kagent/go/httpserver/server/handlers"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 )
 
 type mockErrorResponseWriter struct {

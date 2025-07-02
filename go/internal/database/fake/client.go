@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 )
 
@@ -158,15 +158,21 @@ func (c *InMemmoryFakeClient) GetRun(runID int) (*database.Run, error) {
 }
 
 // GetRunMessages retrieves messages for a specific run
-func (c *InMemmoryFakeClient) GetRunMessages(runID int) ([]*database.Message, error) {
+func (c *InMemmoryFakeClient) GetRunMessages(runID int) ([]database.Message, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	messages, exists := c.messages[runID]
 	if !exists {
-		return []*database.Message{}, nil
+		return []database.Message{}, nil
 	}
-	return messages, nil
+
+	// Convert []*Message to []Message
+	result := make([]database.Message, len(messages))
+	for i, msg := range messages {
+		result[i] = *msg
+	}
+	return result, nil
 }
 
 // GetSession retrieves a session by name and user ID
@@ -219,39 +225,39 @@ func (c *InMemmoryFakeClient) GetToolServer(serverName string) (*database.ToolSe
 }
 
 // ListFeedback lists all feedback for a user
-func (c *InMemmoryFakeClient) ListFeedback(userID string) ([]*database.Feedback, error) {
+func (c *InMemmoryFakeClient) ListFeedback(userID string) ([]database.Feedback, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Feedback
+	var result []database.Feedback
 	for _, feedback := range c.feedback {
 		if feedback.UserID == userID {
-			result = append(result, feedback)
+			result = append(result, *feedback)
 		}
 	}
 	return result, nil
 }
 
 // ListRuns lists all runs for a user
-func (c *InMemmoryFakeClient) ListRuns(userID string) ([]*database.Run, error) {
+func (c *InMemmoryFakeClient) ListRuns(userID string) ([]database.Run, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Run
+	var result []database.Run
 	for _, run := range c.runs {
 		if run.UserID == userID {
-			result = append(result, run)
+			result = append(result, *run)
 		}
 	}
 	return result, nil
 }
 
 // ListSessionRuns lists all runs for a specific session
-func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string) ([]*database.Run, error) {
+func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string) ([]database.Run, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Run
+	var result []database.Run
 	for _, run := range c.runs {
 		// Search for session by name and user ID
 		session, exists := c.sessions[c.sessionKey(sessionName, userID)]
@@ -259,68 +265,68 @@ func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string)
 			continue
 		}
 		if run.SessionID == session.ID && run.UserID == userID {
-			result = append(result, run)
+			result = append(result, *run)
 		}
 	}
 	return result, nil
 }
 
 // ListSessions lists all sessions for a user
-func (c *InMemmoryFakeClient) ListSessions(userID string) ([]*database.Session, error) {
+func (c *InMemmoryFakeClient) ListSessions(userID string) ([]database.Session, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Session
+	var result []database.Session
 	for _, session := range c.sessions {
 		if session.UserID == userID {
-			result = append(result, session)
+			result = append(result, *session)
 		}
 	}
 	return result, nil
 }
 
 // ListTeams lists all teams for a user
-func (c *InMemmoryFakeClient) ListTeams(userID string) ([]*database.Team, error) {
+func (c *InMemmoryFakeClient) ListTeams(userID string) ([]database.Team, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Team
+	var result []database.Team
 	for _, team := range c.teams {
-		result = append(result, team)
+		result = append(result, *team)
 	}
 	return result, nil
 }
 
 // ListToolServers lists all tool servers
-func (c *InMemmoryFakeClient) ListToolServers() ([]*database.ToolServer, error) {
+func (c *InMemmoryFakeClient) ListToolServers() ([]database.ToolServer, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.ToolServer
+	var result []database.ToolServer
 	for _, server := range c.toolServers {
-		result = append(result, server)
+		result = append(result, *server)
 	}
 	return result, nil
 }
 
 // ListTools lists all tools for a user
-func (c *InMemmoryFakeClient) ListTools(userID string) ([]*database.Tool, error) {
+func (c *InMemmoryFakeClient) ListTools(userID string) ([]database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Tool
+	var result []database.Tool
 	for _, tool := range c.tools {
-		result = append(result, tool)
+		result = append(result, *tool)
 	}
 	return result, nil
 }
 
 // ListToolsForServer lists all tools for a specific server
-func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]*database.Tool, error) {
+func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []*database.Tool
+	var result []database.Tool
 	for _, tool := range c.tools {
 		// Search for tool server by name
 		toolServer, exists := c.toolServers[serverName]
@@ -328,17 +334,19 @@ func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]*database
 			continue
 		}
 		if tool.ServerID == toolServer.ID {
-			result = append(result, tool)
+			result = append(result, *tool)
 		}
 	}
 	return result, nil
 }
 
 // RefreshToolsForServer refreshes a tool server
-func (c *InMemmoryFakeClient) RefreshToolsForServer(serverName string, tools []*api.Component) error {
+func (c *InMemmoryFakeClient) RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// For now, just return nil - this would need a proper implementation
+	// based on the actual requirements
 	return nil
 }
 
@@ -432,4 +440,13 @@ func (c *InMemmoryFakeClient) Clear() {
 	c.messages = make(map[int][]*database.Message)
 	c.nextRunID = 1
 	c.nextFeedbackID = 1
+}
+
+// CreateTool creates a new tool record
+func (c *InMemmoryFakeClient) CreateTool(tool *database.Tool) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.tools[tool.Name] = tool
+	return nil
 }

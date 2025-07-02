@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 )
 
 type Client interface {
@@ -14,25 +14,26 @@ type Client interface {
 	CreateTeam(team *Team) error
 	UpsertTeam(team *Team) error
 	CreateToolServer(toolServer *ToolServer) (*ToolServer, error)
-	RefreshToolsForServer(serverName string, tools []*api.Component) error
+	RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error
 	DeleteRun(runID int) error
 	DeleteSession(sessionName string, userID string) error
 	DeleteTeam(teamName string) error
 	DeleteToolServer(serverName string) error
 	GetRun(runID int) (*Run, error)
-	GetRunMessages(runID int) ([]*Message, error)
-	GetSession(sessionLabel string, userID string) (*Session, error)
-	GetTeam(teamLabel string) (*Team, error)
-	GetTool(provider string) (*Tool, error)
-	GetToolServer(serverName string) (*ToolServer, error)
-	ListFeedback(userID string) ([]*Feedback, error)
-	ListRuns(userID string) ([]*Run, error)
-	ListSessionRuns(sessionName string, userID string) ([]*Run, error)
-	ListSessions(userID string) ([]*Session, error)
-	ListTeams(userID string) ([]*Team, error)
-	ListToolServers() ([]*ToolServer, error)
-	ListTools(userID string) ([]*Tool, error)
-	ListToolsForServer(serverName string) ([]*Tool, error)
+	GetRunMessages(runID int) ([]Message, error)
+	GetSession(name string, userID string) (*Session, error)
+	GetTeam(name string) (*Team, error)
+	GetTool(name string) (*Tool, error)
+	GetToolServer(name string) (*ToolServer, error)
+	ListFeedback(userID string) ([]Feedback, error)
+	ListRuns(userID string) ([]Run, error)
+	ListSessionRuns(sessionName string, userID string) ([]Run, error)
+	ListSessions(userID string) ([]Session, error)
+	ListTeams(userID string) ([]Team, error)
+	ListToolServers() ([]ToolServer, error)
+	CreateTool(tool *Tool) error
+	ListTools(userID string) ([]Tool, error)
+	ListToolsForServer(serverName string) ([]Tool, error)
 	ListMessagesForRun(runID uint) ([]Message, error)
 	UpdateSession(session *Session) error
 	UpdateToolServer(server *ToolServer) error
@@ -84,6 +85,11 @@ func (c *clientImpl) CreateToolServer(toolServer *ToolServer) (*ToolServer, erro
 	return toolServer, nil
 }
 
+// CreateTool creates a new tool record
+func (c *clientImpl) CreateTool(tool *Tool) error {
+	return c.serviceWrapper.Tool.Create(tool)
+}
+
 // DeleteRun deletes a run by ID
 func (c *clientImpl) DeleteRun(runID int) error {
 	return c.serviceWrapper.Run.Delete(Clause{Key: "id", Value: runID})
@@ -113,18 +119,13 @@ func (c *clientImpl) GetRun(runID int) (*Run, error) {
 }
 
 // GetRunMessages retrieves messages for a specific run
-func (c *clientImpl) GetRunMessages(runID int) ([]*Message, error) {
+func (c *clientImpl) GetRunMessages(runID int) ([]Message, error) {
 	messages, err := c.serviceWrapper.Message.List(Clause{Key: "run_id", Value: runID})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert []Message to []*Message
-	messagePtrs := make([]*Message, len(messages))
-	for i := range messages {
-		messagePtrs[i] = &messages[i]
-	}
-	return messagePtrs, nil
+	return messages, nil
 }
 
 // GetSession retrieves a session by name and user ID
@@ -151,130 +152,60 @@ func (c *clientImpl) GetToolServer(serverName string) (*ToolServer, error) {
 }
 
 // ListFeedback lists all feedback for a user
-func (c *clientImpl) ListFeedback(userID string) ([]*Feedback, error) {
+func (c *clientImpl) ListFeedback(userID string) ([]Feedback, error) {
 	feedback, err := c.serviceWrapper.Feedback.List(Clause{Key: "user_id", Value: userID})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert []Feedback to []*Feedback
-	feedbackPtrs := make([]*Feedback, len(feedback))
-	for i := range feedback {
-		feedbackPtrs[i] = &feedback[i]
-	}
-	return feedbackPtrs, nil
+	return feedback, nil
 }
 
 // ListRuns lists all runs for a user
-func (c *clientImpl) ListRuns(userID string) ([]*Run, error) {
+func (c *clientImpl) ListRuns(userID string) ([]Run, error) {
 	runs, err := c.serviceWrapper.Run.List(Clause{Key: "user_id", Value: userID})
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert []Run to []*Run
-	runPtrs := make([]*Run, len(runs))
-	for i := range runs {
-		runPtrs[i] = &runs[i]
-	}
-	return runPtrs, nil
+	return runs, nil
 }
 
 // ListSessionRuns lists all runs for a specific session
-func (c *clientImpl) ListSessionRuns(sessionName string, userID string) ([]*Run, error) {
-	runs, err := c.serviceWrapper.Run.List(
+func (c *clientImpl) ListSessionRuns(sessionName string, userID string) ([]Run, error) {
+	return c.serviceWrapper.Run.List(
 		Clause{Key: "session_name", Value: sessionName},
 		Clause{Key: "user_id", Value: userID},
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []Run to []*Run
-	runPtrs := make([]*Run, len(runs))
-	for i := range runs {
-		runPtrs[i] = &runs[i]
-	}
-	return runPtrs, nil
 }
 
 // ListSessions lists all sessions for a user
-func (c *clientImpl) ListSessions(userID string) ([]*Session, error) {
-	sessions, err := c.serviceWrapper.Session.List(Clause{Key: "user_id", Value: userID})
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []Session to []*Session
-	sessionPtrs := make([]*Session, len(sessions))
-	for i := range sessions {
-		sessionPtrs[i] = &sessions[i]
-	}
-	return sessionPtrs, nil
+func (c *clientImpl) ListSessions(userID string) ([]Session, error) {
+	return c.serviceWrapper.Session.List(Clause{Key: "user_id", Value: userID})
 }
 
 // ListTeams lists all teams for a user
-func (c *clientImpl) ListTeams(userID string) ([]*Team, error) {
-	teams, err := c.serviceWrapper.Team.List()
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []Team to []*Team
-	teamPtrs := make([]*Team, len(teams))
-	for i := range teams {
-		teamPtrs[i] = &teams[i]
-	}
-	return teamPtrs, nil
+func (c *clientImpl) ListTeams(userID string) ([]Team, error) {
+	return c.serviceWrapper.Team.List(Clause{Key: "user_id", Value: userID})
 }
 
 // ListToolServers lists all tool servers for a user
-func (c *clientImpl) ListToolServers() ([]*ToolServer, error) {
-	servers, err := c.serviceWrapper.ToolServer.List()
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []ToolServer to []*ToolServer
-	serverPtrs := make([]*ToolServer, len(servers))
-	for i := range servers {
-		serverPtrs[i] = &servers[i]
-	}
-	return serverPtrs, nil
+func (c *clientImpl) ListToolServers() ([]ToolServer, error) {
+	return c.serviceWrapper.ToolServer.List()
 }
 
 // ListTools lists all tools for a user
-func (c *clientImpl) ListTools(userID string) ([]*Tool, error) {
-	tools, err := c.serviceWrapper.Tool.List()
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []Tool to []*Tool
-	toolPtrs := make([]*Tool, len(tools))
-	for i := range tools {
-		toolPtrs[i] = &tools[i]
-	}
-	return toolPtrs, nil
+func (c *clientImpl) ListTools(userID string) ([]Tool, error) {
+	return c.serviceWrapper.Tool.List(Clause{Key: "user_id", Value: userID})
 }
 
 // ListToolsForServer lists all tools for a specific server
-func (c *clientImpl) ListToolsForServer(serverName string) ([]*Tool, error) {
-	tools, err := c.serviceWrapper.Tool.List(Clause{Key: "server_name", Value: serverName})
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert []Tool to []*Tool
-	toolPtrs := make([]*Tool, len(tools))
-	for i := range tools {
-		toolPtrs[i] = &tools[i]
-	}
-	return toolPtrs, nil
+func (c *clientImpl) ListToolsForServer(serverName string) ([]Tool, error) {
+	return c.serviceWrapper.Tool.List(Clause{Key: "server_name", Value: serverName})
 }
 
-// RefreshToolsForServer refreshes a tool server (placeholder implementation)
-func (c *clientImpl) RefreshToolsForServer(serverName string, tools []*api.Component) error {
+// RefreshToolsForServer refreshes a tool server
+func (c *clientImpl) RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error {
 	existingTools, err := c.ListToolsForServer(serverName)
 	if err != nil {
 		return err
@@ -285,31 +216,31 @@ func (c *clientImpl) RefreshToolsForServer(serverName string, tools []*api.Compo
 	// If it doesn't, create it
 	// If it's in the existing tools but not in the new tools, delete it
 	for _, tool := range tools {
-		existingToolIndex := slices.IndexFunc(existingTools, func(t *Tool) bool {
-			return t.Name == tool.Label
+		existingToolIndex := slices.IndexFunc(existingTools, func(t Tool) bool {
+			return t.Name == tool.Name
 		})
 		if existingToolIndex != -1 {
 			existingTool := existingTools[existingToolIndex]
-			existingTool.Component = *tool
-			err = c.serviceWrapper.Tool.Update(existingTool)
+			existingTool.Component = *tool.Component
+			err = c.serviceWrapper.Tool.Update(&existingTool)
 			if err != nil {
 				return err
 			}
 		} else {
 			err = c.serviceWrapper.Tool.Create(&Tool{
-				Name:      tool.Label,
-				Component: *tool,
+				Name:      tool.Name,
+				Component: *tool.Component,
 			})
 			if err != nil {
-				return fmt.Errorf("failed to create tool %s: %v", tool.Label, err)
+				return fmt.Errorf("failed to create tool %s: %v", tool.Name, err)
 			}
 		}
 	}
 
 	// Delete any tools that are in the existing tools but not in the new tools
 	for _, existingTool := range existingTools {
-		if !slices.ContainsFunc(tools, func(t *api.Component) bool {
-			return t.Label == existingTool.Name
+		if !slices.ContainsFunc(tools, func(t *autogen_client.NamedTool) bool {
+			return t.Name == existingTool.Name
 		}) {
 			err = c.serviceWrapper.Tool.Delete(Clause{Key: "name", Value: existingTool.Name})
 			if err != nil {

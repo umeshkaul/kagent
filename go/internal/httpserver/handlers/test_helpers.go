@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 )
 
 func setupScheme() *runtime.Scheme {

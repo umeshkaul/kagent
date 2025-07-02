@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"

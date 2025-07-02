@@ -130,9 +130,6 @@ type ToolServer struct {
 	Name          string        `gorm:"primaryKey" json:"name"`
 	LastConnected *time.Time    `json:"last_connected,omitempty"`
 	Component     api.Component `gorm:"type:json;not null" json:"component"`
-
-	// Relationships
-	Tools []Tool `gorm:"foreignKey:ServerID;constraint:OnDelete:SET NULL" json:"tools,omitempty"`
 }
 
 // EvalTask represents an evaluation task

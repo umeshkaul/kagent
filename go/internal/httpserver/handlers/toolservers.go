@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
-	"github.com/kagent-dev/kagent/go/httpserver/server/errors"
+	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
