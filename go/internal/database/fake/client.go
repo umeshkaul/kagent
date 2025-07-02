@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/kagent-dev/kagent/go/internal/autogen/api"
 	"github.com/kagent-dev/kagent/go/internal/database"
 )
 
@@ -252,7 +253,12 @@ func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string)
 
 	var result []*database.Run
 	for _, run := range c.runs {
-		if run.SessionName == sessionName && run.UserID == userID {
+		// Search for session by name and user ID
+		session, exists := c.sessions[c.sessionKey(sessionName, userID)]
+		if !exists {
+			continue
+		}
+		if run.SessionID == session.ID && run.UserID == userID {
 			result = append(result, run)
 		}
 	}
@@ -316,11 +322,24 @@ func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]*database
 
 	var result []*database.Tool
 	for _, tool := range c.tools {
-		if tool.ServerName == serverName {
+		// Search for tool server by name
+		toolServer, exists := c.toolServers[serverName]
+		if !exists {
+			continue
+		}
+		if tool.ServerID == toolServer.ID {
 			result = append(result, tool)
 		}
 	}
 	return result, nil
+}
+
+// RefreshToolsForServer refreshes a tool server
+func (c *InMemmoryFakeClient) RefreshToolsForServer(serverName string, tools []*api.Component) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return nil
 }
 
 // ListMessagesForRun retrieves messages for a specific run

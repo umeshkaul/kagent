@@ -1,5 +1,12 @@
 package database
 
+import (
+	"fmt"
+	"slices"
+
+	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+)
+
 type Client interface {
 	CreateFeedback(feedback *Feedback) error
 	CreateRun(req *Run) error
@@ -7,6 +14,7 @@ type Client interface {
 	CreateTeam(team *Team) error
 	UpsertTeam(team *Team) error
 	CreateToolServer(toolServer *ToolServer) (*ToolServer, error)
+	RefreshToolsForServer(serverName string, tools []*api.Component) error
 	DeleteRun(runID int) error
 	DeleteSession(sessionName string, userID string) error
 	DeleteTeam(teamName string) error
@@ -265,17 +273,50 @@ func (c *clientImpl) ListToolsForServer(serverName string) ([]*Tool, error) {
 	return toolPtrs, nil
 }
 
-// RefreshToolServer refreshes a tool server (placeholder implementation)
-func (c *clientImpl) RefreshToolServer(serverID int) error {
-	// This would typically involve reconnecting to the tool server
-	// For now, just return nil as a placeholder
-	return nil
-}
+// RefreshToolsForServer refreshes a tool server (placeholder implementation)
+func (c *clientImpl) RefreshToolsForServer(serverName string, tools []*api.Component) error {
+	existingTools, err := c.ListToolsForServer(serverName)
+	if err != nil {
+		return err
+	}
 
-// RefreshTools refreshes tools for a server (placeholder implementation)
-func (c *clientImpl) RefreshTools(serverName string) error {
-	// This would typically involve fetching updated tools from the server
-	// For now, just return nil as a placeholder
+	// Check if the tool exists in the existing tools
+	// If it does, update it
+	// If it doesn't, create it
+	// If it's in the existing tools but not in the new tools, delete it
+	for _, tool := range tools {
+		existingToolIndex := slices.IndexFunc(existingTools, func(t *Tool) bool {
+			return t.Name == tool.Label
+		})
+		if existingToolIndex != -1 {
+			existingTool := existingTools[existingToolIndex]
+			existingTool.Component = *tool
+			err = c.serviceWrapper.Tool.Update(existingTool)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = c.serviceWrapper.Tool.Create(&Tool{
+				Name:      tool.Label,
+				Component: *tool,
+			})
+			if err != nil {
+				return fmt.Errorf("failed to create tool %s: %v", tool.Label, err)
+			}
+		}
+	}
+
+	// Delete any tools that are in the existing tools but not in the new tools
+	for _, existingTool := range existingTools {
+		if !slices.ContainsFunc(tools, func(t *api.Component) bool {
+			return t.Label == existingTool.Name
+		}) {
+			err = c.serviceWrapper.Tool.Delete(Clause{Key: "name", Value: existingTool.Name})
+			if err != nil {
+				return fmt.Errorf("failed to delete tool %s: %v", existingTool.Name, err)
+			}
+		}
+	}
 	return nil
 }
 

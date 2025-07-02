@@ -50,7 +50,7 @@ type Session struct {
 	Name   string `gorm:"unique;not null" json:"name"`
 
 	// Relationships
-	Runs []Run `gorm:"foreignKey:SessionName;constraint:OnDelete:CASCADE" json:"runs,omitempty"`
+	Runs []Run `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE" json:"runs,omitempty"`
 
 	TeamID *uint `gorm:"index;constraint:OnDelete:SET NULL" json:"team_id,omitempty"`
 }
@@ -70,7 +70,7 @@ const (
 type Run struct {
 	gorm.Model
 	UserID       string    `gorm:"primaryKey;not null" json:"user_id"`
-	SessionName  string    `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"session_name"`
+	SessionID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"session_id"`
 	Status       RunStatus `gorm:"default:created" json:"status"`
 	Task         JSONMap   `gorm:"type:json;not null" json:"task"`
 	TeamResult   JSONMap   `gorm:"type:json" json:"team_result,omitempty"`
@@ -85,7 +85,7 @@ type Message struct {
 	gorm.Model
 	UserID      string  `gorm:"primaryKey;not null" json:"user_id"`
 	Config      JSONMap `gorm:"type:json;not null" json:"config"`
-	SessionName string  `gorm:"index;constraint:OnDelete:SET NULL" json:"session_name,omitempty"`
+	SessionID   uint    `gorm:"index;constraint:OnDelete:SET NULL" json:"session_id,omitempty"`
 	RunID       uint    `gorm:"index;constraint:OnDelete:CASCADE" json:"run_id,omitempty"`
 	MessageMeta JSONMap `gorm:"type:json" json:"message_meta,omitempty"`
 
@@ -116,9 +116,9 @@ type Feedback struct {
 // Tool represents a single tool that can be used by an agent
 type Tool struct {
 	gorm.Model
-	Name       string        `gorm:"unique" json:"name"`
-	Component  api.Component `gorm:"type:json;not null" json:"component"`
-	ServerName string        `gorm:"index;constraint:OnDelete:SET NULL" json:"server_name,omitempty"`
+	Name      string        `gorm:"unique" json:"name"`
+	Component api.Component `gorm:"type:json;not null" json:"component"`
+	ServerID  uint          `gorm:"index;constraint:OnDelete:SET NULL" json:"server_id,omitempty"`
 
 	// Relationships
 	ToolServer *ToolServer `gorm:"foreignKey:ServerName" json:"tool_server,omitempty"`
@@ -147,7 +147,6 @@ type EvalTask struct {
 // EvalCriteria represents evaluation criteria
 type EvalCriteria struct {
 	gorm.Model
-	ID          uint          `gorm:"primaryKey" json:"id"`
 	Name        string        `gorm:"default:'Unnamed Criteria'" json:"name"`
 	Description string        `json:"description"`
 	Config      api.Component `gorm:"type:json;not null" json:"config"`

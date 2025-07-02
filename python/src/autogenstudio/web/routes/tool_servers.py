@@ -1,84 +1,53 @@
-from typing import Dict
+from typing import Any, Dict
 
+from autogen_core import (
+    ComponentModel,
+)
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from ...datamodel import Tool, ToolServer
 from ...toolservermanager import ToolServerManager
-from ..deps import get_db
 
 router = APIRouter()
 
 
-@router.get("/")
-async def list_servers(user_id: str, db=Depends(get_db)) -> Dict:
-    response = db.get(ToolServer, filters={"user_id": user_id})
-    if response.status and response.data:
-        # Sort servers by component label
-        response.data.sort(key=lambda x: x.component.get("label", ""))
-    return {"status": True, "data": response.data}
+class GetServerToolsRequest(BaseModel):
+    server: ComponentModel
 
 
-@router.get("/{server_id}")
-async def get_server(server_id: int, user_id: str, db=Depends(get_db)) -> Dict:
-    response = db.get(ToolServer, filters={"id": server_id, "user_id": user_id})
-    if not response.status or not response.data:
-        raise HTTPException(status_code=404, detail="Server not found")
-    return {"status": True, "data": response.data[0]}
+class GetServerToolsResponse(BaseModel):
+    tools: Dict[str, Dict]
 
 
 @router.post("/")
-async def create_server(server: ToolServer, db=Depends(get_db)) -> Dict:
-    response = db.upsert(server)
-    if not response.status:
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"status": True, "data": response.data}
-
-
-@router.put("/{server_id}")
-async def update_server(server_id: int, server: ToolServer, user_id: str, db=Depends(get_db)) -> Dict:
-    # Ensure the server exists and belongs to the user
-    check_response = db.get(ToolServer, filters={"id": server_id, "user_id": user_id})
-    if not check_response.status or not check_response.data:
-        raise HTTPException(status_code=404, detail="Server not found")
-
-    # Update the server
-    server.id = server_id  # Ensure the ID is set correctly
-    server.user_id = user_id  # Ensure the user_id is set correctly
-    response = db.upsert(server)
-
-    if not response.status:
-        raise HTTPException(status_code=400, detail=response.message)
-    return {"status": True, "data": response.data}
-
-
-@router.delete("/{server_id}")
-async def delete_server(server_id: int, user_id: str, db=Depends(get_db)) -> Dict:
-    # Get all tools associated with this server
-    tools_response = db.get(Tool, filters={"server_id": server_id, "user_id": user_id})
-
-    # Delete the tools first
-    if tools_response.status and tools_response.data:
-        for tool in tools_response.data:
-            db.delete(filters={"id": tool.id}, model_class=Tool)
-
-    # Then delete the server
-    db.delete(filters={"id": server_id, "user_id": user_id}, model_class=ToolServer)
-    return {"status": True, "message": "Server and associated tools deleted successfully"}
-
-
-@router.get("/{server_id}/tools")
-async def get_server_tools(server_id: int, user_id: str, db=Depends(get_db)) -> Dict:
+async def get_server_tools(
+    request: GetServerToolsRequest,
+) -> GetServerToolsResponse:
     # First check if server exists
-    server_response = db.get(ToolServer, filters={"id": server_id, "user_id": user_id})
-    if not server_response.status or not server_response.data:
-        raise HTTPException(status_code=404, detail="Server not found")
 
-    tools_response = db.get(Tool, filters={"server_id": server_id, "user_id": user_id})
-    return {"status": True, "data": tools_response.data}
+    tsm = ToolServerManager()
+    tools_dict: Dict[str, Dict] = {}
+    try:
+        tools = await tsm.discover_tools(request.server)
+        for tool in tools:
+            # Generate a unique identifier for the tool from its component
+            component_data = tool.dump_component().model_dump_json()
+
+            # Check if the tool already exists based on id/name
+            component_config = component_data.get("config", {})
+            tool_config = component_config.get("tool", {})
+            tool_name = tool_config.get("name", None)
+            tools_dict[tool_name] = tool
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to get server tools: {str(e)}") from e
+
+    return GetServerToolsResponse(tools=tools_dict)
 
 
 @router.post("/{server_id}/refresh")
-async def refresh_server_tools(server_id: int, user_id: str, db=Depends(get_db)) -> Dict:
+async def refresh_server_tools(server_id: int, user_id: str, db=Depends(get_db)) -> RefreshServerToolsResponse:
     """Refresh tools for an existing server"""
 
     server_response = db.get(ToolServer, filters={"id": server_id, "user_id": user_id})
@@ -139,14 +108,6 @@ async def refresh_server_tools(server_id: int, user_id: str, db=Depends(get_db))
                 db.upsert(new_tool)
                 created_count += 1
 
-        return {
-            "status": True,
-            "message": "Server refreshed successfully.",
-            "data": {
-                "total_count": len(tools_components),
-                "updated_count": updated_count,
-                "created_count": created_count,
-            },
-        }
+        return RefreshServerToolsResponse(tools={tool.name: tool.component for tool in tools_components})
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to refresh server: {str(e)}") from e

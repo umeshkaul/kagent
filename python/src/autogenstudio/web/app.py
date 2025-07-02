@@ -10,15 +10,12 @@ from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from ..version import VERSION
-from .auth import authroutes
-from .auth.middleware import AuthMiddleware
 from .config import settings
 from .deps import cleanup_managers, init_auth_manager, init_managers, register_auth_dependencies
 from .initialization import AppInitializer
 from .routes import (
     invoke,
     models,
-    sessions,
     tool_servers,
     validation,
 )
@@ -77,7 +74,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(AuthMiddleware, auth_manager=auth_manager)
 
 # Create API router with version and documentation
 api = FastAPI(
@@ -89,13 +85,6 @@ api = FastAPI(
 )
 
 # Include all routers with their prefixes
-api.include_router(
-    sessions.router,
-    prefix="/sessions",
-    tags=["sessions"],
-    responses={404: {"description": "Not found"}},
-)
-
 api.include_router(
     validation.router,
     prefix="/validate",
