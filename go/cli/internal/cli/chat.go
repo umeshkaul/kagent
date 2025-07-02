@@ -9,7 +9,8 @@ import (
 	"github.com/abiosoft/ishell/v2"
 	"github.com/abiosoft/readline"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/spf13/pflag"
 )
 
@@ -31,7 +32,7 @@ func ChatCmd(c *ishell.Context) {
 	cfg := config.GetCfg(c)
 	client := config.GetClient(c)
 
-	var team *autogen_client.Team
+	var team *database.Team
 	if len(flagSet.Args()) > 0 {
 		teamName := flagSet.Args()[0]
 		var err error
@@ -74,9 +75,9 @@ func ChatCmd(c *ishell.Context) {
 		return
 	}
 
-	existingSessions := slices.Collect(Filter(slices.Values(sessions), func(session *autogen_client.Session) bool { return true }))
+	existingSessions := slices.Collect(Filter(slices.Values(sessions), func(session *database.Session) bool { return true }))
 
-	existingSessionNames := slices.Collect(Map(slices.Values(existingSessions), func(session *autogen_client.Session) string {
+	existingSessionNames := slices.Collect(Map(slices.Values(existingSessions), func(session *database.Session) string {
 		return session.Name
 	}))
 
@@ -89,7 +90,7 @@ func ChatCmd(c *ishell.Context) {
 		selectedSessionIdx = c.MultiChoice(existingSessionNames, "Select a session:")
 	}
 
-	var session *autogen_client.Session
+	var session *database.Session
 	if selectedSessionIdx == 0 {
 		c.ShowPrompt(false)
 		c.Print("Enter a session name: ")

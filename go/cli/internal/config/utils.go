@@ -7,6 +7,7 @@ import (
 
 	"github.com/abiosoft/ishell/v2"
 	"github.com/fatih/color"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 )
 
 const (

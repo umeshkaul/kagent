@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kagent-dev/kagent/go/controller/utils/a2autils"
 	"github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -45,7 +44,7 @@ func (a *a2aMessageProcessor) ProcessMessage(
 ) (*taskmanager.MessageProcessingResult, error) {
 
 	// Extract text from the incoming message.
-	text := a2autils.ExtractText(message)
+	text := ExtractText(message)
 	if text == "" {
 		err := fmt.Errorf("input message must contain text")
 		message := protocol.NewMessage(

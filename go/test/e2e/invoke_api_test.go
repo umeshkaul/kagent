@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kagent-dev/kagent/go/controller/utils/a2autils"
+	"github.com/kagent-dev/kagent/go/internal/a2a"
 	"github.com/stretchr/testify/require"
 	"trpc.group/trpc-go/trpc-a2a-go/client"
 	"trpc.group/trpc-go/trpc-a2a-go/protocol"
@@ -45,7 +45,7 @@ func TestInvokeAPI(t *testing.T) {
 
 			msgResult, ok := msg.Result.(*protocol.Message)
 			require.True(t, ok)
-			text := a2autils.ExtractText(*msgResult)
+			text := a2a.ExtractText(*msgResult)
 			require.Contains(t, text, "kube-scheduler-kagent-control-plane")
 		})
 
@@ -67,7 +67,7 @@ func TestInvokeAPI(t *testing.T) {
 				if !ok {
 					continue
 				}
-				text += a2autils.ExtractText(*msgResult)
+				text += a2a.ExtractText(*msgResult)
 			}
 			require.Contains(t, text, "kube-scheduler-kagent-control-plane")
 		})
