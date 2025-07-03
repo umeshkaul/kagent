@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -16,13 +17,6 @@ type SessionsHandler struct {
 // NewSessionsHandler creates a new SessionsHandler
 func NewSessionsHandler(base *Base) *SessionsHandler {
 	return &SessionsHandler{Base: base}
-}
-
-// SessionRequest represents a session creation/update request
-type SessionRequest struct {
-	TeamID *uint  `json:"team_id,omitempty"`
-	Name   string `json:"name"`
-	UserID string `json:"user_id"`
 }
 
 // RunRequest represents a run creation request
@@ -49,17 +43,14 @@ func (h *SessionsHandler) HandleListSessions(w ErrorResponseWriter, r *http.Requ
 	}
 
 	log.Info("Successfully listed sessions", "count", len(sessions))
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   sessions,
-	})
+	RespondWithJSON(w, http.StatusOK, sessions)
 }
 
 // HandleCreateSession handles POST /api/sessions requests using database
 func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "create-db")
 
-	var sessionRequest SessionRequest
+	var sessionRequest client.SessionRequest
 	if err := DecodeJSONBody(r, &sessionRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
@@ -87,11 +78,7 @@ func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully created session", "sessionID", session.ID)
-	RespondWithJSON(w, http.StatusCreated, map[string]interface{}{
-		"status":  true,
-		"data":    session,
-		"message": "Session created successfully",
-	})
+	RespondWithJSON(w, http.StatusCreated, session)
 }
 
 // HandleGetSession handles GET /api/sessions/{sessionName} requests using database
@@ -120,17 +107,14 @@ func (h *SessionsHandler) HandleGetSession(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Successfully retrieved session")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   session,
-	})
+	RespondWithJSON(w, http.StatusOK, session)
 }
 
 // HandleUpdateSession handles PUT /api/sessions requests using database
 func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "update-db")
 
-	var sessionRequest SessionRequest
+	var sessionRequest client.SessionRequest
 	if err := DecodeJSONBody(r, &sessionRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
@@ -152,11 +136,7 @@ func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully updated session")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  true,
-		"data":    session,
-		"message": "Session updated successfully",
-	})
+	RespondWithJSON(w, http.StatusOK, session)
 }
 
 // HandleDeleteSession handles DELETE /api/sessions/{sessionName} requests using database

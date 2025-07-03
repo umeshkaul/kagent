@@ -13,9 +13,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 )
@@ -28,7 +29,7 @@ func TestNamespacesHandler(t *testing.T) {
 	err = corev1.AddToScheme(scheme)
 	require.NoError(t, err)
 
-	setupHandler := func(watchedNamespaces []string) (*handlers.NamespacesHandler, client.Client, *mockErrorResponseWriter) {
+	setupHandler := func(watchedNamespaces []string) (*handlers.NamespacesHandler, ctrl_client.Client, *mockErrorResponseWriter) {
 		kubeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
 		base := &handlers.Base{
 			KubeClient:         kubeClient,
@@ -72,13 +73,13 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 
 			// Check that all namespaces are returned
 			assert.Len(t, responseNamespaces, 3)
-			namespaceNames := make(map[string]handlers.NamespaceResponse)
+			namespaceNames := make(map[string]client.NamespaceResponse)
 			for _, ns := range responseNamespaces {
 				namespaceNames[ns.Name] = ns
 			}
@@ -116,7 +117,7 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 			assert.Len(t, responseNamespaces, 2)
@@ -153,7 +154,7 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 
@@ -187,7 +188,7 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 
@@ -221,7 +222,7 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 
@@ -238,7 +239,7 @@ func TestNamespacesHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var responseNamespaces []handlers.NamespaceResponse
+			var responseNamespaces []client.NamespaceResponse
 			err := json.Unmarshal(responseRecorder.Body.Bytes(), &responseNamespaces)
 			require.NoError(t, err)
 			assert.Len(t, responseNamespaces, 0)

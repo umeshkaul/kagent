@@ -1,20 +1,21 @@
 package cli
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
 
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/client"
 )
 
 func GetAgentCmd(cfg *config.Config, resourceName string) {
-	client := autogen_client.New(cfg.APIURL)
+	client := client.New(cfg.APIURL)
 
 	if resourceName == "" {
-		agentList, err := client.ListTeams(cfg.UserID)
+		agentList, err := client.ListTeams(context.Background(), cfg.UserID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get agents: %v\n", err)
 			return
@@ -30,7 +31,7 @@ func GetAgentCmd(cfg *config.Config, resourceName string) {
 			return
 		}
 	} else {
-		agent, err := client.GetTeam(resourceName, cfg.UserID)
+		agent, err := client.GetTeam(context.Background(), resourceName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get agent %s: %v\n", resourceName, err)
 			return
@@ -40,46 +41,10 @@ func GetAgentCmd(cfg *config.Config, resourceName string) {
 	}
 }
 
-func GetRunCmd(cfg *config.Config, resourceName string) {
-	client := autogen_client.New(cfg.APIURL)
-	if resourceName == "" {
-		runList, err := client.ListRuns(cfg.UserID)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to get runs: %v\n", err)
-			return
-		}
-
-		if len(runList) == 0 {
-			fmt.Println("No runs found")
-			return
-		}
-
-		if err := printRuns(runList); err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to print runs: %v\n", err)
-			return
-		}
-	} else {
-		// Convert run ID from string to integer
-		runID, err := strconv.Atoi(resourceName)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Invalid run ID: %s, must be a number: %v\n", resourceName, err)
-			return
-		}
-
-		run, err := client.GetRun(runID)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to get run %d: %v\n", runID, err)
-			return
-		}
-		byt, _ := json.MarshalIndent(run, "", "  ")
-		fmt.Fprintln(os.Stdout, string(byt))
-	}
-}
-
 func GetSessionCmd(cfg *config.Config, resourceName string) {
-	client := autogen_client.New(cfg.APIURL)
+	client := client.New(cfg.APIURL)
 	if resourceName == "" {
-		sessionList, err := client.ListSessions(cfg.UserID)
+		sessionList, err := client.ListSessions(context.Background(), cfg.UserID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get sessions: %v\n", err)
 			return
@@ -100,7 +65,7 @@ func GetSessionCmd(cfg *config.Config, resourceName string) {
 			fmt.Fprintf(os.Stderr, "Failed to convert session name to ID: %v\n", err)
 			return
 		}
-		session, err := client.GetSessionById(sessionID, cfg.UserID)
+		session, err := client.GetSessionById(context.Background(), sessionID, cfg.UserID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get session %s: %v\n", resourceName, err)
 			return

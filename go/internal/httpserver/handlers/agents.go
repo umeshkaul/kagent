@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -18,12 +18,6 @@ type TeamsHandler struct {
 // NewTeamsHandler creates a new TeamsHandler
 func NewTeamsHandler(base *Base) *TeamsHandler {
 	return &TeamsHandler{Base: base}
-}
-
-// TeamRequest represents a team creation/update request
-type TeamRequest struct {
-	AgentRef  string        `json:"agent_ref"`
-	Component api.Component `json:"component"`
 }
 
 // HandleListTeams handles GET /api/teams requests using database
@@ -94,7 +88,7 @@ func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
 func (h *TeamsHandler) HandleCreateTeam(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "create-db")
 
-	var teamRequest TeamRequest
+	var teamRequest client.TeamRequest
 	if err := DecodeJSONBody(r, &teamRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
@@ -144,7 +138,7 @@ func (h *TeamsHandler) HandleUpdateTeam(w ErrorResponseWriter, r *http.Request) 
 	}
 	log = log.WithValues("userID", userID)
 
-	var teamRequest TeamRequest
+	var teamRequest client.TeamRequest
 	if err := DecodeJSONBody(r, &teamRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return

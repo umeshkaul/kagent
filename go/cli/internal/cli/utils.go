@@ -11,10 +11,10 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/client"
 )
 
-func CheckServerConnection(client autogen_client.Client) error {
+func CheckServerConnection(client *client.Client) error {
 	// Only check if we have a valid client
 	if client == nil {
 		return fmt.Errorf("Error connecting to server. Please run 'install' command first.")
@@ -45,7 +45,7 @@ func NewPortForward(ctx context.Context, cfg *config.Config) *portForward {
 		}
 	}()
 
-	client := autogen_client.New(cfg.APIURL)
+	client := client.New(cfg.APIURL)
 	// Try to connect 5 times
 	for i := 0; i < 5; i++ {
 		if err := CheckServerConnection(client); err == nil {

@@ -3,18 +3,13 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-type ToolServerResponse struct {
-	Ref             string                    `json:"ref"`
-	Config          v1alpha1.ToolServerConfig `json:"config"`
-	DiscoveredTools []*v1alpha1.MCPTool       `json:"discoveredTools"`
-}
 
 // ToolServersHandler handles ToolServer-related requests
 type ToolServersHandler struct {
@@ -37,9 +32,9 @@ func (h *ToolServersHandler) HandleListToolServers(w ErrorResponseWriter, r *htt
 		return
 	}
 
-	toolServerWithTools := make([]ToolServerResponse, len(toolServerList.Items))
+	toolServerWithTools := make([]client.ToolServerResponse, len(toolServerList.Items))
 	for i, toolServer := range toolServerList.Items {
-		toolServerWithTools[i] = ToolServerResponse{
+		toolServerWithTools[i] = client.ToolServerResponse{
 			Ref:             common.ResourceRefString(toolServer.Namespace, toolServer.Name),
 			Config:          toolServer.Spec.Config,
 			DiscoveredTools: toolServer.Status.DiscoveredTools,

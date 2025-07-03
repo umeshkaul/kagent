@@ -3,16 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-type NamespaceResponse struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
-}
 
 // NamespacesHandler handles namespace-related requests
 type NamespacesHandler struct {
@@ -44,9 +40,9 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 			return
 		}
 
-		var namespaces []NamespaceResponse
+		var namespaces []client.NamespaceResponse
 		for _, ns := range namespaceList.Items {
-			namespaces = append(namespaces, NamespaceResponse{
+			namespaces = append(namespaces, client.NamespaceResponse{
 				Name:   ns.Name,
 				Status: string(ns.Status.Phase),
 			})
@@ -58,12 +54,12 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 
 	// Filter to only show watched namespaces that exist in the cluster
 	log.Info("Listing watched namespaces only", "watchedNamespaces", h.WatchedNamespaces)
-	var namespaces []NamespaceResponse
+	var namespaces []client.NamespaceResponse
 
 	for _, watchedNS := range h.WatchedNamespaces {
 		namespace := &corev1.Namespace{}
-		if err := h.KubeClient.Get(r.Context(), client.ObjectKey{Name: watchedNS}, namespace); err != nil {
-			if client.IgnoreNotFound(err) != nil {
+		if err := h.KubeClient.Get(r.Context(), ctrl_client.ObjectKey{Name: watchedNS}, namespace); err != nil {
+			if ctrl_client.IgnoreNotFound(err) != nil {
 				log.Error(err, "Failed to get namespace", "namespace", watchedNS)
 				continue // Skip this namespace
 			}
@@ -71,7 +67,7 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 			continue
 		}
 
-		namespaces = append(namespaces, NamespaceResponse{
+		namespaces = append(namespaces, client.NamespaceResponse{
 			Name:   namespace.Name,
 			Status: string(namespace.Status.Phase),
 		})

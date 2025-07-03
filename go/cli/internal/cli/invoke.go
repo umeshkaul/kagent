@@ -9,7 +9,7 @@ import (
 	"os"
 
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	autogen_client "github.com/kagent-dev/kagent/go/controller/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/client"
 )
 
 type InvokeCfg struct {
@@ -22,7 +22,7 @@ type InvokeCfg struct {
 
 func InvokeCmd(ctx context.Context, cfg *InvokeCfg) {
 
-	client := autogen_client.New(cfg.Config.APIURL)
+	client := client.New(cfg.Config.APIURL)
 
 	var pf *portForward
 	if err := CheckServerConnection(client); err != nil {

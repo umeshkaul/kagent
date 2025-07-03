@@ -11,6 +11,7 @@ import (
 	"github.com/abiosoft/ishell/v2"
 	"github.com/kagent-dev/kagent/go/cli/internal/cli"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -78,7 +79,7 @@ func main() {
 		Short: "Generate a bug report",
 		Long:  `Generate a bug report`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -92,7 +93,7 @@ func main() {
 		Short: "Print the kagent version",
 		Long:  `Print the kagent version`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -145,7 +146,7 @@ func main() {
 		Short: "Get a session or list all sessions",
 		Long:  `Get a session by ID or list all sessions`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -163,7 +164,7 @@ func main() {
 		Short: "Get a run or list all runs",
 		Long:  `Get a run by ID or list all runs`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -181,7 +182,7 @@ func main() {
 		Short: "Get an agent or list all agents",
 		Long:  `Get an agent by name or list all agents`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -199,7 +200,7 @@ func main() {
 		Short: "Get tools",
 		Long:  `List all available tools`,
 		Run: func(cmd *cobra.Command, args []string) {
-			client := autogen_client.New(cfg.APIURL)
+			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
 				pf := cli.NewPortForward(ctx, cfg)
 				defer pf.Stop()
@@ -231,7 +232,7 @@ func runInteractive() {
 		os.Exit(1)
 	}
 
-	client := autogen_client.New(cfg.APIURL)
+	client := client.New(cfg.APIURL)
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, "kubectl", "-n", "kagent", "port-forward", "service/kagent", "8081:8081")
 	// Error connecting to server, port-forward the server
@@ -488,29 +489,6 @@ Example:
 	}
 
 	shell.AddCmd(bugReportCmd)
-
-	shell.NotFound(func(c *ishell.Context) {
-		// Hidden create command
-		if len(c.Args) > 0 && c.Args[0] == "create" {
-			c.Args = c.Args[1:]
-			if err := cli.CheckServerConnection(client); err != nil {
-				c.Println(err)
-				return
-			}
-			cli.CreateCmd(c)
-			c.SetPrompt(config.BoldBlue("kagent >> "))
-		} else if len(c.Args) > 0 && c.Args[0] == "delete" {
-			c.Args = c.Args[1:]
-			if err := cli.CheckServerConnection(client); err != nil {
-				c.Println(err)
-				return
-			}
-			cli.DeleteCmd(c)
-			c.SetPrompt(config.BoldBlue("kagent >> "))
-		} else {
-			c.Println("Command not found. Type 'help' to see available commands.")
-		}
-	})
 
 	shell.AddCmd(&ishell.Cmd{
 		Name:    "version",

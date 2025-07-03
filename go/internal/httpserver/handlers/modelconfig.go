@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
@@ -15,16 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
-
-// ModelConfigResponse defines the structure for the ModelConfig API response.
-type ModelConfigResponse struct {
-	Ref             string                 `json:"ref"`
-	ProviderName    string                 `json:"providerName"`
-	Model           string                 `json:"model"`
-	APIKeySecretRef string                 `json:"apiKeySecretRef"`
-	APIKeySecretKey string                 `json:"apiKeySecretKey"`
-	ModelParams     map[string]interface{} `json:"modelParams"`
-}
 
 // ModelConfigHandler handles ModelConfiguration requests
 type ModelConfigHandler struct {
@@ -47,7 +38,7 @@ func (h *ModelConfigHandler) HandleListModelConfigs(w ErrorResponseWriter, r *ht
 		return
 	}
 
-	configs := make([]ModelConfigResponse, 0)
+	configs := make([]client.ModelConfigResponse, 0)
 	for _, config := range modelConfigs.Items {
 		modelParams := make(map[string]interface{})
 
@@ -64,7 +55,7 @@ func (h *ModelConfigHandler) HandleListModelConfigs(w ErrorResponseWriter, r *ht
 			FlattenStructToMap(config.Spec.Ollama, modelParams)
 		}
 
-		responseItem := ModelConfigResponse{
+		responseItem := client.ModelConfigResponse{
 			Ref:             common.GetObjectRef(&config),
 			ProviderName:    string(config.Spec.Provider),
 			Model:           config.Spec.Model,
@@ -138,7 +129,7 @@ func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http
 		FlattenStructToMap(modelConfig.Spec.Ollama, modelParams)
 	}
 
-	responseItem := ModelConfigResponse{
+	responseItem := client.ModelConfigResponse{
 		Ref:             common.GetObjectRef(modelConfig),
 		ProviderName:    string(modelConfig.Spec.Provider),
 		Model:           modelConfig.Spec.Model,
@@ -168,17 +159,6 @@ func getStructJSONKeys(structType reflect.Type) []string {
 	return keys
 }
 
-type CreateModelConfigRequest struct {
-	Ref             string                      `json:"ref"`
-	Provider        Provider                    `json:"provider"`
-	Model           string                      `json:"model"`
-	APIKey          string                      `json:"apiKey"`
-	OpenAIParams    *v1alpha1.OpenAIConfig      `json:"openAI,omitempty"`
-	AnthropicParams *v1alpha1.AnthropicConfig   `json:"anthropic,omitempty"`
-	AzureParams     *v1alpha1.AzureOpenAIConfig `json:"azureOpenAI,omitempty"`
-	OllamaParams    *v1alpha1.OllamaConfig      `json:"ollama,omitempty"`
-}
-
 type Provider struct {
 	Name string `json:"name"`
 	Type string `json:"type"`
@@ -189,7 +169,7 @@ func (h *ModelConfigHandler) HandleCreateModelConfig(w ErrorResponseWriter, r *h
 	log := ctrllog.FromContext(r.Context()).WithName("modelconfig-handler").WithValues("operation", "create")
 	log.Info("Received request to create ModelConfig")
 
-	var req CreateModelConfigRequest
+	var req client.CreateModelConfigRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
@@ -341,15 +321,6 @@ func (h *ModelConfigHandler) HandleCreateModelConfig(w ErrorResponseWriter, r *h
 
 // UpdateModelConfigRequest defines the structure for updating a ModelConfig.
 // It's similar to Create, but APIKey is optional.
-type UpdateModelConfigRequest struct {
-	Provider        Provider                    `json:"provider"`
-	Model           string                      `json:"model"`
-	APIKey          *string                     `json:"apiKey,omitempty"`
-	OpenAIParams    *v1alpha1.OpenAIConfig      `json:"openAI,omitempty"`
-	AnthropicParams *v1alpha1.AnthropicConfig   `json:"anthropic,omitempty"`
-	AzureParams     *v1alpha1.AzureOpenAIConfig `json:"azureOpenAI,omitempty"`
-	OllamaParams    *v1alpha1.OllamaConfig      `json:"ollama,omitempty"`
-}
 
 // HandleUpdateModelConfig handles POST /api/modelconfigs/{namespace}/{configName} requests
 func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *http.Request) {
@@ -370,7 +341,7 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 		return
 	}
 
-	var req UpdateModelConfigRequest
+	var req client.UpdateModelConfigRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
@@ -534,7 +505,7 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 		FlattenStructToMap(modelConfig.Spec.Ollama, updatedParams)
 	}
 
-	responseItem := ModelConfigResponse{
+	responseItem := client.ModelConfigResponse{
 		Ref:             common.GetObjectRef(modelConfig),
 		ProviderName:    string(modelConfig.Spec.Provider),
 		APIKeySecretRef: modelConfig.Spec.APIKeySecretRef,

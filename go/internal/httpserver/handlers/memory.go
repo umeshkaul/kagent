@@ -10,18 +10,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 )
-
-type MemoryResponse struct {
-	Ref             string                 `json:"ref"`
-	ProviderName    string                 `json:"providerName"`
-	APIKeySecretRef string                 `json:"apiKeySecretRef"`
-	APIKeySecretKey string                 `json:"apiKeySecretKey"`
-	MemoryParams    map[string]interface{} `json:"memoryParams"`
-}
 
 // MemoryHandler handles Memory requests
 type MemoryHandler struct {
@@ -44,7 +37,7 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 		return
 	}
 
-	memoryResponses := make([]MemoryResponse, len(memoryList.Items))
+	memoryResponses := make([]client.MemoryResponse, len(memoryList.Items))
 	for i, memory := range memoryList.Items {
 		memoryRef := common.GetObjectRef(&memory)
 		log.V(1).Info("Processing Memory", "memoryRef", memoryRef)
@@ -54,7 +47,7 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 			FlattenStructToMap(memory.Spec.Pinecone, memoryParams)
 		}
 
-		memoryResponses[i] = MemoryResponse{
+		memoryResponses[i] = client.MemoryResponse{
 			Ref:             memoryRef,
 			ProviderName:    string(memory.Spec.Provider),
 			APIKeySecretRef: memory.Spec.APIKeySecretRef,
@@ -67,19 +60,12 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 	RespondWithJSON(w, http.StatusOK, memoryResponses)
 }
 
-type CreateMemoryRequest struct {
-	Ref            string                   `json:"ref"`
-	Provider       Provider                 `json:"provider"`
-	APIKey         string                   `json:"apiKey"`
-	PineconeParams *v1alpha1.PineconeConfig `json:"pinecone,omitempty"`
-}
-
 // HandleCreateMemory handles POST /api/memories/ requests
 func (h *MemoryHandler) HandleCreateMemory(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("memory-handler").WithValues("operation", "create")
 	log.Info("Received request to create Memory")
 
-	var req CreateMemoryRequest
+	var req client.CreateMemoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
@@ -276,7 +262,7 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 		return
 	}
 
-	memoryResponse := MemoryResponse{
+	memoryResponse := client.MemoryResponse{
 		Ref:             common.GetObjectRef(memory),
 		ProviderName:    string(memory.Spec.Provider),
 		APIKeySecretRef: apiKeySecretRef.String(),
@@ -286,10 +272,6 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 
 	log.Info("Memory retrieved successfully")
 	RespondWithJSON(w, http.StatusOK, memoryResponse)
-}
-
-type UpdateMemoryRequest struct {
-	PineconeParams *v1alpha1.PineconeConfig `json:"pinecone,omitempty"`
 }
 
 // HandleUpdateMemory handles PUT /api/memories/{namespace}/{memoryName} requests
@@ -316,7 +298,7 @@ func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Reques
 		"memoryName", memoryName,
 	)
 
-	var req UpdateMemoryRequest
+	var req client.UpdateMemoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
