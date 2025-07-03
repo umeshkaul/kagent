@@ -10,6 +10,8 @@ import "github.com/kagent-dev/kagent/go/client"
 
 ## Basic Usage
 
+The client library provides a modular, interface-based design with sub-clients for different API areas:
+
 ```go
 package main
 
@@ -22,23 +24,40 @@ import (
 )
 
 func main() {
-    // Create a new client
-    c := client.NewClient("http://localhost:8080", 
+    // Create a new client set
+    c := client.NewClientSet("http://localhost:8080", 
         client.WithUserID("your-user-id"))
 
     // Check server health
-    if err := c.Health(context.Background()); err != nil {
+    if err := c.Health().Health(context.Background()); err != nil {
         log.Fatal("Server is not healthy:", err)
     }
 
     // Get version information
-    version, err := c.GetVersion(context.Background())
+    version, err := c.Version().GetVersion(context.Background())
     if err != nil {
         log.Fatal("Failed to get version:", err)
     }
-    fmt.Printf("Server version: %s\n", version.KagentVersion)
+    fmt.Printf("Server version: %s\n", version.KAgentVersion)
 }
 ```
+
+## Client Architecture
+
+The client is organized into sub-clients, each responsible for a specific API area:
+
+- **Health**: `c.Health()` - Server health checks
+- **Version**: `c.Version()` - Version information
+- **ModelConfigs**: `c.ModelConfigs()` - Model configuration management
+- **Sessions**: `c.Sessions()` - Session management
+- **Teams**: `c.Teams()` - Team management
+- **Tools**: `c.Tools()` - Tool listing
+- **ToolServers**: `c.ToolServers()` - Tool server management
+- **Memories**: `c.Memories()` - Memory management
+- **Providers**: `c.Providers()` - Provider information
+- **Models**: `c.Models()` - Model information
+- **Namespaces**: `c.Namespaces()` - Namespace listing
+- **Feedback**: `c.Feedback()` - Feedback management
 
 ## Configuration
 
@@ -47,7 +66,7 @@ func main() {
 ```go
 // With custom HTTP client
 httpClient := &http.Client{Timeout: 60 * time.Second}
-c := client.NewClient("http://localhost:8080", 
+c := client.NewClientSet("http://localhost:8080", 
     client.WithHTTPClient(httpClient),
     client.WithUserID("your-user-id"))
 ```
@@ -58,12 +77,12 @@ Many endpoints require a user ID. You can either:
 
 1. Set a default user ID when creating the client:
 ```go
-c := client.NewClient("http://localhost:8080", client.WithUserID("user123"))
+c := client.NewClientSet("http://localhost:8080", client.WithUserID("user123"))
 ```
 
 2. Pass it explicitly to methods that require it:
 ```go
-sessions, err := c.ListSessions(ctx, "user123")
+sessions, err := c.Sessions().ListSessions(ctx, "user123")
 ```
 
 ## API Methods
@@ -291,6 +310,19 @@ if err != nil {
         fmt.Printf("Client error: %v\n", err)
     }
 }
+```
+
+## Legacy Compatibility
+
+For backward compatibility, you can still use the legacy `New()` function, though it returns the same clientset interface:
+
+```go
+// Legacy usage (still works)
+c := client.New("http://localhost:8080", client.WithUserID("user123"))
+
+// Alternative modern usage
+c := client.NewClientSet("http://localhost:8080", client.WithUserID("user123"))
+c := client.NewClient("http://localhost:8080", client.WithUserID("user123"))
 ```
 
 ## Examples
