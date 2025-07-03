@@ -15,7 +15,7 @@ type Handlers struct {
 	Model       *ModelHandler
 	Provider    *ProviderHandler
 	Sessions    *SessionsHandler
-	Teams       *TeamsHandler
+	Agents      *AgentsHandler
 	Tools       *ToolsHandler
 	ToolServers *ToolServersHandler
 	Memory      *MemoryHandler
@@ -46,7 +46,7 @@ func NewHandlers(kubeClient client.Client, autogenClient autogen_client.Client, 
 		Model:       NewModelHandler(base),
 		Provider:    NewProviderHandler(base),
 		Sessions:    NewSessionsHandler(base),
-		Teams:       NewTeamsHandler(base),
+		Agents:      NewAgentsHandler(base),
 		Tools:       NewToolsHandler(base),
 		ToolServers: NewToolServersHandler(base),
 		Memory:      NewMemoryHandler(base),

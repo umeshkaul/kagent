@@ -70,7 +70,7 @@ func (h *ModelConfigHandler) HandleListModelConfigs(w ErrorResponseWriter, r *ht
 	RespondWithJSON(w, http.StatusOK, configs)
 }
 
-// HandleGetModelConfig handles GET /api/modelconfigs/{namespace}/{configName} requests
+// HandleGetModelConfig handles GET /api/modelconfigs/{namespace}/{name} requests
 func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("modelconfig-handler").WithValues("operation", "get")
 	log.Info("Received request to get ModelConfig")
@@ -82,10 +82,10 @@ func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http
 		return
 	}
 
-	configName, err := GetPathParam(r, "configName")
+	configName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get config name from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get configName from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -139,7 +139,8 @@ func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http
 	}
 
 	log.Info("Successfully retrieved and formatted ModelConfig")
-	RespondWithJSON(w, http.StatusOK, responseItem)
+	data := client.NewResponse(responseItem, "Successfully retrieved ModelConfig", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // Helper function to get all JSON keys from a struct type
@@ -316,13 +317,14 @@ func (h *ModelConfigHandler) HandleCreateModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.Info("Successfully created ModelConfig")
-	RespondWithJSON(w, http.StatusCreated, modelConfig)
+	data := client.NewResponse(modelConfig, "Successfully created ModelConfig", false)
+	RespondWithJSON(w, http.StatusCreated, data)
 }
 
 // UpdateModelConfigRequest defines the structure for updating a ModelConfig.
 // It's similar to Create, but APIKey is optional.
 
-// HandleUpdateModelConfig handles POST /api/modelconfigs/{namespace}/{configName} requests
+// HandleUpdateModelConfig handles POST /api/modelconfigs/{namespace}/{name} requests
 func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("modelconfig-handler").WithValues("operation", "update")
 	log.Info("Received request to update ModelConfig")
@@ -334,10 +336,10 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 		return
 	}
 
-	configName, err := GetPathParam(r, "configName")
+	configName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get configName from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get configName from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -515,10 +517,11 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.V(1).Info("Successfully updated ModelConfig")
-	RespondWithJSON(w, http.StatusOK, responseItem)
+	data := client.NewResponse(responseItem, "Successfully updated ModelConfig", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleDeleteModelConfig handles DELETE /api/modelconfigs/{namespace}/{configName} requests
+// HandleDeleteModelConfig handles DELETE /api/modelconfigs/{namespace}/{name} requests
 func (h *ModelConfigHandler) HandleDeleteModelConfig(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("modelconfig-handler").WithValues("operation", "delete")
 	log.Info("Received request to delete ModelConfig")
@@ -530,10 +533,10 @@ func (h *ModelConfigHandler) HandleDeleteModelConfig(w ErrorResponseWriter, r *h
 		return
 	}
 
-	configName, err := GetPathParam(r, "configName")
+	configName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get config name from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get configName from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -570,5 +573,6 @@ func (h *ModelConfigHandler) HandleDeleteModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.V(1).Info("Successfully deleted ModelConfig")
-	RespondWithJSON(w, http.StatusOK, nil)
+	data := client.NewResponse(struct{}{}, "Successfully deleted ModelConfig", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

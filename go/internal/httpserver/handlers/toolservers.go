@@ -42,7 +42,8 @@ func (h *ToolServersHandler) HandleListToolServers(w ErrorResponseWriter, r *htt
 	}
 
 	log.Info("Successfully listed ToolServers", "count", len(toolServerWithTools))
-	RespondWithJSON(w, http.StatusOK, toolServerWithTools)
+	data := client.NewResponse(toolServerWithTools, "Successfully listed ToolServers", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleCreateToolServer handles POST /api/toolservers requests
@@ -80,10 +81,11 @@ func (h *ToolServersHandler) HandleCreateToolServer(w ErrorResponseWriter, r *ht
 	}
 
 	log.Info("Successfully created ToolServer")
-	RespondWithJSON(w, http.StatusCreated, toolServerRequest)
+	data := client.NewResponse(toolServerRequest, "Successfully created ToolServer", false)
+	RespondWithJSON(w, http.StatusCreated, data)
 }
 
-// HandleDeleteToolServer handles DELETE /api/toolservers/{namespace}/{toolServerName} requests
+// HandleDeleteToolServer handles DELETE /api/toolservers/{namespace}/{name} requests
 func (h *ToolServersHandler) HandleDeleteToolServer(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("toolservers-handler").WithValues("operation", "delete")
 	log.Info("Received request to delete ToolServer")
@@ -95,9 +97,9 @@ func (h *ToolServersHandler) HandleDeleteToolServer(w ErrorResponseWriter, r *ht
 		return
 	}
 
-	toolServerName, err := GetPathParam(r, "toolServerName")
+	toolServerName, err := GetPathParam(r, "name")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get ToolServerName from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -134,5 +136,6 @@ func (h *ToolServersHandler) HandleDeleteToolServer(w ErrorResponseWriter, r *ht
 	}
 
 	log.Info("Successfully deleted ToolServer from Kubernetes")
-	w.WriteHeader(http.StatusNoContent)
+	data := client.NewResponse(struct{}{}, "Successfully deleted ToolServer", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

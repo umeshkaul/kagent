@@ -73,5 +73,6 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 		})
 	}
 
-	RespondWithJSON(w, http.StatusOK, namespaces)
+	data := client.NewResponse(namespaces, "Successfully listed namespaces", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

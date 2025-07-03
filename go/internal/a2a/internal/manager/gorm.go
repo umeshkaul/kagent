@@ -10,53 +10,52 @@ import (
 )
 
 // GORM models
-type StoredMessage struct {
-	ID        uint   `gorm:"primaryKey"`
-	MessageID string `gorm:"unique;not null;index"`
-	ContextID *string
-	Data      string `gorm:"type:text;not null"` // JSON serialized protocol.Message
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type Message struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	ConversationID string  `gorm:"not null;index" json:"conversation_id"`
+	Data           string  `gorm:"type:text;not null" json:"data"` // JSON serialized protocol.Message
+	ContextID      *string `gorm:"not null;index" json:"context_id"`
 }
 
-func (StoredMessage) TableName() string {
+func (Message) TableName() string {
 	return "messages"
 }
 
-type StoredConversation struct {
-	ID             uint   `gorm:"primaryKey"`
-	ContextID      string `gorm:"unique;not null;index"`
-	MessageIDs     string `gorm:"type:text"` // JSON array of message IDs
-	LastAccessTime time.Time
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+type Conversation struct {
+	gorm.Model
+
+	MessageIDs     []string  `gorm:"type:text" json:"message_ids"` // JSON array of message IDs
+	ContextID      string    `gorm:"not null;index" json:"context_id"`
+	LastAccessTime time.Time `json:"last_access_time"`
 }
 
-func (StoredConversation) TableName() string {
+func (Conversation) TableName() string {
 	return "conversations"
 }
 
-type StoredTask struct {
-	ID        uint   `gorm:"primaryKey"`
-	TaskID    string `gorm:"unique;not null;index"`
-	Data      string `gorm:"type:text;not null"` // JSON serialized task data
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type Task struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	Data      string         `gorm:"type:text;not null" json:"data"` // JSON serialized task data
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
 }
 
-func (StoredTask) TableName() string {
+func (Task) TableName() string {
 	return "tasks"
 }
 
-type StoredPushNotification struct {
-	ID        uint   `gorm:"primaryKey"`
-	TaskID    string `gorm:"unique;not null;index"`
-	Data      string `gorm:"type:text;not null"` // JSON serialized push notification config
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type PushNotification struct {
+	gorm.Model
+	TaskID string `gorm:"not null;index" json:"task_id"`
+	Data   string `gorm:"type:text;not null" json:"data"` // JSON serialized push notification config
 }
 
-func (StoredPushNotification) TableName() string {
+func (PushNotification) TableName() string {
 	return "push_notifications"
 }
 
@@ -80,10 +79,10 @@ func NewGormStorage(db *gorm.DB, options StorageOptions) (*GormStorage, error) {
 
 	// Auto migrate tables
 	err := db.AutoMigrate(
-		&StoredMessage{},
-		&StoredConversation{},
-		&StoredTask{},
-		&StoredPushNotification{},
+		&Message{},
+		&Conversation{},
+		&Task{},
+		&PushNotification{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to migrate tables: %w", err)
@@ -100,8 +99,8 @@ func (s *GormStorage) StoreMessage(message protocol.Message) error {
 		return fmt.Errorf("failed to serialize message: %w", err)
 	}
 
-	storedMessage := StoredMessage{
-		MessageID: message.MessageID,
+	storedMessage := Message{
+		ID:        message.MessageID,
 		ContextID: message.ContextID,
 		Data:      string(data),
 	}
@@ -124,17 +123,16 @@ func (s *GormStorage) StoreMessage(message protocol.Message) error {
 	if message.ContextID != nil {
 		contextID := *message.ContextID
 
-		var conversation StoredConversation
+		var conversation Conversation
 		err := tx.Where("context_id = ?", contextID).First(&conversation).Error
 
 		if err == gorm.ErrRecordNotFound {
 			// Create new conversation
 			messageIDs := []string{message.MessageID}
-			messageIDsJSON, _ := json.Marshal(messageIDs)
 
-			conversation = StoredConversation{
+			conversation = Conversation{
 				ContextID:      contextID,
-				MessageIDs:     string(messageIDsJSON),
+				MessageIDs:     messageIDs,
 				LastAccessTime: time.Now(),
 			}
 
@@ -146,14 +144,7 @@ func (s *GormStorage) StoreMessage(message protocol.Message) error {
 			tx.Rollback()
 			return fmt.Errorf("failed to query conversation: %w", err)
 		} else {
-			// Update existing conversation
-			var messageIDs []string
-			if err := json.Unmarshal([]byte(conversation.MessageIDs), &messageIDs); err != nil {
-				tx.Rollback()
-				return fmt.Errorf("failed to unmarshal message IDs: %w", err)
-			}
-
-			messageIDs = append(messageIDs, message.MessageID)
+			messageIDs := conversation.MessageIDs
 
 			// Limit history length
 			if len(messageIDs) > s.maxHistoryLength {
@@ -162,14 +153,13 @@ func (s *GormStorage) StoreMessage(message protocol.Message) error {
 				messageIDs = messageIDs[len(messageIDs)-s.maxHistoryLength:]
 
 				// Delete old messages from database
-				if err := tx.Where("message_id IN ?", removedMsgIDs).Delete(&StoredMessage{}).Error; err != nil {
+				if err := tx.Where("message_id IN ?", removedMsgIDs).Delete(&Message{}).Error; err != nil {
 					tx.Rollback()
 					return fmt.Errorf("failed to delete old messages: %w", err)
 				}
 			}
 
-			messageIDsJSON, _ := json.Marshal(messageIDs)
-			conversation.MessageIDs = string(messageIDsJSON)
+			conversation.MessageIDs = messageIDs
 			conversation.LastAccessTime = time.Now()
 
 			if err := tx.Save(&conversation).Error; err != nil {
@@ -183,7 +173,7 @@ func (s *GormStorage) StoreMessage(message protocol.Message) error {
 }
 
 func (s *GormStorage) GetMessage(messageID string) (protocol.Message, error) {
-	var storedMessage StoredMessage
+	var storedMessage Message
 	err := s.db.Where("message_id = ?", messageID).First(&storedMessage).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -201,7 +191,7 @@ func (s *GormStorage) GetMessage(messageID string) (protocol.Message, error) {
 }
 
 func (s *GormStorage) DeleteMessage(messageID string) error {
-	return s.db.Where("message_id = ?", messageID).Delete(&StoredMessage{}).Error
+	return s.db.Where("message_id = ?", messageID).Delete(&Message{}).Error
 }
 
 func (s *GormStorage) GetMessages(messageIDs []string) ([]protocol.Message, error) {
@@ -209,7 +199,7 @@ func (s *GormStorage) GetMessages(messageIDs []string) ([]protocol.Message, erro
 		return []protocol.Message{}, nil
 	}
 
-	var storedMessages []StoredMessage
+	var storedMessages []Message
 	err := s.db.Where("message_id IN ?", messageIDs).Find(&storedMessages).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get messages: %w", err)
@@ -229,14 +219,10 @@ func (s *GormStorage) GetMessages(messageIDs []string) ([]protocol.Message, erro
 
 // Conversation operations
 func (s *GormStorage) StoreConversation(contextID string, history *ConversationHistory) error {
-	messageIDsJSON, err := json.Marshal(history.MessageIDs)
-	if err != nil {
-		return fmt.Errorf("failed to serialize message IDs: %w", err)
-	}
 
-	conversation := StoredConversation{
+	conversation := Conversation{
 		ContextID:      contextID,
-		MessageIDs:     string(messageIDsJSON),
+		MessageIDs:     history.MessageIDs,
 		LastAccessTime: history.LastAccessTime,
 	}
 
@@ -244,7 +230,7 @@ func (s *GormStorage) StoreConversation(contextID string, history *ConversationH
 }
 
 func (s *GormStorage) GetConversation(contextID string) (*ConversationHistory, error) {
-	var conversation StoredConversation
+	var conversation Conversation
 	err := s.db.Where("context_id = ?", contextID).First(&conversation).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -253,31 +239,26 @@ func (s *GormStorage) GetConversation(contextID string) (*ConversationHistory, e
 		return nil, fmt.Errorf("failed to get conversation: %w", err)
 	}
 
-	var messageIDs []string
-	if err := json.Unmarshal([]byte(conversation.MessageIDs), &messageIDs); err != nil {
-		return nil, fmt.Errorf("failed to deserialize message IDs: %w", err)
-	}
-
 	return &ConversationHistory{
-		MessageIDs:     messageIDs,
+		MessageIDs:     conversation.MessageIDs,
 		LastAccessTime: conversation.LastAccessTime,
 	}, nil
 }
 
 func (s *GormStorage) UpdateConversationAccess(contextID string, timestamp time.Time) error {
-	return s.db.Model(&StoredConversation{}).
+	return s.db.Model(&Conversation{}).
 		Where("context_id = ?", contextID).
 		Update("last_access_time", timestamp).Error
 }
 
 func (s *GormStorage) DeleteConversation(contextID string) error {
-	return s.db.Where("context_id = ?", contextID).Delete(&StoredConversation{}).Error
+	return s.db.Where("context_id = ?", contextID).Delete(&Conversation{}).Error
 }
 
 func (s *GormStorage) GetExpiredConversations(maxAge time.Duration) ([]string, error) {
 	cutoff := time.Now().Add(-maxAge)
 
-	var conversations []StoredConversation
+	var conversations []Conversation
 	err := s.db.Where("last_access_time < ?", cutoff).Find(&conversations).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get expired conversations: %w", err)
@@ -291,36 +272,6 @@ func (s *GormStorage) GetExpiredConversations(maxAge time.Duration) ([]string, e
 	return contextIDs, nil
 }
 
-func (s *GormStorage) GetConversationStats() (map[string]interface{}, error) {
-	var totalConversations int64
-	var totalMessages int64
-
-	if err := s.db.Model(&StoredConversation{}).Count(&totalConversations).Error; err != nil {
-		return nil, fmt.Errorf("failed to count conversations: %w", err)
-	}
-
-	if err := s.db.Model(&StoredMessage{}).Count(&totalMessages).Error; err != nil {
-		return nil, fmt.Errorf("failed to count messages: %w", err)
-	}
-
-	stats := map[string]interface{}{
-		"total_conversations": totalConversations,
-		"total_messages":      totalMessages,
-	}
-
-	if totalConversations > 0 {
-		var oldestAccess, newestAccess time.Time
-
-		s.db.Model(&StoredConversation{}).Select("MIN(last_access_time)").Scan(&oldestAccess)
-		s.db.Model(&StoredConversation{}).Select("MAX(last_access_time)").Scan(&newestAccess)
-
-		stats["oldest_access"] = oldestAccess
-		stats["newest_access"] = newestAccess
-	}
-
-	return stats, nil
-}
-
 // Task operations - Note: Tasks cannot be easily serialized due to context.CancelFunc
 // For now, we'll store a simplified version and recreate the cancellation context
 func (s *GormStorage) StoreTask(taskID string, task *MemoryCancellableTask) error {
@@ -331,17 +282,17 @@ func (s *GormStorage) StoreTask(taskID string, task *MemoryCancellableTask) erro
 		return fmt.Errorf("failed to serialize task: %w", err)
 	}
 
-	storedTask := StoredTask{
-		TaskID: taskID,
-		Data:   string(data),
+	storedTask := Task{
+		ID:   taskID,
+		Data: string(data),
 	}
 
 	return s.db.Save(&storedTask).Error
 }
 
 func (s *GormStorage) GetTask(taskID string) (*MemoryCancellableTask, error) {
-	var storedTask StoredTask
-	err := s.db.Where("task_id = ?", taskID).First(&storedTask).Error
+	var storedTask Task
+	err := s.db.Where("id = ?", taskID).First(&storedTask).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("task not found: %s", taskID)
@@ -360,12 +311,12 @@ func (s *GormStorage) GetTask(taskID string) (*MemoryCancellableTask, error) {
 }
 
 func (s *GormStorage) DeleteTask(taskID string) error {
-	return s.db.Where("task_id = ?", taskID).Delete(&StoredTask{}).Error
+	return s.db.Where("id = ?", taskID).Delete(&Task{}).Error
 }
 
 func (s *GormStorage) TaskExists(taskID string) bool {
 	var count int64
-	s.db.Model(&StoredTask{}).Where("task_id = ?", taskID).Count(&count)
+	s.db.Model(&Task{}).Where("id = ?", taskID).Count(&count)
 	return count > 0
 }
 
@@ -376,7 +327,7 @@ func (s *GormStorage) StorePushNotification(taskID string, config protocol.TaskP
 		return fmt.Errorf("failed to serialize push notification config: %w", err)
 	}
 
-	storedConfig := StoredPushNotification{
+	storedConfig := PushNotification{
 		TaskID: taskID,
 		Data:   string(data),
 	}
@@ -385,7 +336,7 @@ func (s *GormStorage) StorePushNotification(taskID string, config protocol.TaskP
 }
 
 func (s *GormStorage) GetPushNotification(taskID string) (protocol.TaskPushNotificationConfig, error) {
-	var storedConfig StoredPushNotification
+	var storedConfig PushNotification
 	err := s.db.Where("task_id = ?", taskID).First(&storedConfig).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -403,7 +354,7 @@ func (s *GormStorage) GetPushNotification(taskID string) (protocol.TaskPushNotif
 }
 
 func (s *GormStorage) DeletePushNotification(taskID string) error {
-	return s.db.Where("task_id = ?", taskID).Delete(&StoredPushNotification{}).Error
+	return s.db.Where("task_id = ?", taskID).Delete(&PushNotification{}).Error
 }
 
 // Cleanup operations
@@ -419,7 +370,7 @@ func (s *GormStorage) CleanupExpiredConversations(maxAge time.Duration) (int, er
 	}()
 
 	// Get expired conversations
-	var expiredConversations []StoredConversation
+	var expiredConversations []Conversation
 	err := tx.Where("last_access_time < ?", cutoff).Find(&expiredConversations).Error
 	if err != nil {
 		tx.Rollback()
@@ -438,22 +389,19 @@ func (s *GormStorage) CleanupExpiredConversations(maxAge time.Duration) (int, er
 	for _, conv := range expiredConversations {
 		contextIDs = append(contextIDs, conv.ContextID)
 
-		var messageIDs []string
-		if err := json.Unmarshal([]byte(conv.MessageIDs), &messageIDs); err == nil {
-			allMessageIDs = append(allMessageIDs, messageIDs...)
-		}
+		allMessageIDs = append(allMessageIDs, conv.MessageIDs...)
 	}
 
 	// Delete messages from expired conversations
 	if len(allMessageIDs) > 0 {
-		if err := tx.Where("message_id IN ?", allMessageIDs).Delete(&StoredMessage{}).Error; err != nil {
+		if err := tx.Where("id IN ?", allMessageIDs).Delete(&Message{}).Error; err != nil {
 			tx.Rollback()
 			return 0, fmt.Errorf("failed to delete expired messages: %w", err)
 		}
 	}
 
 	// Delete expired conversations
-	if err := tx.Where("context_id IN ?", contextIDs).Delete(&StoredConversation{}).Error; err != nil {
+	if err := tx.Where("context_id IN ?", contextIDs).Delete(&Conversation{}).Error; err != nil {
 		tx.Rollback()
 		return 0, fmt.Errorf("failed to delete expired conversations: %w", err)
 	}

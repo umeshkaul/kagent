@@ -43,7 +43,8 @@ func (h *SessionsHandler) HandleListSessions(w ErrorResponseWriter, r *http.Requ
 	}
 
 	log.Info("Successfully listed sessions", "count", len(sessions))
-	RespondWithJSON(w, http.StatusOK, sessions)
+	data := client.NewResponse(sessions, "Successfully listed sessions", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleCreateSession handles POST /api/sessions requests using database
@@ -78,7 +79,8 @@ func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully created session", "sessionID", session.ID)
-	RespondWithJSON(w, http.StatusCreated, session)
+	data := client.NewResponse(session, "Successfully created session", false)
+	RespondWithJSON(w, http.StatusCreated, data)
 }
 
 // HandleGetSession handles GET /api/sessions/{sessionName} requests using database
@@ -107,7 +109,8 @@ func (h *SessionsHandler) HandleGetSession(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Successfully retrieved session")
-	RespondWithJSON(w, http.StatusOK, session)
+	data := client.NewResponse(session, "Successfully retrieved session", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleUpdateSession handles PUT /api/sessions requests using database
@@ -136,7 +139,8 @@ func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully updated session")
-	RespondWithJSON(w, http.StatusOK, session)
+	data := client.NewResponse(session, "Successfully updated session", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleDeleteSession handles DELETE /api/sessions/{sessionName} requests using database
@@ -163,10 +167,8 @@ func (h *SessionsHandler) HandleDeleteSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully deleted session")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  true,
-		"message": "Session deleted successfully",
-	})
+	data := client.NewResponse(struct{}{}, "Session deleted successfully", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleListSessionRuns handles GET /api/sessions/{sessionName}/runs requests using database
@@ -215,8 +217,6 @@ func (h *SessionsHandler) HandleListSessionRuns(w ErrorResponseWriter, r *http.R
 	}
 
 	log.Info("Successfully retrieved session runs", "count", len(runs))
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   map[string]interface{}{"runs": runData},
-	})
+	data := client.NewResponse(map[string]interface{}{"runs": runData}, "Successfully retrieved session runs", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

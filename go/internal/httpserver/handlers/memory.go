@@ -57,7 +57,8 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Successfully listed Memories", "count", len(memoryResponses))
-	RespondWithJSON(w, http.StatusOK, memoryResponses)
+	data := client.NewResponse(memoryResponses, "Successfully listed Memories", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 // HandleCreateMemory handles POST /api/memories/ requests
@@ -148,10 +149,11 @@ func (h *MemoryHandler) HandleCreateMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory created successfully")
-	RespondWithJSON(w, http.StatusCreated, memory)
+	data := client.NewResponse(memory, "Successfully created Memory", false)
+	RespondWithJSON(w, http.StatusCreated, data)
 }
 
-// HandleDeleteMemory handles DELETE /api/memories/{namespace}/{memoryName} requests
+// HandleDeleteMemory handles DELETE /api/memories/{namespace}/{name} requests
 func (h *MemoryHandler) HandleDeleteMemory(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("memory-handler").WithValues("operation", "delete")
 	log.Info("Received request to delete Memory")
@@ -163,10 +165,10 @@ func (h *MemoryHandler) HandleDeleteMemory(w ErrorResponseWriter, r *http.Reques
 		return
 	}
 
-	memoryName, err := GetPathParam(r, "memoryName")
+	memoryName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get memoryName from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get memoryName from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -203,10 +205,11 @@ func (h *MemoryHandler) HandleDeleteMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory deleted successfully")
-	RespondWithJSON(w, http.StatusOK, map[string]string{"message": "Memory deleted successfully"})
+	data := client.NewResponse(struct{}{}, "Memory deleted successfully", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleGetMemory handles GET /api/memories/{namespace}/{memoryName} requests
+// HandleGetMemory handles GET /api/memories/{namespace}/{name} requests
 func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("memory-handler").WithValues("operation", "get")
 	log.Info("Received request to get Memory")
@@ -218,10 +221,10 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 		return
 	}
 
-	memoryName, err := GetPathParam(r, "memoryName")
+	memoryName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get configName from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get configName from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -271,10 +274,11 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 	}
 
 	log.Info("Memory retrieved successfully")
-	RespondWithJSON(w, http.StatusOK, memoryResponse)
+	data := client.NewResponse(memoryResponse, "Successfully retrieved Memory", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleUpdateMemory handles PUT /api/memories/{namespace}/{memoryName} requests
+// HandleUpdateMemory handles PUT /api/memories/{namespace}/{name} requests
 func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("memory-handler").WithValues("operation", "update")
 	log.Info("Received request to update Memory")
@@ -286,10 +290,10 @@ func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Reques
 		return
 	}
 
-	memoryName, err := GetPathParam(r, "memoryName")
+	memoryName, err := GetPathParam(r, "name")
 	if err != nil {
-		log.Error(err, "Failed to get config name from path")
-		w.RespondWithError(errors.NewBadRequestError("Failed to get config name from path", err))
+		log.Error(err, "Failed to get name from path")
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 
@@ -330,5 +334,6 @@ func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory updated successfully")
-	RespondWithJSON(w, http.StatusOK, existingMemory)
+	data := client.NewResponse(existingMemory, "Successfully updated Memory", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

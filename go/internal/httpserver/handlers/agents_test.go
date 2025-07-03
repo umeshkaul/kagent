@@ -50,7 +50,7 @@ func createTestAgent(name string, modelConfig *v1alpha1.ModelConfig) *v1alpha1.A
 	}
 }
 
-func setupTestHandler(objects ...client.Object) (*TeamsHandler, string) {
+func setupTestHandler(objects ...client.Object) (*AgentsHandler, string) {
 	kubeClient := fake.NewClientBuilder().
 		WithScheme(setupScheme()).
 		WithObjects(objects...).
@@ -68,7 +68,7 @@ func setupTestHandler(objects ...client.Object) (*TeamsHandler, string) {
 		},
 	}
 
-	return NewTeamsHandler(base), userID
+	return NewAgentsHandler(base), userID
 }
 
 func createAutogenTeam(client *db_fake.InMemmoryFakeClient, userID string, agent *v1alpha1.Agent) {
@@ -92,7 +92,7 @@ func TestHandleGetTeam(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"teamID": "1"})
 		w := httptest.NewRecorder()
 
-		handler.HandleGetTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleGetAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -110,7 +110,7 @@ func TestHandleGetTeam(t *testing.T) {
 		req = mux.SetURLVars(req, map[string]string{"teamID": "1"})
 		w := httptest.NewRecorder()
 
-		handler.HandleGetTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleGetAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
@@ -135,7 +135,7 @@ func TestHandleUpdateTeam(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
-		handler.HandleUpdateTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleUpdateAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -157,7 +157,7 @@ func TestHandleUpdateTeam(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
-		handler.HandleUpdateTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleUpdateAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})
@@ -174,7 +174,7 @@ func TestHandleListTeams(t *testing.T) {
 		req := httptest.NewRequest("GET", fmt.Sprintf("/api/teams?user_id=%s", userID), nil)
 		w := httptest.NewRecorder()
 
-		handler.HandleListTeams(&testErrorResponseWriter{w}, req)
+		handler.HandleListAgents(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
@@ -191,7 +191,7 @@ func TestHandleListTeams(t *testing.T) {
 		req := httptest.NewRequest("GET", "/api/teams", nil)
 		w := httptest.NewRecorder()
 
-		handler.HandleListTeams(&testErrorResponseWriter{w}, req)
+		handler.HandleListAgents(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
@@ -228,7 +228,7 @@ func TestHandleCreateTeam(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
-		handler.HandleCreateTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleCreateAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
 
@@ -254,7 +254,7 @@ func TestHandleDeleteTeam(t *testing.T) {
 		})
 		w := httptest.NewRecorder()
 
-		handler.HandleDeleteTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleDeleteAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusNoContent, w.Code)
 	})
@@ -269,7 +269,7 @@ func TestHandleDeleteTeam(t *testing.T) {
 		})
 		w := httptest.NewRecorder()
 
-		handler.HandleDeleteTeam(&testErrorResponseWriter{w}, req)
+		handler.HandleDeleteAgent(&testErrorResponseWriter{w}, req)
 
 		assert.Equal(t, http.StatusNotFound, w.Code)
 	})

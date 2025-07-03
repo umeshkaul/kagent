@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -36,5 +37,6 @@ func (h *ToolsHandler) HandleListToolsDB(w ErrorResponseWriter, r *http.Request)
 	}
 
 	log.Info("Successfully listed tools", "count", len(tools))
-	RespondWithJSON(w, http.StatusOK, tools)
+	data := client.NewResponse(tools, "Successfully listed tools", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

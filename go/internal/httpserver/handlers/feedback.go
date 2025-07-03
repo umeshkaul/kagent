@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -57,7 +58,8 @@ func (h *FeedbackHandler) HandleCreateFeedback(w ErrorResponseWriter, r *http.Re
 	}
 
 	log.Info("Feedback successfully submitted")
-	RespondWithJSON(w, http.StatusOK, "Feedback submitted successfully")
+	data := client.NewResponse(struct{}{}, "Feedback submitted successfully", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
 func (h *FeedbackHandler) HandleListFeedback(w ErrorResponseWriter, r *http.Request) {
@@ -80,5 +82,6 @@ func (h *FeedbackHandler) HandleListFeedback(w ErrorResponseWriter, r *http.Requ
 	}
 
 	log.Info("Feedback listed successfully")
-	RespondWithJSON(w, http.StatusOK, feedback)
+	data := client.NewResponse(feedback, "Successfully listed feedback", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

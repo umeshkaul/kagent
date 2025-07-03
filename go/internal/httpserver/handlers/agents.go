@@ -10,19 +10,19 @@ import (
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-// TeamsHandler handles team-related requests
-type TeamsHandler struct {
+// AgentsHandler handles agent-related requests
+type AgentsHandler struct {
 	*Base
 }
 
-// NewTeamsHandler creates a new TeamsHandler
-func NewTeamsHandler(base *Base) *TeamsHandler {
-	return &TeamsHandler{Base: base}
+// NewAgentsHandler creates a new AgentsHandler
+func NewAgentsHandler(base *Base) *AgentsHandler {
+	return &AgentsHandler{Base: base}
 }
 
-// HandleListTeams handles GET /api/teams requests using database
-func (h *TeamsHandler) HandleListTeams(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "list-db")
+// HandleListAgents handles GET /api/agents requests using database
+func (h *AgentsHandler) HandleListAgents(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "list-db")
 
 	userID, err := GetUserID(r)
 	if err != nil {
@@ -31,7 +31,7 @@ func (h *TeamsHandler) HandleListTeams(w ErrorResponseWriter, r *http.Request) {
 	}
 	log = log.WithValues("userID", userID)
 
-	log.V(1).Info("Listing teams from database")
+	log.V(1).Info("Listing agents from database")
 	teams, err := h.DatabaseService.ListTeams(userID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to list teams", err))
@@ -39,15 +39,13 @@ func (h *TeamsHandler) HandleListTeams(w ErrorResponseWriter, r *http.Request) {
 	}
 
 	log.Info("Successfully listed teams", "count", len(teams))
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   teams,
-	})
+	data := client.NewResponse(teams, "Successfully listed teams", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleGetTeam handles GET /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "get-db")
+// HandleGetAgent handles GET /api/agents/{namespace}/{name} requests using database
+func (h *AgentsHandler) HandleGetAgent(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "get-db")
 
 	userID, err := GetUserID(r)
 	if err != nil {
@@ -56,16 +54,16 @@ func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
 	}
 	log = log.WithValues("userID", userID)
 
-	agentName, err := GetPathParam(r, "agent_name")
+	agentName, err := GetPathParam(r, "name")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get team ID from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 	log = log.WithValues("agentName", agentName)
 
-	agentNamespace, err := GetPathParam(r, "agent_namespace")
+	agentNamespace, err := GetPathParam(r, "namespace")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get agent namespace from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get namespace from path", err))
 		return
 	}
 	log = log.WithValues("agentNamespace", agentNamespace)
@@ -78,15 +76,13 @@ func (h *TeamsHandler) HandleGetTeam(w ErrorResponseWriter, r *http.Request) {
 	}
 
 	log.Info("Successfully retrieved team")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status": true,
-		"data":   team,
-	})
+	data := client.NewResponse(team, "Successfully retrieved team", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleCreateTeam handles POST /api/teams requests using database
-func (h *TeamsHandler) HandleCreateTeam(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "create-db")
+// HandleCreateAgent handles POST /api/agents requests using database
+func (h *AgentsHandler) HandleCreateAgent(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "create-db")
 
 	var teamRequest client.TeamRequest
 	if err := DecodeJSONBody(r, &teamRequest); err != nil {
@@ -106,27 +102,24 @@ func (h *TeamsHandler) HandleCreateTeam(w ErrorResponseWriter, r *http.Request) 
 	}
 
 	log.Info("Successfully created team", "teamID", team.ID)
-	RespondWithJSON(w, http.StatusCreated, map[string]interface{}{
-		"status":  true,
-		"data":    team,
-		"message": "Team created successfully",
-	})
+	data := client.NewResponse(team, "Successfully created team", false)
+	RespondWithJSON(w, http.StatusCreated, data)
 }
 
-// HandleUpdateTeam handles PUT /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleUpdateTeam(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "update-db")
+// HandleUpdateAgent handles PUT /api/agents/{namespace}/{name} requests using database
+func (h *AgentsHandler) HandleUpdateAgent(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "update-db")
 
-	agentName, err := GetPathParam(r, "agent_name")
+	agentName, err := GetPathParam(r, "name")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get team ID from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 	log = log.WithValues("agentName", agentName)
 
-	agentNamespace, err := GetPathParam(r, "agent_namespace")
+	agentNamespace, err := GetPathParam(r, "namespace")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get agent namespace from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get namespace from path", err))
 		return
 	}
 	log = log.WithValues("agentNamespace", agentNamespace)
@@ -159,16 +152,13 @@ func (h *TeamsHandler) HandleUpdateTeam(w ErrorResponseWriter, r *http.Request) 
 	}
 
 	log.Info("Successfully updated team")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  true,
-		"data":    team,
-		"message": "Team updated successfully",
-	})
+	data := client.NewResponse(team, "Successfully updated team", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleDeleteTeam handles DELETE /api/teams/{agent_name}/{agent_namespace} requests using database
-func (h *TeamsHandler) HandleDeleteTeam(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("teams-handler").WithValues("operation", "delete-db")
+// HandleDeleteAgent handles DELETE /api/agents/{namespace}/{name} requests using database
+func (h *AgentsHandler) HandleDeleteAgent(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "delete-db")
 
 	userID, err := GetUserID(r)
 	if err != nil {
@@ -177,16 +167,16 @@ func (h *TeamsHandler) HandleDeleteTeam(w ErrorResponseWriter, r *http.Request) 
 	}
 	log = log.WithValues("userID", userID)
 
-	agentName, err := GetPathParam(r, "agent_name")
+	agentName, err := GetPathParam(r, "name")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get team ID from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
 		return
 	}
 	log = log.WithValues("agentName", agentName)
 
-	agentNamespace, err := GetPathParam(r, "agent_namespace")
+	agentNamespace, err := GetPathParam(r, "namespace")
 	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get agent namespace from path", err))
+		w.RespondWithError(errors.NewBadRequestError("Failed to get namespace from path", err))
 		return
 	}
 	log = log.WithValues("agentNamespace", agentNamespace)
@@ -197,8 +187,6 @@ func (h *TeamsHandler) HandleDeleteTeam(w ErrorResponseWriter, r *http.Request) 
 	}
 
 	log.Info("Successfully deleted team")
-	RespondWithJSON(w, http.StatusOK, map[string]interface{}{
-		"status":  true,
-		"message": "Team deleted successfully",
-	})
+	data := client.NewResponse(struct{}{}, "Successfully deleted team", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }

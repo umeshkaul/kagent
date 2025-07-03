@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/kagent-dev/kagent/go/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -19,6 +20,6 @@ func (h *HealthHandler) HandleHealth(w http.ResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("health-handler")
 	log.V(1).Info("Handling health check request")
 
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	data := client.NewResponse(map[string]interface{}{"status": "OK"}, "OK", false)
+	RespondWithJSON(w, http.StatusOK, data)
 }
