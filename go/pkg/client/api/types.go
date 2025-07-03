@@ -1,8 +1,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/autogen/api"
 	"github.com/kagent-dev/kagent/go/internal/database"
@@ -80,20 +78,9 @@ type UpdateModelConfigRequest struct {
 
 // SessionRequest represents a session creation/update request
 type SessionRequest struct {
-	TeamID *uint  `json:"team_id,omitempty"`
-	Name   string `json:"name"`
-	UserID string `json:"user_id"`
-}
-
-// Session represents a session from the database
-type Session struct {
-	ID        uint      `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	UserID    string    `json:"user_id"`
-	Name      string    `json:"name"`
-	TeamID    *uint     `json:"team_id,omitempty"`
-	Runs      []Run     `json:"runs,omitempty"`
+	AgentRef string `json:"agent_ref"`
+	Name     string `json:"name"`
+	UserID   string `json:"user_id"`
 }
 
 // Run types
@@ -103,38 +90,33 @@ type RunRequest struct {
 	Task string `json:"task"`
 }
 
-// RunStatus represents the status of a run
-type RunStatus string
-
-const (
-	RunStatusCreated  RunStatus = "created"
-	RunStatusActive   RunStatus = "active"
-	RunStatusComplete RunStatus = "complete"
-	RunStatusError    RunStatus = "error"
-	RunStatusStopped  RunStatus = "stopped"
-)
-
 // Run represents a run from the database
-type Run = database.Run
+type Task = database.Task
 
 // Message represents a message from the database
 type Message = database.Message
 
+// Session represents a session from the database
+type Session = database.Session
+
 // Team types
 
-// TeamRequest represents a team creation/update request
-type TeamRequest struct {
+// AgentRequest represents an agent creation/update request
+type AgentRequest struct {
 	AgentRef  string        `json:"agent_ref"`
 	Component api.Component `json:"component"`
 }
 
-// Team represents a team from the database
-type Team = database.Team
+// Agent represents an agent from the database
+type Agent = database.Agent
 
 // Tool types
 
 // Tool represents a tool from the database
 type Tool = database.Tool
+
+// Feedback represents a feedback from the database
+type Feedback = database.Feedback
 
 // ToolServer types
 
@@ -175,30 +157,6 @@ type UpdateMemoryRequest struct {
 type NamespaceResponse struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
-}
-
-// Feedback types
-
-// FeedbackIssueType represents the category of feedback issue
-type FeedbackIssueType string
-
-const (
-	FeedbackIssueTypeInstructions FeedbackIssueType = "instructions" // Did not follow instructions
-	FeedbackIssueTypeFactual      FeedbackIssueType = "factual"      // Not factually correct
-	FeedbackIssueTypeIncomplete   FeedbackIssueType = "incomplete"   // Incomplete response
-	FeedbackIssueTypeTool         FeedbackIssueType = "tool"         // Should have run the tool
-)
-
-// Feedback represents feedback from the database
-type Feedback struct {
-	ID           uint               `json:"id"`
-	CreatedAt    time.Time          `json:"created_at"`
-	UpdatedAt    time.Time          `json:"updated_at"`
-	UserID       string             `json:"user_id"`
-	MessageID    uint               `json:"message_id"`
-	IsPositive   bool               `json:"is_positive"`
-	FeedbackText string             `json:"feedback_text"`
-	IssueType    *FeedbackIssueType `json:"issue_type,omitempty"`
 }
 
 // Provider types

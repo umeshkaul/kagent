@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
+	"github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -32,14 +33,14 @@ func (h *AgentsHandler) HandleListAgents(w ErrorResponseWriter, r *http.Request)
 	log = log.WithValues("userID", userID)
 
 	log.V(1).Info("Listing agents from database")
-	teams, err := h.DatabaseService.ListTeams(userID)
+	agents, err := h.DatabaseService.ListAgents(userID)
 	if err != nil {
-		w.RespondWithError(errors.NewInternalServerError("Failed to list teams", err))
+		w.RespondWithError(errors.NewInternalServerError("Failed to list agents", err))
 		return
 	}
 
-	log.Info("Successfully listed teams", "count", len(teams))
-	data := client.NewResponse(teams, "Successfully listed teams", false)
+	log.Info("Successfully listed agents", "count", len(agents))
+	data := api.NewResponse(agents, "Successfully listed agents", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -68,15 +69,15 @@ func (h *AgentsHandler) HandleGetAgent(w ErrorResponseWriter, r *http.Request) {
 	}
 	log = log.WithValues("agentNamespace", agentNamespace)
 
-	log.V(1).Info("Getting team from database")
-	team, err := h.DatabaseService.GetTeam(fmt.Sprintf("%s/%s", agentNamespace, agentName))
+	log.V(1).Info("Getting agent from database")
+	agent, err := h.DatabaseService.GetAgent(fmt.Sprintf("%s/%s", agentNamespace, agentName))
 	if err != nil {
-		w.RespondWithError(errors.NewNotFoundError("Team not found", err))
+		w.RespondWithError(errors.NewNotFoundError("Agent not found", err))
 		return
 	}
 
-	log.Info("Successfully retrieved team")
-	data := client.NewResponse(team, "Successfully retrieved team", false)
+	log.Info("Successfully retrieved agent")
+	data := api.NewResponse(agent, "Successfully retrieved agent", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -84,45 +85,31 @@ func (h *AgentsHandler) HandleGetAgent(w ErrorResponseWriter, r *http.Request) {
 func (h *AgentsHandler) HandleCreateAgent(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "create-db")
 
-	var teamRequest client.TeamRequest
+	var teamRequest api.AgentRequest
 	if err := DecodeJSONBody(r, &teamRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
 	}
 	log = log.WithValues("agentRef", teamRequest.AgentRef)
 
-	team := &database.Team{
+	agent := &database.Agent{
 		Component: teamRequest.Component,
 	}
 
-	log.V(1).Info("Creating team in database")
-	if err := h.DatabaseService.CreateTeam(team); err != nil {
-		w.RespondWithError(errors.NewInternalServerError("Failed to create team", err))
+	log.V(1).Info("Creating agent in database")
+	if err := h.DatabaseService.CreateAgent(agent); err != nil {
+		w.RespondWithError(errors.NewInternalServerError("Failed to create agent", err))
 		return
 	}
 
-	log.Info("Successfully created team", "teamID", team.ID)
-	data := client.NewResponse(team, "Successfully created team", false)
+	log.Info("Successfully created agent", "agentID", agent.ID)
+	data := api.NewResponse(agent, "Successfully created agent", false)
 	RespondWithJSON(w, http.StatusCreated, data)
 }
 
 // HandleUpdateAgent handles PUT /api/agents/{namespace}/{name} requests using database
 func (h *AgentsHandler) HandleUpdateAgent(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("agents-handler").WithValues("operation", "update-db")
-
-	agentName, err := GetPathParam(r, "name")
-	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get name from path", err))
-		return
-	}
-	log = log.WithValues("agentName", agentName)
-
-	agentNamespace, err := GetPathParam(r, "namespace")
-	if err != nil {
-		w.RespondWithError(errors.NewBadRequestError("Failed to get namespace from path", err))
-		return
-	}
-	log = log.WithValues("agentNamespace", agentNamespace)
 
 	userID, err := GetUserID(r)
 	if err != nil {
@@ -131,28 +118,34 @@ func (h *AgentsHandler) HandleUpdateAgent(w ErrorResponseWriter, r *http.Request
 	}
 	log = log.WithValues("userID", userID)
 
-	var teamRequest client.TeamRequest
+	var teamRequest api.AgentRequest
 	if err := DecodeJSONBody(r, &teamRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
 	}
 
-	// Get existing team
-	team, err := h.DatabaseService.GetTeam(fmt.Sprintf("%s/%s", agentNamespace, agentName))
+	nns, err := utils.ParseRefString(teamRequest.AgentRef, utils.GetResourceNamespace())
 	if err != nil {
-		w.RespondWithError(errors.NewNotFoundError("Team not found", err))
+		w.RespondWithError(errors.NewBadRequestError("Invalid agent ref", err))
 		return
 	}
 
-	team.Component = teamRequest.Component
-
-	if err := h.DatabaseService.UpdateTeam(team); err != nil {
-		w.RespondWithError(errors.NewInternalServerError("Failed to update team", err))
+	// Get existing agent
+	agent, err := h.DatabaseService.GetAgent(nns.String())
+	if err != nil {
+		w.RespondWithError(errors.NewNotFoundError("Agent not found", err))
 		return
 	}
 
-	log.Info("Successfully updated team")
-	data := client.NewResponse(team, "Successfully updated team", false)
+	agent.Component = teamRequest.Component
+
+	if err := h.DatabaseService.UpdateAgent(agent); err != nil {
+		w.RespondWithError(errors.NewInternalServerError("Failed to update agent", err))
+		return
+	}
+
+	log.Info("Successfully updated agent")
+	data := api.NewResponse(agent, "Successfully updated agent", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -181,12 +174,12 @@ func (h *AgentsHandler) HandleDeleteAgent(w ErrorResponseWriter, r *http.Request
 	}
 	log = log.WithValues("agentNamespace", agentNamespace)
 
-	if err := h.DatabaseService.DeleteTeam(fmt.Sprintf("%s/%s", agentNamespace, agentName)); err != nil {
-		w.RespondWithError(errors.NewInternalServerError("Failed to delete team", err))
+	if err := h.DatabaseService.DeleteAgent(fmt.Sprintf("%s/%s", agentNamespace, agentName)); err != nil {
+		w.RespondWithError(errors.NewInternalServerError("Failed to delete agent", err))
 		return
 	}
 
-	log.Info("Successfully deleted team")
-	data := client.NewResponse(struct{}{}, "Successfully deleted team", false)
+	log.Info("Successfully deleted agent")
+	data := api.NewResponse(struct{}{}, "Successfully deleted agent", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

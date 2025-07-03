@@ -27,12 +27,12 @@ type ApiTranslator interface {
 	TranslateGroupChatForTeam(
 		ctx context.Context,
 		team *v1alpha1.Team,
-	) (*database.Team, error)
+	) (*database.Agent, error)
 
 	TranslateGroupChatForAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-	) (*database.Team, error)
+	) (*database.Agent, error)
 
 	TranslateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*database.ToolServer, error)
 }
@@ -253,7 +253,7 @@ func NewAutogenApiTranslator(
 	}
 }
 
-func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*database.Team, error) {
+func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v1alpha1.Agent) (*database.Agent, error) {
 	stream := true
 	if agent.Spec.Stream != nil {
 		stream = *agent.Spec.Stream
@@ -267,7 +267,7 @@ func (a *apiTranslator) TranslateGroupChatForAgent(ctx context.Context, agent *v
 func (a *apiTranslator) TranslateGroupChatForTeam(
 	ctx context.Context,
 	team *v1alpha1.Team,
-) (*database.Team, error) {
+) (*database.Agent, error) {
 	return a.translateGroupChatForTeam(ctx, team, defaultTeamOptions(), &tState{})
 }
 
@@ -307,7 +307,7 @@ func (a *apiTranslator) translateGroupChatForAgent(
 	agent *v1alpha1.Agent,
 	opts *teamOptions,
 	state *tState,
-) (*database.Team, error) {
+) (*database.Agent, error) {
 	simpleTeam, err := a.simpleRoundRobinTeam(ctx, agent)
 	if err != nil {
 		return nil, err
@@ -321,7 +321,7 @@ func (a *apiTranslator) translateGroupChatForTeam(
 	team *v1alpha1.Team,
 	opts *teamOptions,
 	state *tState,
-) (*database.Team, error) {
+) (*database.Agent, error) {
 	// get model config
 	roundRobinTeamConfig := team.Spec.RoundRobinTeamConfig
 	selectorTeamConfig := team.Spec.SelectorTeamConfig
@@ -437,7 +437,7 @@ func (a *apiTranslator) translateGroupChatForTeam(
 
 	teamConfig.Label = common.GetObjectRef(team)
 
-	return &database.Team{
+	return &database.Agent{
 		Component: *teamConfig,
 	}, nil
 }

@@ -6,13 +6,13 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/a2a"
 	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
 	"github.com/kagent-dev/kagent/go/internal/version"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -132,7 +132,7 @@ func (s *HTTPServer) setupRoutes() {
 
 	// Version
 	s.router.HandleFunc(APIPathVersion, adaptHandler(func(erw handlers.ErrorResponseWriter, r *http.Request) {
-		versionResponse := client.VersionResponse{
+		versionResponse := api.VersionResponse{
 			KAgentVersion: version.Version,
 			GitCommit:     version.GitCommit,
 			BuildDate:     version.BuildDate,
@@ -151,7 +151,7 @@ func (s *HTTPServer) setupRoutes() {
 	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleListSessions)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathSessions, adaptHandler(s.handlers.Sessions.HandleCreateSession)).Methods(http.MethodPost)
 	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleGetSession)).Methods(http.MethodGet)
-	s.router.HandleFunc(APIPathSessions+"/{sessionID}/runs", adaptHandler(s.handlers.Sessions.HandleListSessionRuns)).Methods(http.MethodGet)
+	s.router.HandleFunc(APIPathSessions+"/{sessionID}/tasks", adaptHandler(s.handlers.Sessions.HandleListSessionTasks)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleDeleteSession)).Methods(http.MethodDelete)
 	s.router.HandleFunc(APIPathSessions+"/{sessionID}", adaptHandler(s.handlers.Sessions.HandleUpdateSession)).Methods(http.MethodPut)
 
@@ -166,7 +166,7 @@ func (s *HTTPServer) setupRoutes() {
 	// Agents - using database handlers
 	s.router.HandleFunc(APIPathAgents, adaptHandler(s.handlers.Agents.HandleListAgents)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathAgents, adaptHandler(s.handlers.Agents.HandleCreateAgent)).Methods(http.MethodPost)
-	s.router.HandleFunc(APIPathAgents+"/{namespace}/{name}", adaptHandler(s.handlers.Agents.HandleUpdateAgent)).Methods(http.MethodPut)
+	s.router.HandleFunc(APIPathAgents, adaptHandler(s.handlers.Agents.HandleUpdateAgent)).Methods(http.MethodPut)
 	s.router.HandleFunc(APIPathAgents+"/{namespace}/{name}", adaptHandler(s.handlers.Agents.HandleGetAgent)).Methods(http.MethodGet)
 	s.router.HandleFunc(APIPathAgents+"/{namespace}/{name}", adaptHandler(s.handlers.Agents.HandleDeleteAgent)).Methods(http.MethodDelete)
 

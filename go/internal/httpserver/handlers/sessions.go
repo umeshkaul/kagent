@@ -3,9 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
+	"k8s.io/utils/ptr"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -43,7 +44,7 @@ func (h *SessionsHandler) HandleListSessions(w ErrorResponseWriter, r *http.Requ
 	}
 
 	log.Info("Successfully listed sessions", "count", len(sessions))
-	data := client.NewResponse(sessions, "Successfully listed sessions", false)
+	data := api.NewResponse(sessions, "Successfully listed sessions", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -51,7 +52,7 @@ func (h *SessionsHandler) HandleListSessions(w ErrorResponseWriter, r *http.Requ
 func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "create-db")
 
-	var sessionRequest client.SessionRequest
+	var sessionRequest api.SessionRequest
 	if err := DecodeJSONBody(r, &sessionRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
@@ -64,13 +65,13 @@ func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Req
 	log = log.WithValues("userID", sessionRequest.UserID)
 
 	session := &database.Session{
-		UserID: sessionRequest.UserID,
-		TeamID: sessionRequest.TeamID,
-		Name:   sessionRequest.Name,
+		UserID:  sessionRequest.UserID,
+		AgentID: ptr.To(sessionRequest.AgentRef),
+		ID:      sessionRequest.Name,
 	}
 
 	log.V(1).Info("Creating session in database",
-		"teamID", sessionRequest.TeamID,
+		"agentRef", sessionRequest.AgentRef,
 		"name", sessionRequest.Name)
 
 	if err := h.DatabaseService.CreateSession(session); err != nil {
@@ -79,7 +80,7 @@ func (h *SessionsHandler) HandleCreateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully created session", "sessionID", session.ID)
-	data := client.NewResponse(session, "Successfully created session", false)
+	data := api.NewResponse(session, "Successfully created session", false)
 	RespondWithJSON(w, http.StatusCreated, data)
 }
 
@@ -109,7 +110,7 @@ func (h *SessionsHandler) HandleGetSession(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Successfully retrieved session")
-	data := client.NewResponse(session, "Successfully retrieved session", false)
+	data := api.NewResponse(session, "Successfully retrieved session", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -117,7 +118,7 @@ func (h *SessionsHandler) HandleGetSession(w ErrorResponseWriter, r *http.Reques
 func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Request) {
 	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "update-db")
 
-	var sessionRequest client.SessionRequest
+	var sessionRequest api.SessionRequest
 	if err := DecodeJSONBody(r, &sessionRequest); err != nil {
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
 		return
@@ -131,7 +132,7 @@ func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	// Update fields
-	session.TeamID = sessionRequest.TeamID
+	session.AgentID = ptr.To(sessionRequest.AgentRef)
 
 	if err := h.DatabaseService.UpdateSession(session); err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to update session", err))
@@ -139,7 +140,7 @@ func (h *SessionsHandler) HandleUpdateSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully updated session")
-	data := client.NewResponse(session, "Successfully updated session", false)
+	data := api.NewResponse(session, "Successfully updated session", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -167,13 +168,13 @@ func (h *SessionsHandler) HandleDeleteSession(w ErrorResponseWriter, r *http.Req
 	}
 
 	log.Info("Successfully deleted session")
-	data := client.NewResponse(struct{}{}, "Session deleted successfully", false)
+	data := api.NewResponse(struct{}{}, "Session deleted successfully", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
-// HandleListSessionRuns handles GET /api/sessions/{sessionName}/runs requests using database
-func (h *SessionsHandler) HandleListSessionRuns(w ErrorResponseWriter, r *http.Request) {
-	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "list-runs-db")
+// HandleListSessionRuns handles GET /api/sessions/{sessionName}/tasks requests using database
+func (h *SessionsHandler) HandleListSessionTasks(w ErrorResponseWriter, r *http.Request) {
+	log := ctrllog.FromContext(r.Context()).WithName("sessions-handler").WithValues("operation", "list-tasks-db")
 
 	sessionName, err := GetPathParam(r, "session_name")
 	if err != nil {
@@ -189,34 +190,14 @@ func (h *SessionsHandler) HandleListSessionRuns(w ErrorResponseWriter, r *http.R
 	}
 	log = log.WithValues("userID", userID)
 
-	log.V(1).Info("Getting session runs from database")
-	runs, err := h.DatabaseService.ListSessionRuns(sessionName, userID)
+	log.V(1).Info("Getting session tasks from database")
+	tasks, err := h.DatabaseService.ListSessionTasks(sessionName, userID)
 	if err != nil {
 		w.RespondWithError(errors.NewInternalServerError("Failed to get session runs", err))
 		return
 	}
 
-	// Build response with messages per run
-	runData := make([]map[string]interface{}, 0, len(runs))
-	for _, run := range runs {
-		// Get messages for this run
-		messages, err := h.DatabaseService.ListMessagesForRun(run.ID)
-		if err != nil {
-			log.Error(err, "Failed to get messages for run", "runID", run.ID)
-			messages = []database.Message{} // Continue with empty messages
-		}
-
-		runData = append(runData, map[string]interface{}{
-			"id":          run.ID,
-			"created_at":  run.CreatedAt,
-			"status":      run.Status,
-			"task":        run.Task,
-			"team_result": run.TeamResult,
-			"messages":    messages,
-		})
-	}
-
-	log.Info("Successfully retrieved session runs", "count", len(runs))
-	data := client.NewResponse(map[string]interface{}{"runs": runData}, "Successfully retrieved session runs", false)
+	log.Info("Successfully retrieved session tasks", "count", len(tasks))
+	data := api.NewResponse(tasks, "Successfully retrieved session tasks", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

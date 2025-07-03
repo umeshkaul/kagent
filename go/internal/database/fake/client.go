@@ -8,17 +8,16 @@ import (
 	"github.com/kagent-dev/kagent/go/internal/database"
 )
 
-// InMemmoryFakeClient is a fake implementation of database.InMemmoryFakeClient for testing
+// InMemmoryFakeClient is a fake implementation of database.Client for testing
 type InMemmoryFakeClient struct {
 	mu             sync.RWMutex
 	feedback       map[string]*database.Feedback
-	runs           map[int]*database.Run
-	sessions       map[string]*database.Session // key: sessionName_userID
-	teams          map[string]*database.Team
+	tasks          map[string]*database.Task    // changed from runs, key: taskID
+	sessions       map[string]*database.Session // key: sessionID_userID
+	agents         map[string]*database.Agent   // changed from teams
 	toolServers    map[string]*database.ToolServer
 	tools          map[string]*database.Tool
-	messages       map[int][]*database.Message // key: runID
-	nextRunID      int
+	messages       map[string][]*database.Message // key: taskID
 	nextFeedbackID int
 }
 
@@ -26,19 +25,18 @@ type InMemmoryFakeClient struct {
 func NewClient() database.Client {
 	return &InMemmoryFakeClient{
 		feedback:       make(map[string]*database.Feedback),
-		runs:           make(map[int]*database.Run),
+		tasks:          make(map[string]*database.Task),
 		sessions:       make(map[string]*database.Session),
-		teams:          make(map[string]*database.Team),
+		agents:         make(map[string]*database.Agent),
 		toolServers:    make(map[string]*database.ToolServer),
 		tools:          make(map[string]*database.Tool),
-		messages:       make(map[int][]*database.Message),
-		nextRunID:      1,
+		messages:       make(map[string][]*database.Message),
 		nextFeedbackID: 1,
 	}
 }
 
-func (c *InMemmoryFakeClient) sessionKey(name, userID string) string {
-	return fmt.Sprintf("%s_%s", name, userID)
+func (c *InMemmoryFakeClient) sessionKey(sessionID, userID string) string {
+	return fmt.Sprintf("%s_%s", sessionID, userID)
 }
 
 // CreateFeedback creates a new feedback record
@@ -56,45 +54,31 @@ func (c *InMemmoryFakeClient) CreateFeedback(feedback *database.Feedback) error 
 	return nil
 }
 
-// CreateRun creates a new run record
-func (c *InMemmoryFakeClient) CreateRun(req *database.Run) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Copy the run and assign an ID
-	newRun := *req
-	newRun.ID = uint(c.nextRunID)
-	c.nextRunID++
-
-	c.runs[int(newRun.ID)] = &newRun
-	return nil
-}
-
 // CreateSession creates a new session record
 func (c *InMemmoryFakeClient) CreateSession(session *database.Session) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := c.sessionKey(session.Name, session.UserID)
+	key := c.sessionKey(session.ID, session.UserID)
 	c.sessions[key] = session
 	return nil
 }
 
-// CreateTeam creates a new team record
-func (c *InMemmoryFakeClient) CreateTeam(team *database.Team) error {
+// CreateAgent creates a new agent record
+func (c *InMemmoryFakeClient) CreateAgent(agent *database.Agent) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.teams[team.Name] = team
+	c.agents[agent.Name] = agent
 	return nil
 }
 
-// UpsertTeam upserts a team record
-func (c *InMemmoryFakeClient) UpsertTeam(team *database.Team) error {
+// UpsertAgent upserts an agent record
+func (c *InMemmoryFakeClient) UpsertAgent(agent *database.Agent) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.teams[team.Name] = team
+	c.agents[agent.Name] = agent
 	return nil
 }
 
@@ -107,32 +91,31 @@ func (c *InMemmoryFakeClient) CreateToolServer(toolServer *database.ToolServer) 
 	return toolServer, nil
 }
 
-// DeleteRun deletes a run by ID
-func (c *InMemmoryFakeClient) DeleteRun(runID int) error {
+// CreateTool creates a new tool record
+func (c *InMemmoryFakeClient) CreateTool(tool *database.Tool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	delete(c.runs, runID)
-	delete(c.messages, runID)
+	c.tools[tool.Name] = tool
 	return nil
 }
 
-// DeleteSession deletes a session by name and user ID
-func (c *InMemmoryFakeClient) DeleteSession(sessionName string, userID string) error {
+// DeleteSession deletes a session by ID and user ID
+func (c *InMemmoryFakeClient) DeleteSession(sessionID string, userID string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := c.sessionKey(sessionName, userID)
+	key := c.sessionKey(sessionID, userID)
 	delete(c.sessions, key)
 	return nil
 }
 
-// DeleteTeam deletes a team by name
-func (c *InMemmoryFakeClient) DeleteTeam(teamName string) error {
+// DeleteAgent deletes an agent by name
+func (c *InMemmoryFakeClient) DeleteAgent(agentName string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	delete(c.teams, teamName)
+	delete(c.agents, agentName)
 	return nil
 }
 
@@ -145,69 +128,39 @@ func (c *InMemmoryFakeClient) DeleteToolServer(serverName string) error {
 	return nil
 }
 
-// GetRun retrieves a run by ID
-func (c *InMemmoryFakeClient) GetRun(runID int) (*database.Run, error) {
+// GetSession retrieves a session by ID and user ID
+func (c *InMemmoryFakeClient) GetSession(sessionID string, userID string) (*database.Session, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	run, exists := c.runs[runID]
-	if !exists {
-		return nil, fmt.Errorf("run with ID %d not found", runID)
-	}
-	return run, nil
-}
-
-// GetRunMessages retrieves messages for a specific run
-func (c *InMemmoryFakeClient) GetRunMessages(runID int) ([]database.Message, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	messages, exists := c.messages[runID]
-	if !exists {
-		return []database.Message{}, nil
-	}
-
-	// Convert []*Message to []Message
-	result := make([]database.Message, len(messages))
-	for i, msg := range messages {
-		result[i] = *msg
-	}
-	return result, nil
-}
-
-// GetSession retrieves a session by name and user ID
-func (c *InMemmoryFakeClient) GetSession(sessionLabel string, userID string) (*database.Session, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	key := c.sessionKey(sessionLabel, userID)
+	key := c.sessionKey(sessionID, userID)
 	session, exists := c.sessions[key]
 	if !exists {
-		return nil, fmt.Errorf("session with label %s for user %s not found", sessionLabel, userID)
+		return nil, fmt.Errorf("session with ID %s for user %s not found", sessionID, userID)
 	}
 	return session, nil
 }
 
-// GetTeam retrieves a team by name
-func (c *InMemmoryFakeClient) GetTeam(teamLabel string) (*database.Team, error) {
+// GetAgent retrieves an agent by name
+func (c *InMemmoryFakeClient) GetAgent(agentName string) (*database.Agent, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	team, exists := c.teams[teamLabel]
+	agent, exists := c.agents[agentName]
 	if !exists {
-		return nil, fmt.Errorf("team with label %s not found", teamLabel)
+		return nil, fmt.Errorf("agent with name %s not found", agentName)
 	}
-	return team, nil
+	return agent, nil
 }
 
-// GetTool retrieves a tool by provider
-func (c *InMemmoryFakeClient) GetTool(provider string) (*database.Tool, error) {
+// GetTool retrieves a tool by name
+func (c *InMemmoryFakeClient) GetTool(toolName string) (*database.Tool, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	tool, exists := c.tools[provider]
+	tool, exists := c.tools[toolName]
 	if !exists {
-		return nil, fmt.Errorf("tool with provider %s not found", provider)
+		return nil, fmt.Errorf("tool with name %s not found", toolName)
 	}
 	return tool, nil
 }
@@ -238,34 +191,15 @@ func (c *InMemmoryFakeClient) ListFeedback(userID string) ([]database.Feedback, 
 	return result, nil
 }
 
-// ListRuns lists all runs for a user
-func (c *InMemmoryFakeClient) ListRuns(userID string) ([]database.Run, error) {
+// ListSessionTasks lists all tasks for a specific session
+func (c *InMemmoryFakeClient) ListSessionTasks(sessionID string, userID string) ([]database.Task, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []database.Run
-	for _, run := range c.runs {
-		if run.UserID == userID {
-			result = append(result, *run)
-		}
-	}
-	return result, nil
-}
-
-// ListSessionRuns lists all runs for a specific session
-func (c *InMemmoryFakeClient) ListSessionRuns(sessionName string, userID string) ([]database.Run, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	var result []database.Run
-	for _, run := range c.runs {
-		// Search for session by name and user ID
-		session, exists := c.sessions[c.sessionKey(sessionName, userID)]
-		if !exists {
-			continue
-		}
-		if run.SessionID == session.ID && run.UserID == userID {
-			result = append(result, *run)
+	var result []database.Task
+	for _, task := range c.tasks {
+		if task.SessionID != nil && *task.SessionID == sessionID && task.UserID == userID {
+			result = append(result, *task)
 		}
 	}
 	return result, nil
@@ -285,14 +219,14 @@ func (c *InMemmoryFakeClient) ListSessions(userID string) ([]database.Session, e
 	return result, nil
 }
 
-// ListTeams lists all teams for a user
-func (c *InMemmoryFakeClient) ListTeams(userID string) ([]database.Team, error) {
+// ListAgents lists all agents for a user
+func (c *InMemmoryFakeClient) ListAgents(userID string) ([]database.Agent, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	var result []database.Team
-	for _, team := range c.teams {
-		result = append(result, *team)
+	var result []database.Agent
+	for _, agent := range c.agents {
+		result = append(result, *agent)
 	}
 	return result, nil
 }
@@ -340,22 +274,12 @@ func (c *InMemmoryFakeClient) ListToolsForServer(serverName string) ([]database.
 	return result, nil
 }
 
-// RefreshToolsForServer refreshes a tool server
-func (c *InMemmoryFakeClient) RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// For now, just return nil - this would need a proper implementation
-	// based on the actual requirements
-	return nil
-}
-
-// ListMessagesForRun retrieves messages for a specific run
-func (c *InMemmoryFakeClient) ListMessagesForRun(runID uint) ([]database.Message, error) {
+// ListMessagesForTask retrieves messages for a specific task
+func (c *InMemmoryFakeClient) ListMessagesForTask(taskID string) ([]database.Message, error) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	messages, exists := c.messages[int(runID)]
+	messages, exists := c.messages[taskID]
 	if !exists {
 		return []database.Message{}, nil
 	}
@@ -368,12 +292,22 @@ func (c *InMemmoryFakeClient) ListMessagesForRun(runID uint) ([]database.Message
 	return result, nil
 }
 
+// RefreshToolsForServer refreshes a tool server
+func (c *InMemmoryFakeClient) RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// For now, just return nil - this would need a proper implementation
+	// based on the actual requirements
+	return nil
+}
+
 // UpdateSession updates a session
 func (c *InMemmoryFakeClient) UpdateSession(session *database.Session) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := c.sessionKey(session.Name, session.UserID)
+	key := c.sessionKey(session.ID, session.UserID)
 	c.sessions[key] = session
 	return nil
 }
@@ -387,35 +321,35 @@ func (c *InMemmoryFakeClient) UpdateToolServer(server *database.ToolServer) erro
 	return nil
 }
 
-// UpdateRun updates a run record
-func (c *InMemmoryFakeClient) UpdateRun(run *database.Run) error {
+// UpdateAgent updates an agent record
+func (c *InMemmoryFakeClient) UpdateAgent(agent *database.Agent) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.runs[int(run.ID)] = run
+	c.agents[agent.Name] = agent
 	return nil
 }
 
-// UpdateTeam updates a team record
-func (c *InMemmoryFakeClient) UpdateTeam(team *database.Team) error {
+// UpdateTask updates a task record
+func (c *InMemmoryFakeClient) UpdateTask(task *database.Task) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.teams[team.Name] = team
+	c.tasks[task.ID] = task
 	return nil
 }
 
 // Helper methods for testing
 
-// AddMessage adds a message to a run for testing purposes
-func (c *InMemmoryFakeClient) AddMessage(runID int, message *database.Message) {
+// AddMessage adds a message to a task for testing purposes
+func (c *InMemmoryFakeClient) AddMessage(taskID string, message *database.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.messages[runID] == nil {
-		c.messages[runID] = []*database.Message{}
+	if c.messages[taskID] == nil {
+		c.messages[taskID] = []*database.Message{}
 	}
-	c.messages[runID] = append(c.messages[runID], message)
+	c.messages[taskID] = append(c.messages[taskID], message)
 }
 
 // AddTool adds a tool for testing purposes
@@ -426,27 +360,25 @@ func (c *InMemmoryFakeClient) AddTool(tool *database.Tool) {
 	c.tools[tool.Name] = tool
 }
 
+// AddTask adds a task for testing purposes
+func (c *InMemmoryFakeClient) AddTask(task *database.Task) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.tasks[task.ID] = task
+}
+
 // Clear clears all data for testing purposes
 func (c *InMemmoryFakeClient) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.feedback = make(map[string]*database.Feedback)
-	c.runs = make(map[int]*database.Run)
+	c.tasks = make(map[string]*database.Task)
 	c.sessions = make(map[string]*database.Session)
-	c.teams = make(map[string]*database.Team)
+	c.agents = make(map[string]*database.Agent)
 	c.toolServers = make(map[string]*database.ToolServer)
 	c.tools = make(map[string]*database.Tool)
-	c.messages = make(map[int][]*database.Message)
-	c.nextRunID = 1
+	c.messages = make(map[string][]*database.Message)
 	c.nextFeedbackID = 1
-}
-
-// CreateTool creates a new tool record
-func (c *InMemmoryFakeClient) CreateTool(tool *database.Tool) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.tools[tool.Name] = tool
-	return nil
 }

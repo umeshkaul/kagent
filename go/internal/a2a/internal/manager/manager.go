@@ -17,13 +17,13 @@ const defaultCleanupInterval = 30 * time.Second
 const defaultConversationTTL = 1 * time.Hour
 const defaultTaskSubscriberBufferSize = 10
 
-// ConversationHistory stores conversation history information
-type ConversationHistory struct {
-	// MessageIDs is the list of message IDs, ordered by time
-	MessageIDs []string
-	// LastAccessTime is the last access time
-	LastAccessTime time.Time
-}
+// // ConversationHistory stores conversation history information
+// type ConversationHistory struct {
+// 	// MessageIDs is the list of message IDs, ordered by time
+// 	MessageIDs []string
+// 	// LastAccessTime is the last access time
+// 	LastAccessTime time.Time
+// }
 
 // MemoryCancellableTask is a task that can be cancelled
 type MemoryCancellableTask struct {
@@ -147,24 +147,8 @@ type TaskManager struct {
 	Subscribers map[string][]*TaskSubscriber
 }
 
-// ManagerOptions contains configuration options for the TaskManager
-type ManagerOptions struct {
-	EnableCleanup   bool
-	CleanupInterval time.Duration
-	ConversationTTL time.Duration
-}
-
-// DefaultManagerOptions returns default options for the TaskManager
-func DefaultManagerOptions() ManagerOptions {
-	return ManagerOptions{
-		EnableCleanup:   false,
-		CleanupInterval: defaultCleanupInterval,
-		ConversationTTL: defaultConversationTTL,
-	}
-}
-
 // NewTaskManager creates a new TaskManager instance
-func NewTaskManager(processor taskmanager.MessageProcessor, storage Storage, opts ...ManagerOptions) (*TaskManager, error) {
+func NewTaskManager(processor taskmanager.MessageProcessor, storage Storage) (*TaskManager, error) {
 	if processor == nil {
 		return nil, fmt.Errorf("processor cannot be nil")
 	}
@@ -172,28 +156,10 @@ func NewTaskManager(processor taskmanager.MessageProcessor, storage Storage, opt
 		return nil, fmt.Errorf("storage cannot be nil")
 	}
 
-	// Apply default options
-	options := DefaultManagerOptions()
-	if len(opts) > 0 {
-		options = opts[0]
-	}
-
 	manager := &TaskManager{
 		Processor:   processor,
 		Storage:     storage,
 		Subscribers: make(map[string][]*TaskSubscriber),
-	}
-
-	// Start cleanup goroutine if enabled
-	if options.EnableCleanup {
-		go func() {
-			ticker := time.NewTicker(options.CleanupInterval)
-			defer ticker.Stop()
-
-			for range ticker.C {
-				manager.CleanExpiredConversations(options.ConversationTTL)
-			}
-		}()
 	}
 
 	return manager, nil
@@ -417,15 +383,7 @@ func (m *TaskManager) getMessageHistory(contextID string) []protocol.Message {
 		return []protocol.Message{}
 	}
 
-	conversation, err := m.Storage.GetConversation(contextID)
-	if err != nil {
-		return []protocol.Message{}
-	}
-
-	// Update last access time
-	m.Storage.UpdateConversationAccess(contextID, time.Now())
-
-	messages, err := m.Storage.ListMessages(conversation.MessageIDs...)
+	messages, err := m.Storage.ListMessagesByContextID(contextID, defaultMaxHistoryLength)
 	if err != nil {
 		return []protocol.Message{}
 	}
@@ -439,24 +397,7 @@ func (m *TaskManager) getConversationHistory(contextID string, length int) []pro
 		return []protocol.Message{}
 	}
 
-	conversation, err := m.Storage.GetConversation(contextID)
-	if err != nil {
-		return []protocol.Message{}
-	}
-
-	// Update last access time
-	m.Storage.UpdateConversationAccess(contextID, time.Now())
-
-	// Get the last `length` message IDs
-	messageIDs := conversation.MessageIDs
-	start := 0
-	if len(messageIDs) > length {
-		start = len(messageIDs) - length
-	}
-
-	limitedMessageIDs := messageIDs[start:]
-
-	messages, err := m.Storage.ListMessages(limitedMessageIDs...)
+	messages, err := m.Storage.ListMessagesByContextID(contextID, length)
 	if err != nil {
 		return []protocol.Message{}
 	}
@@ -628,20 +569,4 @@ func (m *TaskManager) cleanSubscribers(taskID string) {
 		sub.Close()
 	}
 	delete(m.Subscribers, taskID)
-}
-
-// CleanExpiredConversations cleans up expired conversation history
-// maxAge: the maximum lifetime of the conversation, conversations not accessed beyond this time will be cleaned up
-func (m *TaskManager) CleanExpiredConversations(maxAge time.Duration) int {
-	count, err := m.Storage.CleanupExpiredConversations(maxAge)
-	if err != nil {
-		log.Debugf("Failed to cleanup expired conversations: %v", err)
-		return 0
-	}
-
-	if count > 0 {
-		log.Debugf("Cleaned %d expired conversations", count)
-	}
-
-	return count
 }

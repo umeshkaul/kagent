@@ -9,7 +9,7 @@ import (
 	"github.com/kagent-dev/kagent/go/internal/version"
 
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	"github.com/kagent-dev/kagent/go/client"
+	"github.com/kagent-dev/kagent/go/pkg/client"
 )
 
 func VersionCmd(cfg *config.Config) {
@@ -21,7 +21,7 @@ func VersionCmd(cfg *config.Config) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	client := client.New(cfg.APIURL)
-	version, err := client.GetVersion(ctx)
+	version, err := client.Version.GetVersion(ctx)
 	if err != nil {
 		versionInfo["backend_version"] = "unknown"
 	} else {

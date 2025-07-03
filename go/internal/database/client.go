@@ -9,36 +9,37 @@ import (
 
 type Client interface {
 	CreateFeedback(feedback *Feedback) error
-	CreateRun(req *Run) error
 	CreateSession(session *Session) error
-	CreateTeam(team *Team) error
-	UpsertTeam(team *Team) error
+	CreateAgent(agent *Agent) error
 	CreateToolServer(toolServer *ToolServer) (*ToolServer, error)
-	RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error
-	DeleteRun(runID int) error
-	DeleteSession(sessionName string, userID string) error
-	DeleteTeam(teamName string) error
-	DeleteToolServer(serverName string) error
-	GetRun(runID int) (*Run, error)
-	GetRunMessages(runID int) ([]Message, error)
-	GetSession(name string, userID string) (*Session, error)
-	GetTeam(name string) (*Team, error)
-	GetTool(name string) (*Tool, error)
-	GetToolServer(name string) (*ToolServer, error)
-	ListFeedback(userID string) ([]Feedback, error)
-	ListRuns(userID string) ([]Run, error)
-	ListSessionRuns(sessionName string, userID string) ([]Run, error)
-	ListSessions(userID string) ([]Session, error)
-	ListTeams(userID string) ([]Team, error)
-	ListToolServers() ([]ToolServer, error)
 	CreateTool(tool *Tool) error
-	ListTools(userID string) ([]Tool, error)
-	ListToolsForServer(serverName string) ([]Tool, error)
-	ListMessagesForRun(runID uint) ([]Message, error)
+
+	UpsertAgent(agent *Agent) error
+
+	RefreshToolsForServer(serverName string, tools []*autogen_client.NamedTool) error
+
+	DeleteSession(sessionName string, userID string) error
+	DeleteAgent(agentName string) error
+	DeleteToolServer(serverName string) error
+
 	UpdateSession(session *Session) error
 	UpdateToolServer(server *ToolServer) error
-	UpdateRun(run *Run) error
-	UpdateTeam(team *Team) error
+	UpdateAgent(agent *Agent) error
+	UpdateTask(task *Task) error
+
+	GetSession(name string, userID string) (*Session, error)
+	GetAgent(name string) (*Agent, error)
+	GetTool(name string) (*Tool, error)
+	GetToolServer(name string) (*ToolServer, error)
+
+	ListTools(userID string) ([]Tool, error)
+	ListFeedback(userID string) ([]Feedback, error)
+	ListSessionTasks(sessionName string, userID string) ([]Task, error)
+	ListSessions(userID string) ([]Session, error)
+	ListAgents(userID string) ([]Agent, error)
+	ListToolServers() ([]ToolServer, error)
+	ListToolsForServer(serverName string) ([]Tool, error)
+	ListMessagesForTask(taskID string) ([]Message, error)
 }
 
 type clientImpl struct {
@@ -56,24 +57,19 @@ func (c *clientImpl) CreateFeedback(feedback *Feedback) error {
 	return c.serviceWrapper.Feedback.Create(feedback)
 }
 
-// CreateRun creates a new run record
-func (c *clientImpl) CreateRun(req *Run) error {
-	return c.serviceWrapper.Run.Create(req)
-}
-
 // CreateSession creates a new session record
 func (c *clientImpl) CreateSession(session *Session) error {
 	return c.serviceWrapper.Session.Create(session)
 }
 
-// CreateTeam creates a new team record
-func (c *clientImpl) CreateTeam(team *Team) error {
-	return c.serviceWrapper.Team.Create(team)
+// CreateAgent creates a new agent record
+func (c *clientImpl) CreateAgent(agent *Agent) error {
+	return c.serviceWrapper.Agent.Create(agent)
 }
 
-// UpsertTeam upserts a team record
-func (c *clientImpl) UpsertTeam(team *Team) error {
-	return c.serviceWrapper.Team.Update(team)
+// UpsertAgent upserts an agent record
+func (c *clientImpl) UpsertAgent(agent *Agent) error {
+	return c.serviceWrapper.Agent.Update(agent)
 }
 
 // CreateToolServer creates a new tool server record
@@ -90,11 +86,6 @@ func (c *clientImpl) CreateTool(tool *Tool) error {
 	return c.serviceWrapper.Tool.Create(tool)
 }
 
-// DeleteRun deletes a run by ID
-func (c *clientImpl) DeleteRun(runID int) error {
-	return c.serviceWrapper.Run.Delete(Clause{Key: "id", Value: runID})
-}
-
 // DeleteSession deletes a session by name and user ID
 func (c *clientImpl) DeleteSession(sessionName string, userID string) error {
 	return c.serviceWrapper.Session.Delete(
@@ -103,9 +94,9 @@ func (c *clientImpl) DeleteSession(sessionName string, userID string) error {
 	)
 }
 
-// DeleteTeam deletes a team by name and user ID
-func (c *clientImpl) DeleteTeam(teamName string) error {
-	return c.serviceWrapper.Team.Delete(Clause{Key: "name", Value: teamName})
+// DeleteAgent deletes an agent by name and user ID
+func (c *clientImpl) DeleteAgent(agentName string) error {
+	return c.serviceWrapper.Agent.Delete(Clause{Key: "name", Value: agentName})
 }
 
 // DeleteToolServer deletes a tool server by name and user ID
@@ -113,14 +104,9 @@ func (c *clientImpl) DeleteToolServer(serverName string) error {
 	return c.serviceWrapper.ToolServer.Delete(Clause{Key: "name", Value: serverName})
 }
 
-// GetRun retrieves a run by ID
-func (c *clientImpl) GetRun(runID int) (*Run, error) {
-	return c.serviceWrapper.Run.Get(Clause{Key: "id", Value: runID})
-}
-
-// GetRunMessages retrieves messages for a specific run
-func (c *clientImpl) GetRunMessages(runID int) ([]Message, error) {
-	messages, err := c.serviceWrapper.Message.List(Clause{Key: "run_id", Value: runID})
+// GetTaskMessages retrieves messages for a specific task
+func (c *clientImpl) GetTaskMessages(taskID int) ([]Message, error) {
+	messages, err := c.serviceWrapper.Message.List(Clause{Key: "task_id", Value: taskID})
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +122,9 @@ func (c *clientImpl) GetSession(sessionLabel string, userID string) (*Session, e
 	)
 }
 
-// GetTeam retrieves a team by name and user ID
-func (c *clientImpl) GetTeam(teamLabel string) (*Team, error) {
-	return c.serviceWrapper.Team.Get(Clause{Key: "name", Value: teamLabel})
+// GetAgent retrieves an agent by name and user ID
+func (c *clientImpl) GetAgent(agentLabel string) (*Agent, error) {
+	return c.serviceWrapper.Agent.Get(Clause{Key: "name", Value: agentLabel})
 }
 
 // GetTool retrieves a tool by provider (name) and user ID
@@ -162,19 +148,18 @@ func (c *clientImpl) ListFeedback(userID string) ([]Feedback, error) {
 }
 
 // ListRuns lists all runs for a user
-func (c *clientImpl) ListRuns(userID string) ([]Run, error) {
-	runs, err := c.serviceWrapper.Run.List(Clause{Key: "user_id", Value: userID})
+func (c *clientImpl) ListTasks(userID string) ([]Task, error) {
+	tasks, err := c.serviceWrapper.Task.List(Clause{Key: "user_id", Value: userID})
 	if err != nil {
 		return nil, err
 	}
-
-	return runs, nil
+	return tasks, nil
 }
 
 // ListSessionRuns lists all runs for a specific session
-func (c *clientImpl) ListSessionRuns(sessionName string, userID string) ([]Run, error) {
-	return c.serviceWrapper.Run.List(
-		Clause{Key: "session_name", Value: sessionName},
+func (c *clientImpl) ListSessionTasks(sessionName string, userID string) ([]Task, error) {
+	return c.serviceWrapper.Task.List(
+		Clause{Key: "session_id", Value: sessionName},
 		Clause{Key: "user_id", Value: userID},
 	)
 }
@@ -184,9 +169,9 @@ func (c *clientImpl) ListSessions(userID string) ([]Session, error) {
 	return c.serviceWrapper.Session.List(Clause{Key: "user_id", Value: userID})
 }
 
-// ListTeams lists all teams for a user
-func (c *clientImpl) ListTeams(userID string) ([]Team, error) {
-	return c.serviceWrapper.Team.List(Clause{Key: "user_id", Value: userID})
+// ListAgents lists all agents for a user
+func (c *clientImpl) ListAgents(userID string) ([]Agent, error) {
+	return c.serviceWrapper.Agent.List(Clause{Key: "user_id", Value: userID})
 }
 
 // ListToolServers lists all tool servers for a user
@@ -261,17 +246,17 @@ func (c *clientImpl) UpdateToolServer(server *ToolServer) error {
 	return c.serviceWrapper.ToolServer.Update(server)
 }
 
-// UpdateRun updates a run record
-func (c *clientImpl) UpdateRun(run *Run) error {
-	return c.serviceWrapper.Run.Update(run)
+// UpdateTask updates a task record
+func (c *clientImpl) UpdateTask(task *Task) error {
+	return c.serviceWrapper.Task.Update(task)
 }
 
-// UpdateTeam updates a team record
-func (c *clientImpl) UpdateTeam(team *Team) error {
-	return c.serviceWrapper.Team.Update(team)
+// UpdateAgent updates an agent record
+func (c *clientImpl) UpdateAgent(agent *Agent) error {
+	return c.serviceWrapper.Agent.Update(agent)
 }
 
 // ListMessagesForRun retrieves messages for a specific run (helper method)
-func (c *clientImpl) ListMessagesForRun(runID uint) ([]Message, error) {
-	return c.serviceWrapper.Message.List(Clause{Key: "run_id", Value: runID})
+func (c *clientImpl) ListMessagesForTask(taskID string) ([]Message, error) {
+	return c.serviceWrapper.Message.List(Clause{Key: "task_id", Value: taskID})
 }

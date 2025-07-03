@@ -1,11 +1,8 @@
 package client
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 )
 
 type TaskResult struct {
@@ -31,33 +28,6 @@ type ModelInfo struct {
 	FunctionCalling bool   `json:"function_calling"`
 }
 
-type SseEvent struct {
-	Event string `json:"event"`
-	Data  []byte `json:"data"`
-}
-
 var (
 	NotFoundError = errors.New("not found")
 )
-
-func streamSseResponse(r io.ReadCloser) chan *SseEvent {
-	scanner := bufio.NewScanner(r)
-	ch := make(chan *SseEvent, 10)
-	go func() {
-		defer close(ch)
-		defer r.Close()
-		currentEvent := &SseEvent{}
-		for scanner.Scan() {
-			line := scanner.Bytes()
-			if bytes.HasPrefix(line, []byte("event:")) {
-				currentEvent.Event = string(bytes.TrimPrefix(line, []byte("event:")))
-			}
-			if bytes.HasPrefix(line, []byte("data:")) {
-				currentEvent.Data = bytes.TrimPrefix(line, []byte("data:"))
-				ch <- currentEvent
-				currentEvent = &SseEvent{}
-			}
-		}
-	}()
-	return ch
-}

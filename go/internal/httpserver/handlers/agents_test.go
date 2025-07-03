@@ -72,7 +72,7 @@ func setupTestHandler(objects ...client.Object) (*AgentsHandler, string) {
 }
 
 func createAutogenTeam(client *db_fake.InMemmoryFakeClient, userID string, agent *v1alpha1.Agent) {
-	autogenTeam := &database.Team{
+	autogenTeam := &database.Agent{
 		Component: api.Component{
 			Label: common.GetObjectRef(agent),
 		},
@@ -96,7 +96,7 @@ func TestHandleGetTeam(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response database.Team
+		var response database.Agent
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Equal(t, 1, response.ID)
@@ -178,7 +178,7 @@ func TestHandleListTeams(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response []database.Team
+		var response []database.Agent
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		require.NoError(t, err)
 		assert.Len(t, response, 1)

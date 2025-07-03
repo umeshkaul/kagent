@@ -7,10 +7,10 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +38,7 @@ func (h *ModelConfigHandler) HandleListModelConfigs(w ErrorResponseWriter, r *ht
 		return
 	}
 
-	configs := make([]client.ModelConfigResponse, 0)
+	configs := make([]api.ModelConfigResponse, 0)
 	for _, config := range modelConfigs.Items {
 		modelParams := make(map[string]interface{})
 
@@ -55,7 +55,7 @@ func (h *ModelConfigHandler) HandleListModelConfigs(w ErrorResponseWriter, r *ht
 			FlattenStructToMap(config.Spec.Ollama, modelParams)
 		}
 
-		responseItem := client.ModelConfigResponse{
+		responseItem := api.ModelConfigResponse{
 			Ref:             common.GetObjectRef(&config),
 			ProviderName:    string(config.Spec.Provider),
 			Model:           config.Spec.Model,
@@ -129,7 +129,7 @@ func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http
 		FlattenStructToMap(modelConfig.Spec.Ollama, modelParams)
 	}
 
-	responseItem := client.ModelConfigResponse{
+	responseItem := api.ModelConfigResponse{
 		Ref:             common.GetObjectRef(modelConfig),
 		ProviderName:    string(modelConfig.Spec.Provider),
 		Model:           modelConfig.Spec.Model,
@@ -139,7 +139,7 @@ func (h *ModelConfigHandler) HandleGetModelConfig(w ErrorResponseWriter, r *http
 	}
 
 	log.Info("Successfully retrieved and formatted ModelConfig")
-	data := client.NewResponse(responseItem, "Successfully retrieved ModelConfig", false)
+	data := api.NewResponse(responseItem, "Successfully retrieved ModelConfig", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -170,7 +170,7 @@ func (h *ModelConfigHandler) HandleCreateModelConfig(w ErrorResponseWriter, r *h
 	log := ctrllog.FromContext(r.Context()).WithName("modelconfig-handler").WithValues("operation", "create")
 	log.Info("Received request to create ModelConfig")
 
-	var req client.CreateModelConfigRequest
+	var req api.CreateModelConfigRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
@@ -317,7 +317,7 @@ func (h *ModelConfigHandler) HandleCreateModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.Info("Successfully created ModelConfig")
-	data := client.NewResponse(modelConfig, "Successfully created ModelConfig", false)
+	data := api.NewResponse(modelConfig, "Successfully created ModelConfig", false)
 	RespondWithJSON(w, http.StatusCreated, data)
 }
 
@@ -343,7 +343,7 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 		return
 	}
 
-	var req client.UpdateModelConfigRequest
+	var req api.UpdateModelConfigRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
@@ -507,7 +507,7 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 		FlattenStructToMap(modelConfig.Spec.Ollama, updatedParams)
 	}
 
-	responseItem := client.ModelConfigResponse{
+	responseItem := api.ModelConfigResponse{
 		Ref:             common.GetObjectRef(modelConfig),
 		ProviderName:    string(modelConfig.Spec.Provider),
 		APIKeySecretRef: modelConfig.Spec.APIKeySecretRef,
@@ -517,7 +517,7 @@ func (h *ModelConfigHandler) HandleUpdateModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.V(1).Info("Successfully updated ModelConfig")
-	data := client.NewResponse(responseItem, "Successfully updated ModelConfig", false)
+	data := api.NewResponse(responseItem, "Successfully updated ModelConfig", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -573,6 +573,6 @@ func (h *ModelConfigHandler) HandleDeleteModelConfig(w ErrorResponseWriter, r *h
 	}
 
 	log.V(1).Info("Successfully deleted ModelConfig")
-	data := client.NewResponse(struct{}{}, "Successfully deleted ModelConfig", false)
+	data := api.NewResponse(struct{}{}, "Successfully deleted ModelConfig", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

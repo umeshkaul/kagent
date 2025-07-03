@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -29,6 +29,6 @@ func (h *ModelHandler) HandleListSupportedModels(w ErrorResponseWriter, r *http.
 		return
 	}
 
-	data := client.NewResponse(models, "Successfully listed supported models", false)
+	data := api.NewResponse(models, "Successfully listed supported models", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

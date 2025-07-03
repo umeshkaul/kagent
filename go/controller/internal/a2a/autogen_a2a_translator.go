@@ -20,7 +20,7 @@ type AutogenA2ATranslator interface {
 	TranslateHandlerForAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-		autogenTeam *database.Team,
+		autogenTeam *database.Agent,
 	) (*a2a.A2AHandlerParams, error)
 }
 
@@ -47,7 +47,7 @@ func NewAutogenA2ATranslator(
 func (a *autogenA2ATranslator) TranslateHandlerForAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
-	autogenTeam *database.Team,
+	autogenTeam *database.Agent,
 ) (*a2a.A2AHandlerParams, error) {
 	card, err := a.translateCardForAgent(agent)
 	if err != nil {
@@ -106,7 +106,7 @@ func (a *autogenA2ATranslator) translateCardForAgent(
 }
 
 func (a *autogenA2ATranslator) makeHandlerForTeam(
-	autogenTeam *database.Team,
+	autogenTeam *database.Agent,
 ) (a2a.MessageHandler, error) {
 	return &taskHandler{
 		team:   autogenTeam,
@@ -115,7 +115,7 @@ func (a *autogenA2ATranslator) makeHandlerForTeam(
 }
 
 type taskHandler struct {
-	team      *database.Team
+	team      *database.Agent
 	client    autogen_client.Client
 	dbService database.Client
 }

@@ -3,12 +3,14 @@ package client
 import (
 	"context"
 	"fmt"
+
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
-// FeedbackInterface defines the feedback operations
-type FeedbackInterface interface {
-	CreateFeedback(ctx context.Context, feedback *Feedback, userID string) error
-	ListFeedback(ctx context.Context, userID string) ([]Feedback, error)
+// Feedback defines the feedback operations
+type Feedback interface {
+	CreateFeedback(ctx context.Context, feedback *api.Feedback, userID string) error
+	ListFeedback(ctx context.Context, userID string) (*api.StandardResponse[[]api.Feedback], error)
 }
 
 // feedbackClient handles feedback-related requests
@@ -17,12 +19,12 @@ type feedbackClient struct {
 }
 
 // NewFeedbackClient creates a new feedback client
-func NewFeedbackClient(client *BaseClient) FeedbackInterface {
+func NewFeedbackClient(client *BaseClient) Feedback {
 	return &feedbackClient{client: client}
 }
 
 // CreateFeedback creates new feedback
-func (c *feedbackClient) CreateFeedback(ctx context.Context, feedback *Feedback, userID string) error {
+func (c *feedbackClient) CreateFeedback(ctx context.Context, feedback *api.Feedback, userID string) error {
 	userID = c.client.GetUserIDOrDefault(userID)
 	feedback.UserID = userID
 
@@ -35,7 +37,7 @@ func (c *feedbackClient) CreateFeedback(ctx context.Context, feedback *Feedback,
 }
 
 // ListFeedback lists all feedback for a user
-func (c *feedbackClient) ListFeedback(ctx context.Context, userID string) ([]Feedback, error) {
+func (c *feedbackClient) ListFeedback(ctx context.Context, userID string) (*api.StandardResponse[[]api.Feedback], error) {
 	userID = c.client.GetUserIDOrDefault(userID)
 	if userID == "" {
 		return nil, fmt.Errorf("userID is required")
@@ -46,10 +48,10 @@ func (c *feedbackClient) ListFeedback(ctx context.Context, userID string) ([]Fee
 		return nil, err
 	}
 
-	var feedback []Feedback
+	var feedback api.StandardResponse[[]api.Feedback]
 	if err := DecodeResponse(resp, &feedback); err != nil {
 		return nil, err
 	}
 
-	return feedback, nil
+	return &feedback, nil
 }

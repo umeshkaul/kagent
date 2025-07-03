@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kagent-dev/kagent/go/pkg/sse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,7 +31,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "event:message\ndata:hello world\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read the event from the channel
 		select {
@@ -55,7 +56,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "event:message\ndata:first message\nevent:update\ndata:second message\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read first event
 		select {
@@ -90,7 +91,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "data:message without event type\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read the event from the channel
 		select {
@@ -115,7 +116,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "event:empty\ndata:\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read the event from the channel
 		select {
@@ -141,7 +142,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "event:json\ndata:" + jsonData + "\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read the event from the channel
 		select {
@@ -165,7 +166,7 @@ func TestStreamSseResponse(t *testing.T) {
 	t.Run("should handle empty input", func(t *testing.T) {
 		reader := newMockReadCloser("")
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Verify channel is closed immediately
 		select {
@@ -180,7 +181,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "comment: this is a comment\nevent:test\nother line\ndata:test data\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read the event from the channel
 		select {
@@ -205,7 +206,7 @@ func TestStreamSseResponse(t *testing.T) {
 		sseData := "event:orphan\nevent:complete\ndata:complete data\n"
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Should only receive the complete event (the orphan event has no data line)
 		select {
@@ -238,7 +239,7 @@ data:process finished
 `
 		reader := newMockReadCloser(sseData)
 
-		ch := streamSseResponse(reader)
+		ch := sse.StreamSseResponse(reader)
 
 		// Read first event
 		select {

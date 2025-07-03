@@ -18,9 +18,9 @@ import (
 	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 func TestMemoryHandler(t *testing.T) {
@@ -74,7 +74,7 @@ func TestMemoryHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var memories []client.MemoryResponse
+			var memories []api.MemoryResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &memories)
 			require.NoError(t, err)
 			assert.Len(t, memories, 1)
@@ -95,7 +95,7 @@ func TestMemoryHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var memories []client.MemoryResponse
+			var memories []api.MemoryResponse
 			err := json.Unmarshal(responseRecorder.Body.Bytes(), &memories)
 			require.NoError(t, err)
 			assert.Len(t, memories, 0)
@@ -106,9 +106,9 @@ func TestMemoryHandler(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			handler, _, responseRecorder := setupHandler()
 
-			reqBody := client.CreateMemoryRequest{
+			reqBody := api.CreateMemoryRequest{
 				Ref:      "default/test-memory",
-				Provider: client.Provider{Type: "Pinecone"},
+				Provider: api.Provider{Type: "Pinecone"},
 				APIKey:   "dGVzdC1hcGkta2V5Cg==",
 				PineconeParams: &v1alpha1.PineconeConfig{
 					IndexHost:      "test-index.pinecone.io",
@@ -150,9 +150,9 @@ func TestMemoryHandler(t *testing.T) {
 		t.Run("InvalidRef", func(t *testing.T) {
 			handler, _, responseRecorder := setupHandler()
 
-			reqBody := client.CreateMemoryRequest{
+			reqBody := api.CreateMemoryRequest{
 				Ref:      "invalid/ref/with/too/many/slashes",
-				Provider: client.Provider{Type: "Pinecone"},
+				Provider: api.Provider{Type: "Pinecone"},
 				APIKey:   "test-api-key",
 			}
 
@@ -182,9 +182,9 @@ func TestMemoryHandler(t *testing.T) {
 			err := kubeClient.Create(context.Background(), existingMemory)
 			require.NoError(t, err)
 
-			reqBody := client.CreateMemoryRequest{
+			reqBody := api.CreateMemoryRequest{
 				Ref:      "default/test-memory",
-				Provider: client.Provider{Type: "Pinecone"},
+				Provider: api.Provider{Type: "Pinecone"},
 				APIKey:   "test-api-key",
 			}
 
@@ -234,7 +234,7 @@ func TestMemoryHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var memoryResponse client.MemoryResponse
+			var memoryResponse api.MemoryResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &memoryResponse)
 			require.NoError(t, err)
 			assert.Equal(t, "default/test-memory", memoryResponse.Ref)
@@ -280,7 +280,7 @@ func TestMemoryHandler(t *testing.T) {
 			err := kubeClient.Create(context.Background(), memory)
 			require.NoError(t, err)
 
-			reqBody := client.UpdateMemoryRequest{
+			reqBody := api.UpdateMemoryRequest{
 				PineconeParams: &v1alpha1.PineconeConfig{
 					IndexHost: "new-index.pinecone.io",
 					TopK:      15,
@@ -327,7 +327,7 @@ func TestMemoryHandler(t *testing.T) {
 		t.Run("MemoryNotFound", func(t *testing.T) {
 			handler, _, responseRecorder := setupHandler()
 
-			reqBody := client.UpdateMemoryRequest{
+			reqBody := api.UpdateMemoryRequest{
 				PineconeParams: &v1alpha1.PineconeConfig{
 					IndexHost: "new-index.pinecone.io",
 				},

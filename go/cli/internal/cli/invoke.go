@@ -9,7 +9,9 @@ import (
 	"os"
 
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	"github.com/kagent-dev/kagent/go/client"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/pkg/client"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 type InvokeCfg struct {
@@ -54,8 +56,8 @@ func InvokeCmd(ctx context.Context, cfg *InvokeCfg) {
 	}
 	// If session is set invoke within a session.
 	if cfg.Session != "" {
-		session, err := client.GetSession(cfg.Session, cfg.Config.UserID)
-		var team *autogen_client.Team
+		session, err := client.Session.GetSession(ctx, cfg.Session, cfg.Config.UserID)
+		var team *api.Team
 
 		if err != nil {
 			if errors.Is(err, autogen_client.NotFoundError) {
@@ -65,7 +67,7 @@ func InvokeCmd(ctx context.Context, cfg *InvokeCfg) {
 				}
 				// If the session is not found, create it
 
-				session, err = client.CreateSession(&autogen_client.CreateSession{
+				session, err = client.Session.CreateSession(ctx, &api.SessionRequest{
 					Name:   cfg.Session,
 					UserID: cfg.Config.UserID,
 				})
@@ -79,7 +81,7 @@ func InvokeCmd(ctx context.Context, cfg *InvokeCfg) {
 			}
 		}
 
-		team, err = client.GetTeam(cfg.Agent, cfg.Config.UserID)
+		team, err = client.Agent.GetTeam(ctx, cfg.Agent)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error getting team: %v\n", err)
 			return
@@ -87,7 +89,7 @@ func InvokeCmd(ctx context.Context, cfg *InvokeCfg) {
 
 		if cfg.Stream {
 			usage := &autogen_client.ModelsUsage{}
-			ch, err := client.InvokeSessionStream(session.ID, cfg.Config.UserID, &autogen_client.InvokeRequest{
+			ch, err := client.Session.InvokeSessionStream(ctx, session.ID, &api.InvokeRequest{
 				Task:       task,
 				TeamConfig: team.Component,
 			})

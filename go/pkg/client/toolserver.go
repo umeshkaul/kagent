@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
-// ToolServerInterface defines the tool server operations
-type ToolServerInterface interface {
-	ListToolServers(ctx context.Context) ([]ToolServerResponse, error)
+// ToolServer defines the tool server operations
+type ToolServer interface {
+	ListToolServers(ctx context.Context) ([]api.ToolServerResponse, error)
 	CreateToolServer(ctx context.Context, toolServer *v1alpha1.ToolServer) (*v1alpha1.ToolServer, error)
 	DeleteToolServer(ctx context.Context, namespace, toolServerName string) error
 }
@@ -20,18 +21,18 @@ type ToolServerClient struct {
 }
 
 // NewToolServerClient creates a new tool server client
-func NewToolServerClient(client *BaseClient) ToolServerInterface {
+func NewToolServerClient(client *BaseClient) ToolServer {
 	return &ToolServerClient{client: client}
 }
 
 // ListToolServers lists all tool servers
-func (c *ToolServerClient) ListToolServers(ctx context.Context) ([]ToolServerResponse, error) {
+func (c *ToolServerClient) ListToolServers(ctx context.Context) ([]api.ToolServerResponse, error) {
 	resp, err := c.client.Get(ctx, "/api/toolservers", "")
 	if err != nil {
 		return nil, err
 	}
 
-	var toolServers []ToolServerResponse
+	var toolServers []api.ToolServerResponse
 	if err := DecodeResponse(resp, &toolServers); err != nil {
 		return nil, err
 	}

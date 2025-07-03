@@ -53,7 +53,7 @@ func TestE2E(t *testing.T) {
 	// Initialize fresh test start time for unique sessions on each run
 	testStartTime := time.Now().String()
 
-	createOrFetchAgentSession := func(agentName string) (*database.Session, *database.Team) {
+	createOrFetchAgentSession := func(agentName string) (*database.Session, *database.Agent) {
 		agentTeam, err := dbService.GetTeam(agentName, GlobalUserID)
 		require.NoError(t, err)
 

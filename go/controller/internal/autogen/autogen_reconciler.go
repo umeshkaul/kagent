@@ -102,7 +102,7 @@ func (a *autogenReconciler) handleAgentDeletion(req ctrl.Request) error {
 	// remove a2a handler if it exists
 	a.a2aReconciler.ReconcileAutogenAgentDeletion(req.NamespacedName.String())
 
-	if err := a.dbClient.DeleteTeam(req.NamespacedName.String()); err != nil {
+	if err := a.dbClient.DeleteAgent(req.NamespacedName.String()); err != nil {
 		return fmt.Errorf("failed to delete agent %s: %w",
 			req.NamespacedName.String(), err)
 	}
@@ -452,7 +452,7 @@ func (a *autogenReconciler) reconcileTeams(ctx context.Context, teams ...*v1alph
 				"failed to translate team %s/%s: %v", team.Namespace, team.Name, err)
 			continue
 		}
-		if err := a.upsertTeam(ctx, autogenTeam); err != nil {
+		if err := a.upsertAgent(ctx, autogenTeam); err != nil {
 			errs[types.NamespacedName{Name: team.Name, Namespace: team.Namespace}] = fmt.Errorf(
 				"failed to upsert team %s/%s: %v", team.Namespace, team.Name, err)
 			continue
@@ -492,7 +492,7 @@ func (a *autogenReconciler) reconcileAgent(ctx context.Context, agent *v1alpha1.
 	if err := a.reconcileA2A(ctx, autogenTeam, agent); err != nil {
 		return fmt.Errorf("failed to reconcile A2A for agent %s/%s: %v", agent.Namespace, agent.Name, err)
 	}
-	if err := a.upsertTeam(ctx, autogenTeam); err != nil {
+	if err := a.upsertAgent(ctx, autogenTeam); err != nil {
 		return fmt.Errorf("failed to upsert agent %s/%s: %v", agent.Namespace, agent.Name, err)
 	}
 
@@ -512,32 +512,32 @@ func (a *autogenReconciler) reconcileToolServer(ctx context.Context, server *v1a
 	return serverID, nil
 }
 
-func (a *autogenReconciler) upsertTeam(ctx context.Context, team *database.Team) error {
+func (a *autogenReconciler) upsertAgent(ctx context.Context, agent *database.Agent) error {
 	// lock to prevent races
 	a.upsertLock.Lock()
 	defer a.upsertLock.Unlock()
 	// validate the team
 	req := autogen_client.ValidationRequest{
-		Component: &team.Component,
+		Component: &agent.Component,
 	}
 	resp, err := a.autogenClient.Validate(ctx, &req)
 	if err != nil {
-		return fmt.Errorf("failed to validate team %s: %v", team.Component.Label, err)
+		return fmt.Errorf("failed to validate agent %s: %v", agent.Component.Label, err)
 	}
 	if !resp.IsValid {
-		return fmt.Errorf("team %s is invalid: %v", team.Component.Label, resp.ErrorMsg())
+		return fmt.Errorf("agent %s is invalid: %v", agent.Component.Label, resp.ErrorMsg())
 	}
 
 	// delete if team exists
-	existingTeam, err := a.dbClient.GetTeam(team.Component.Label)
+	existingAgent, err := a.dbClient.GetAgent(agent.Component.Label)
 	if err != nil && err != autogen_client.NotFoundError {
-		return fmt.Errorf("failed to get existing team %s: %v", team.Component.Label, err)
+		return fmt.Errorf("failed to get existing agent %s: %v", agent.Component.Label, err)
 	}
-	if existingTeam != nil {
-		team.ID = existingTeam.ID
+	if existingAgent != nil {
+		agent.ID = existingAgent.ID
 	}
 
-	return a.dbClient.CreateTeam(team)
+	return a.dbClient.CreateAgent(agent)
 }
 
 func (a *autogenReconciler) upsertToolServer(ctx context.Context, toolServer *database.ToolServer) (uint, error) {
@@ -879,7 +879,7 @@ func (a *autogenReconciler) getDiscoveredMCPTools(ctx context.Context, serverID 
 
 func (a *autogenReconciler) reconcileA2A(
 	ctx context.Context,
-	team *database.Team,
+	team *database.Agent,
 	agent *v1alpha1.Agent,
 ) error {
 	return a.a2aReconciler.ReconcileAutogenAgent(ctx, agent, team)

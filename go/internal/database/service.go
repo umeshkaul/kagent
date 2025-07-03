@@ -8,16 +8,17 @@ import (
 
 func NewServiceWrapper(manager *Manager) *ServiceWrapper {
 	return &ServiceWrapper{
-		Team:         NewService[Team](manager),
-		Session:      NewService[Session](manager),
-		Run:          NewService[Run](manager),
-		Message:      NewService[Message](manager),
-		Feedback:     NewService[Feedback](manager),
-		Tool:         NewService[Tool](manager),
-		ToolServer:   NewService[ToolServer](manager),
-		EvalTask:     NewService[EvalTask](manager),
-		EvalCriteria: NewService[EvalCriteria](manager),
-		EvalRun:      NewService[EvalRun](manager),
+		Agent:            NewService[Agent](manager),
+		Message:          NewService[Message](manager),
+		Session:          NewService[Session](manager),
+		Task:             NewService[Task](manager),
+		PushNotification: NewService[PushNotification](manager),
+		Feedback:         NewService[Feedback](manager),
+		Tool:             NewService[Tool](manager),
+		ToolServer:       NewService[ToolServer](manager),
+		EvalTask:         NewService[EvalTask](manager),
+		EvalCriteria:     NewService[EvalCriteria](manager),
+		EvalRun:          NewService[EvalRun](manager),
 	}
 }
 
@@ -26,16 +27,17 @@ type Model interface {
 }
 
 type ServiceWrapper struct {
-	Team         *Service[Team]
-	Session      *Service[Session]
-	Run          *Service[Run]
-	Message      *Service[Message]
-	Feedback     *Service[Feedback]
-	Tool         *Service[Tool]
-	ToolServer   *Service[ToolServer]
-	EvalTask     *Service[EvalTask]
-	EvalCriteria *Service[EvalCriteria]
-	EvalRun      *Service[EvalRun]
+	Agent            *Service[Agent]
+	Message          *Service[Message]
+	Session          *Service[Session]
+	Task             *Service[Task]
+	PushNotification *Service[PushNotification]
+	Feedback         *Service[Feedback]
+	Tool             *Service[Tool]
+	ToolServer       *Service[ToolServer]
+	EvalTask         *Service[EvalTask]
+	EvalCriteria     *Service[EvalCriteria]
+	EvalRun          *Service[EvalRun]
 }
 
 // Service provides high-level database operations

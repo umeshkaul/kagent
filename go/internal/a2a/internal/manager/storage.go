@@ -20,14 +20,8 @@ type Storage interface {
 	StoreMessage(message protocol.Message) error
 	GetMessage(messageID string) (protocol.Message, error)
 	DeleteMessage(messageID string) error
-	ListMessages(messageIDs ...string) ([]protocol.Message, error)
-
-	// Conversation operations
-	StoreConversation(contextID string, history *ConversationHistory) error
-	GetConversation(contextID string) (*ConversationHistory, error)
-	UpdateConversationAccess(contextID string, timestamp time.Time) error
-	DeleteConversation(contextID string) error
-	GetExpiredConversations(maxAge time.Duration) ([]string, error)
+	// List messages by context ID, if limit is -1, return all messages
+	ListMessagesByContextID(contextID string, limit int) ([]protocol.Message, error)
 
 	// Task operations
 	StoreTask(taskID string, task *MemoryCancellableTask) error

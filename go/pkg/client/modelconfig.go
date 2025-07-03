@@ -5,14 +5,15 @@ import (
 	"fmt"
 
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 // ModelConfigInterface defines the model configuration operations
 type ModelConfigInterface interface {
-	ListModelConfigs(ctx context.Context) (*StandardResponse[[]ModelConfigResponse], error)
-	GetModelConfig(ctx context.Context, namespace, name string) (*ModelConfigResponse, error)
-	CreateModelConfig(ctx context.Context, request *CreateModelConfigRequest) (*v1alpha1.ModelConfig, error)
-	UpdateModelConfig(ctx context.Context, namespace, name string, request *UpdateModelConfigRequest) (*ModelConfigResponse, error)
+	ListModelConfigs(ctx context.Context) (*api.StandardResponse[[]api.ModelConfigResponse], error)
+	GetModelConfig(ctx context.Context, namespace, name string) (*api.StandardResponse[*api.ModelConfigResponse], error)
+	CreateModelConfig(ctx context.Context, request *api.CreateModelConfigRequest) (*api.StandardResponse[*v1alpha1.ModelConfig], error)
+	UpdateModelConfig(ctx context.Context, namespace, name string, request *api.UpdateModelConfigRequest) (*api.StandardResponse[*api.ModelConfigResponse], error)
 	DeleteModelConfig(ctx context.Context, namespace, name string) error
 }
 
@@ -27,13 +28,13 @@ func NewModelConfigClient(client *BaseClient) ModelConfigInterface {
 }
 
 // ListModelConfigs lists all model configurations
-func (c *ModelConfigClient) ListModelConfigs(ctx context.Context) (*StandardResponse[[]ModelConfigResponse], error) {
+func (c *ModelConfigClient) ListModelConfigs(ctx context.Context) (*api.StandardResponse[[]api.ModelConfigResponse], error) {
 	resp, err := c.client.Get(ctx, "/api/modelconfigs", "")
 	if err != nil {
 		return nil, err
 	}
 
-	var response StandardResponse[[]ModelConfigResponse]
+	var response api.StandardResponse[[]api.ModelConfigResponse]
 	if err := DecodeResponse(resp, &response); err != nil {
 		return nil, err
 	}
@@ -42,14 +43,14 @@ func (c *ModelConfigClient) ListModelConfigs(ctx context.Context) (*StandardResp
 }
 
 // GetModelConfig retrieves a specific model configuration
-func (c *ModelConfigClient) GetModelConfig(ctx context.Context, namespace, name string) (*ModelConfigResponse, error) {
+func (c *ModelConfigClient) GetModelConfig(ctx context.Context, namespace, name string) (*api.StandardResponse[*api.ModelConfigResponse], error) {
 	path := fmt.Sprintf("/api/modelconfigs/%s/%s", namespace, name)
 	resp, err := c.client.Get(ctx, path, "")
 	if err != nil {
 		return nil, err
 	}
 
-	var config ModelConfigResponse
+	var config api.StandardResponse[*api.ModelConfigResponse]
 	if err := DecodeResponse(resp, &config); err != nil {
 		return nil, err
 	}
@@ -58,13 +59,13 @@ func (c *ModelConfigClient) GetModelConfig(ctx context.Context, namespace, name 
 }
 
 // CreateModelConfig creates a new model configuration
-func (c *ModelConfigClient) CreateModelConfig(ctx context.Context, request *CreateModelConfigRequest) (*v1alpha1.ModelConfig, error) {
+func (c *ModelConfigClient) CreateModelConfig(ctx context.Context, request *api.CreateModelConfigRequest) (*api.StandardResponse[*v1alpha1.ModelConfig], error) {
 	resp, err := c.client.Post(ctx, "/api/modelconfigs", request, "")
 	if err != nil {
 		return nil, err
 	}
 
-	var config v1alpha1.ModelConfig
+	var config api.StandardResponse[*v1alpha1.ModelConfig]
 	if err := DecodeResponse(resp, &config); err != nil {
 		return nil, err
 	}
@@ -73,14 +74,14 @@ func (c *ModelConfigClient) CreateModelConfig(ctx context.Context, request *Crea
 }
 
 // UpdateModelConfig updates an existing model configuration
-func (c *ModelConfigClient) UpdateModelConfig(ctx context.Context, namespace, configName string, request *UpdateModelConfigRequest) (*ModelConfigResponse, error) {
+func (c *ModelConfigClient) UpdateModelConfig(ctx context.Context, namespace, configName string, request *api.UpdateModelConfigRequest) (*api.StandardResponse[*api.ModelConfigResponse], error) {
 	path := fmt.Sprintf("/api/modelconfigs/%s/%s", namespace, configName)
 	resp, err := c.client.Put(ctx, path, request, "")
 	if err != nil {
 		return nil, err
 	}
 
-	var config ModelConfigResponse
+	var config api.StandardResponse[*api.ModelConfigResponse]
 	if err := DecodeResponse(resp, &config); err != nil {
 		return nil, err
 	}

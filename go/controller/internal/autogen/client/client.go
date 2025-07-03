@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/kagent-dev/kagent/go/internal/autogen/api"
+	"github.com/kagent-dev/kagent/go/pkg/sse"
 )
 
 type client struct {
@@ -21,7 +22,7 @@ type client struct {
 type Client interface {
 	GetVersion(ctx context.Context) (string, error)
 	InvokeTask(ctx context.Context, req *InvokeTaskRequest) (*InvokeTaskResult, error)
-	InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *SseEvent, error)
+	InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *sse.Event, error)
 	FetchTools(ctx context.Context, req *ToolServerRequest) ([]*api.Component, error)
 	Validate(ctx context.Context, req *ValidationRequest) (*ValidationResponse, error)
 	ListSupportedModels(ctx context.Context) (*ProviderModels, error)
@@ -148,12 +149,12 @@ func (c *client) InvokeTask(ctx context.Context, req *InvokeTaskRequest) (*Invok
 	return &invoke, err
 }
 
-func (c *client) InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *SseEvent, error) {
+func (c *client) InvokeTaskStream(ctx context.Context, req *InvokeTaskRequest) (<-chan *sse.Event, error) {
 	resp, err := c.startRequest(ctx, "POST", "/invoke/stream", req)
 	if err != nil {
 		return nil, err
 	}
-	ch := streamSseResponse(resp.Body)
+	ch := sse.StreamSseResponse(resp.Body)
 	return ch, nil
 }
 

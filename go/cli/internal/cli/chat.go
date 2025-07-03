@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -11,6 +12,8 @@ import (
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
 	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
 	"github.com/kagent-dev/kagent/go/internal/database"
+	"github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	"github.com/spf13/pflag"
 )
 
@@ -32,52 +35,53 @@ func ChatCmd(c *ishell.Context) {
 	cfg := config.GetCfg(c)
 	client := config.GetClient(c)
 
-	var team *database.Team
+	var team *database.Agent
 	if len(flagSet.Args()) > 0 {
 		teamName := flagSet.Args()[0]
 		var err error
-		team, err = client.GetTeam(teamName, cfg.UserID)
+		agtResp, err := client.Agent.GetAgent(context.Background(), teamName)
 		if err != nil {
 			c.Println(err)
 			return
 		}
+		team = agtResp.Data
 	}
 	// If team is not found or not passed as an argument, prompt the user to select from available teams
 	if team == nil {
 		c.Printf("Please select from available teams.\n")
 		// Get the teams based on the input + userID
-		teams, err := client.ListTeams(cfg.UserID)
+		agtResp, err := client.Agent.ListAgents(context.Background(), cfg.UserID)
 		if err != nil {
 			c.Println(err)
 			return
 		}
 
-		if len(teams) == 0 {
+		if len(agtResp.Data) == 0 {
 			c.Println("No teams found, please create one via the web UI or CRD before chatting.")
 			return
 		}
 
-		teamNames := make([]string, len(teams))
-		for i, team := range teams {
+		agentNames := make([]string, len(agtResp.Data))
+		for i, team := range agtResp.Data {
 			if team.Component.Label == "" {
 				continue
 			}
-			teamNames[i] = team.Component.Label
+			agentNames[i] = team.Component.Label
 		}
 
-		selectedTeamIdx := c.MultiChoice(teamNames, "Select an agent:")
-		team = teams[selectedTeamIdx]
+		selectedTeamIdx := c.MultiChoice(agentNames, "Select an agent:")
+		team = &agtResp.Data[selectedTeamIdx]
 	}
 
-	sessions, err := client.ListSessions(cfg.UserID)
+	sessions, err := client.Session.ListSessions(context.Background(), cfg.UserID)
 	if err != nil {
 		c.Println(err)
 		return
 	}
 
-	existingSessions := slices.Collect(Filter(slices.Values(sessions), func(session *database.Session) bool { return true }))
+	existingSessions := slices.Collect(utils.Filter(slices.Values(sessions.Data), func(session *api.Session) bool { return true }))
 
-	existingSessionNames := slices.Collect(Map(slices.Values(existingSessions), func(session *database.Session) string {
+	existingSessionNames := slices.Collect(utils.Map(slices.Values(existingSessions), func(session *api.Session) string {
 		return session.Name
 	}))
 

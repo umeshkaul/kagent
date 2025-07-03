@@ -11,7 +11,7 @@ import (
 	"github.com/abiosoft/ishell/v2"
 	"github.com/kagent-dev/kagent/go/cli/internal/cli"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	"github.com/kagent-dev/kagent/go/client"
+	"github.com/kagent-dev/kagent/go/pkg/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -160,9 +160,9 @@ func main() {
 	}
 
 	getRunCmd := &cobra.Command{
-		Use:   "run [run_id]",
-		Short: "Get a run or list all runs",
-		Long:  `Get a run by ID or list all runs`,
+		Use:   "task [task_id]",
+		Short: "Get a task or list all tasks",
+		Long:  `Get a task by ID or list all tasks`,
 		Run: func(cmd *cobra.Command, args []string) {
 			client := client.New(cfg.APIURL)
 			if err := cli.CheckServerConnection(client); err != nil {
@@ -173,7 +173,7 @@ func main() {
 			if len(args) > 0 {
 				resourceName = args[0]
 			}
-			cli.GetRunCmd(cfg, resourceName)
+			cli.GetTaskCmd(cfg, resourceName)
 		},
 	}
 
@@ -386,31 +386,6 @@ Examples:
 				cli.GetSessionCmd(cfg, c.Args[0])
 			} else {
 				cli.GetSessionCmd(cfg, "")
-			}
-		},
-	})
-
-	getCmd.AddCmd(&ishell.Cmd{
-		Name:    "run",
-		Aliases: []string{"r", "runs"},
-		Help:    "get a run.",
-		LongHelp: `get a run.
-
-If no resource name is provided, then a list of available resources will be returned.
-Examples:
-  get run [run_id]
-  get run
-  `,
-		Func: func(c *ishell.Context) {
-			if err := cli.CheckServerConnection(client); err != nil {
-				c.Println(err)
-				return
-			}
-			cfg := config.GetCfg(c)
-			if len(c.Args) > 0 {
-				cli.GetRunCmd(cfg, c.Args[0])
-			} else {
-				cli.GetRunCmd(cfg, "")
 			}
 		},
 	})

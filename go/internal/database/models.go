@@ -36,61 +36,58 @@ func (j JSONMap) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
-// Team represents a team configuration
-type Team struct {
+// Agent represents an agent configuration
+type Agent struct {
 	gorm.Model
 	Name      string        `gorm:"unique;not null" json:"name"`
 	Component api.Component `gorm:"type:json;not null" json:"component"`
+
+	Sessions []Session `gorm:"foreignKey:AgentID;constraint:OnDelete:CASCADE" json:"sessions"`
 }
 
-// Session represents a conversation session
-type Session struct {
-	gorm.Model
-	UserID string `gorm:"primaryKey;not null" json:"user_id"`
-	Name   string `gorm:"unique;not null" json:"name"`
-
-	// Relationships
-	Runs []Run `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE" json:"runs,omitempty"`
-
-	TeamID *uint `gorm:"index;constraint:OnDelete:SET NULL" json:"team_id,omitempty"`
-}
-
-// RunStatus represents the status of a run
-type RunStatus string
-
-const (
-	RunStatusCreated  RunStatus = "created"
-	RunStatusActive   RunStatus = "active"
-	RunStatusComplete RunStatus = "complete"
-	RunStatusError    RunStatus = "error"
-	RunStatusStopped  RunStatus = "stopped"
-)
-
-// Run represents a single execution run within a session
-type Run struct {
-	gorm.Model
-	UserID       string    `gorm:"primaryKey;not null" json:"user_id"`
-	SessionID    uint      `gorm:"not null;index;constraint:OnDelete:CASCADE" json:"session_id"`
-	Status       RunStatus `gorm:"default:created" json:"status"`
-	Task         JSONMap   `gorm:"type:json;not null" json:"task"`
-	TeamResult   JSONMap   `gorm:"type:json" json:"team_result,omitempty"`
-	ErrorMessage *string   `json:"error_message,omitempty"`
-
-	// Relationships
-	MessageItems []Message `gorm:"foreignKey:RunID;constraint:OnDelete:CASCADE" json:"message_items,omitempty"`
-}
-
-// Message represents a message in a conversation
 type Message struct {
-	gorm.Model
-	UserID      string  `gorm:"primaryKey;not null" json:"user_id"`
-	Config      JSONMap `gorm:"type:json;not null" json:"config"`
-	SessionID   uint    `gorm:"index;constraint:OnDelete:SET NULL" json:"session_id,omitempty"`
-	RunID       uint    `gorm:"index;constraint:OnDelete:CASCADE" json:"run_id,omitempty"`
-	MessageMeta JSONMap `gorm:"type:json" json:"message_meta,omitempty"`
+	ID        string         `gorm:"primaryKey" json:"id"`
+	UserID    string         `gorm:"primaryKey" json:"user_id"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	Data      string  `gorm:"type:text;not null" json:"data"` // JSON serialized protocol.Message
+	SessionID *string `gorm:"not null;index" json:"session_id"`
+	TaskID    string  `gorm:"not null;index" json:"task_id"`
 
 	// Relationships
 	Feedback []Feedback `gorm:"foreignKey:MessageID;constraint:OnDelete:CASCADE" json:"feedback,omitempty"`
+}
+
+type Session struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	UserID    string         `gorm:"primaryKey" json:"user_id"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+
+	AgentID *string `gorm:"not null;index" json:"agent_id"`
+
+	Tasks []Task `gorm:"foreignKey:SessionID;constraint:OnDelete:CASCADE" json:"tasks"`
+}
+
+type Task struct {
+	ID        string         `gorm:"primaryKey" json:"id"`
+	UserID    string         `gorm:"primaryKey" json:"user_id"`
+	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at"`
+	Data      string         `gorm:"type:text;not null" json:"data"` // JSON serialized task data
+	SessionID *string        `gorm:"not null;index" json:"session_id"`
+
+	Messages []Message `gorm:"foreignKey:TaskID;constraint:OnDelete:CASCADE" json:"messages"`
+}
+
+type PushNotification struct {
+	gorm.Model
+	TaskID string `gorm:"not null;index" json:"task_id"`
+	Data   string `gorm:"type:text;not null" json:"data"` // JSON serialized push notification config
 }
 
 // FeedbackIssueType represents the category of feedback issue
@@ -181,13 +178,14 @@ type EvalRun struct {
 }
 
 // TableName methods to match Python table names
-func (Team) TableName() string         { return "team" }
-func (Session) TableName() string      { return "session" }
-func (Run) TableName() string          { return "run" }
-func (Message) TableName() string      { return "message" }
-func (Feedback) TableName() string     { return "feedback" }
-func (Tool) TableName() string         { return "tool" }
-func (ToolServer) TableName() string   { return "toolserver" }
-func (EvalTask) TableName() string     { return "evaltask" }
-func (EvalCriteria) TableName() string { return "evalcriteria" }
-func (EvalRun) TableName() string      { return "evalrun" }
+func (Agent) TableName() string            { return "agent" }
+func (Message) TableName() string          { return "message" }
+func (Session) TableName() string          { return "session" }
+func (Task) TableName() string             { return "task" }
+func (PushNotification) TableName() string { return "push_notification" }
+func (Feedback) TableName() string         { return "feedback" }
+func (Tool) TableName() string             { return "tool" }
+func (ToolServer) TableName() string       { return "toolserver" }
+func (EvalTask) TableName() string         { return "evaltask" }
+func (EvalCriteria) TableName() string     { return "evalcriteria" }
+func (EvalRun) TableName() string          { return "evalrun" }

@@ -9,6 +9,12 @@ import (
 )
 
 // MemoryStorage is an in-memory implementation of the Storage interface
+
+type ConversationHistory struct {
+	MessageIDs     []string
+	LastAccessTime time.Time
+}
+
 type MemoryStorage struct {
 	mu                sync.RWMutex
 	messages          map[string]protocol.Message

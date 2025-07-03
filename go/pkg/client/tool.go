@@ -3,25 +3,27 @@ package client
 import (
 	"context"
 	"fmt"
+
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
-// ToolInterface defines the tool operations
-type ToolInterface interface {
-	ListTools(ctx context.Context, userID string) ([]Tool, error)
+// Tool defines the tool operations
+type Tool interface {
+	ListTools(ctx context.Context, userID string) ([]api.Tool, error)
 }
 
-// ToolClient handles tool-related requests
-type ToolClient struct {
+// toolClient handles tool-related requests
+type toolClient struct {
 	client *BaseClient
 }
 
 // NewToolClient creates a new tool client
-func NewToolClient(client *BaseClient) ToolInterface {
-	return &ToolClient{client: client}
+func NewToolClient(client *BaseClient) Tool {
+	return &toolClient{client: client}
 }
 
 // ListTools lists all tools for a user
-func (c *ToolClient) ListTools(ctx context.Context, userID string) ([]Tool, error) {
+func (c *toolClient) ListTools(ctx context.Context, userID string) ([]api.Tool, error) {
 	userID = c.client.GetUserIDOrDefault(userID)
 	if userID == "" {
 		return nil, fmt.Errorf("userID is required")
@@ -32,7 +34,7 @@ func (c *ToolClient) ListTools(ctx context.Context, userID string) ([]Tool, erro
 		return nil, err
 	}
 
-	var tools []Tool
+	var tools []api.Tool
 	if err := DecodeResponse(resp, &tools); err != nil {
 		return nil, err
 	}

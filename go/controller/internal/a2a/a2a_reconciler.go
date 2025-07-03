@@ -19,7 +19,7 @@ type A2AReconciler interface {
 	ReconcileAutogenAgent(
 		ctx context.Context,
 		agent *v1alpha1.Agent,
-		autogenTeam *database.Team,
+		autogenTeam *database.Agent,
 	) error
 
 	ReconcileAutogenAgentDeletion(
@@ -49,7 +49,7 @@ func NewAutogenReconciler(
 func (a *a2aReconciler) ReconcileAutogenAgent(
 	ctx context.Context,
 	agent *v1alpha1.Agent,
-	autogenTeam *database.Team,
+	autogenTeam *database.Agent,
 ) error {
 	params, err := a.a2aTranslator.TranslateHandlerForAgent(ctx, agent, autogenTeam)
 	if err != nil {

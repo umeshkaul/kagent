@@ -11,10 +11,12 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	"github.com/kagent-dev/kagent/go/client"
+	autogen_client "github.com/kagent-dev/kagent/go/internal/autogen/client"
+	"github.com/kagent-dev/kagent/go/pkg/client"
+	"github.com/kagent-dev/kagent/go/pkg/sse"
 )
 
-func CheckServerConnection(client *client.Client) error {
+func CheckServerConnection(client *client.ClientSet) error {
 	// Only check if we have a valid client
 	if client == nil {
 		return fmt.Errorf("Error connecting to server. Please run 'install' command first.")
@@ -22,7 +24,7 @@ func CheckServerConnection(client *client.Client) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	_, err := client.GetVersion(ctx)
+	_, err := client.Version.GetVersion(ctx)
 	if err != nil {
 		return fmt.Errorf("Error connecting to server. Please run 'install' command first.")
 	}
@@ -69,7 +71,7 @@ func (p *portForward) Stop() {
 	}
 }
 
-func StreamEvents(ch <-chan *autogen_client.SseEvent, usage *autogen_client.ModelsUsage, verbose bool) {
+func StreamEvents(ch <-chan *sse.Event, usage *autogen_client.ModelsUsage, verbose bool) {
 	// Tool call requests and executions are sent as separate messages, but we should print them together
 	// so if we receive a tool call request, we buffer it until we receive the corresponding tool call execution
 	// We only need to buffer one request and one execution at a time

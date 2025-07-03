@@ -20,8 +20,8 @@ import (
 )
 
 // Helper function to create a mock autogen team with proper Component
-func createMockAutogenTeam(id int, label string) *database.Team {
-	return &database.Team{
+func createMockAutogenTeam(id int, label string) *database.Agent {
+	return &database.Agent{
 		Component: api.Component{
 			Provider:      "test.provider",
 			ComponentType: "team",

@@ -8,7 +8,8 @@ import (
 	"strconv"
 
 	"github.com/kagent-dev/kagent/go/cli/internal/config"
-	"github.com/kagent-dev/kagent/go/client"
+	"github.com/kagent-dev/kagent/go/pkg/client"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 func GetAgentCmd(cfg *config.Config, resourceName string) {
@@ -65,7 +66,7 @@ func GetSessionCmd(cfg *config.Config, resourceName string) {
 			fmt.Fprintf(os.Stderr, "Failed to convert session name to ID: %v\n", err)
 			return
 		}
-		session, err := client.GetSessionById(context.Background(), sessionID, cfg.UserID)
+		session, err := client.GetSessionById(sessionID, cfg.UserID)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get session %s: %v\n", resourceName, err)
 			return
@@ -76,7 +77,7 @@ func GetSessionCmd(cfg *config.Config, resourceName string) {
 }
 
 func GetToolCmd(cfg *config.Config) {
-	client := autogen_client.New(cfg.APIURL)
+	client := client.New(cfg.APIURL)
 	toolList, err := client.ListTools(cfg.UserID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to get tools: %v\n", err)
@@ -88,16 +89,16 @@ func GetToolCmd(cfg *config.Config) {
 	}
 }
 
-func printTools(tools []*autogen_client.Tool) error {
+func printTools(tools []*api.Tool) error {
 	headers := []string{"#", "ID", "PROVIDER", "LABEL", "CREATED"}
 	rows := make([][]string, len(tools))
 	for i, tool := range tools {
 		rows[i] = []string{
 			strconv.Itoa(i + 1),
-			strconv.Itoa(tool.Id),
+			strconv.Itoa(int(tool.Model.ID)),
 			tool.Component.Provider,
 			tool.Component.Label,
-			tool.CreatedAt,
+			tool.Model.CreatedAt.String(),
 		}
 	}
 

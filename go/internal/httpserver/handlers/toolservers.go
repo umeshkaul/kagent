@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -32,9 +32,9 @@ func (h *ToolServersHandler) HandleListToolServers(w ErrorResponseWriter, r *htt
 		return
 	}
 
-	toolServerWithTools := make([]client.ToolServerResponse, len(toolServerList.Items))
+	toolServerWithTools := make([]api.ToolServerResponse, len(toolServerList.Items))
 	for i, toolServer := range toolServerList.Items {
-		toolServerWithTools[i] = client.ToolServerResponse{
+		toolServerWithTools[i] = api.ToolServerResponse{
 			Ref:             common.ResourceRefString(toolServer.Namespace, toolServer.Name),
 			Config:          toolServer.Spec.Config,
 			DiscoveredTools: toolServer.Status.DiscoveredTools,
@@ -42,7 +42,7 @@ func (h *ToolServersHandler) HandleListToolServers(w ErrorResponseWriter, r *htt
 	}
 
 	log.Info("Successfully listed ToolServers", "count", len(toolServerWithTools))
-	data := client.NewResponse(toolServerWithTools, "Successfully listed ToolServers", false)
+	data := api.NewResponse(toolServerWithTools, "Successfully listed ToolServers", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -81,7 +81,7 @@ func (h *ToolServersHandler) HandleCreateToolServer(w ErrorResponseWriter, r *ht
 	}
 
 	log.Info("Successfully created ToolServer")
-	data := client.NewResponse(toolServerRequest, "Successfully created ToolServer", false)
+	data := api.NewResponse(toolServerRequest, "Successfully created ToolServer", false)
 	RespondWithJSON(w, http.StatusCreated, data)
 }
 
@@ -136,6 +136,6 @@ func (h *ToolServersHandler) HandleDeleteToolServer(w ErrorResponseWriter, r *ht
 	}
 
 	log.Info("Successfully deleted ToolServer from Kubernetes")
-	data := client.NewResponse(struct{}{}, "Successfully deleted ToolServer", false)
+	data := api.NewResponse(struct{}{}, "Successfully deleted ToolServer", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

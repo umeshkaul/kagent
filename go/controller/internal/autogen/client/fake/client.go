@@ -64,7 +64,7 @@ func (m *InMemoryAutogenClient) FetchTools(ctx context.Context, req *autogen_cli
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	tools, exists := m.toolsByServer[req.Component.Label]
+	tools, exists := m.toolsByServer[req.Server.Label]
 	if !exists {
 		return []*api.Component{}, nil
 	}

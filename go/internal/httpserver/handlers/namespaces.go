@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 	corev1 "k8s.io/api/core/v1"
 	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,9 +40,9 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 			return
 		}
 
-		var namespaces []client.NamespaceResponse
+		var namespaces []api.NamespaceResponse
 		for _, ns := range namespaceList.Items {
-			namespaces = append(namespaces, client.NamespaceResponse{
+			namespaces = append(namespaces, api.NamespaceResponse{
 				Name:   ns.Name,
 				Status: string(ns.Status.Phase),
 			})
@@ -54,7 +54,7 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 
 	// Filter to only show watched namespaces that exist in the cluster
 	log.Info("Listing watched namespaces only", "watchedNamespaces", h.WatchedNamespaces)
-	var namespaces []client.NamespaceResponse
+	var namespaces []api.NamespaceResponse
 
 	for _, watchedNS := range h.WatchedNamespaces {
 		namespace := &corev1.Namespace{}
@@ -67,12 +67,12 @@ func (h *NamespacesHandler) HandleListNamespaces(w ErrorResponseWriter, r *http.
 			continue
 		}
 
-		namespaces = append(namespaces, client.NamespaceResponse{
+		namespaces = append(namespaces, api.NamespaceResponse{
 			Name:   namespace.Name,
 			Status: string(namespace.Status.Phase),
 		})
 	}
 
-	data := client.NewResponse(namespaces, "Successfully listed namespaces", false)
+	data := api.NewResponse(namespaces, "Successfully listed namespaces", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }

@@ -5,7 +5,7 @@ HTTP Client to interact with the KAgent API.
 ## Installation
 
 ```go
-import "github.com/kagent-dev/kagent/go/client"
+import "github.com/kagent-dev/kagent/go/pkg/client"
 ```
 
 ## Basic Usage
@@ -20,7 +20,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/kagent-dev/kagent/go/client"
+    "github.com/kagent-dev/kagent/go/pkg/client"
 )
 
 func main() {
@@ -336,7 +336,7 @@ import (
     "context"
     "log"
 
-    "github.com/kagent-dev/kagent/go/client"
+    "github.com/kagent-dev/kagent/go/pkg/client"
 )
 
 func main() {

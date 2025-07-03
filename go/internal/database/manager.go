@@ -46,10 +46,11 @@ func (m *Manager) Initialize() error {
 
 	// AutoMigrate all models
 	err := m.db.AutoMigrate(
-		&Team{},
+		&Agent{},
 		&Session{},
-		&Run{},
+		&Task{},
 		&Message{},
+		&PushNotification{},
 		&Feedback{},
 		&Tool{},
 		&ToolServer{},
@@ -74,10 +75,11 @@ func (m *Manager) Reset(recreateTables bool) error {
 
 	// Drop all tables
 	err := m.db.Migrator().DropTable(
-		&Team{},
+		&Agent{},
 		&Session{},
-		&Run{},
+		&Task{},
 		&Message{},
+		&PushNotification{},
 		&Feedback{},
 		&Tool{},
 		&ToolServer{},

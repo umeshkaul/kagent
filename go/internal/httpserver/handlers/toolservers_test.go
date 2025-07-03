@@ -19,10 +19,10 @@ import (
 	ctrl_client "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/handlers"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 func TestToolServersHandler(t *testing.T) {
@@ -121,7 +121,7 @@ func TestToolServersHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var toolServers []client.ToolServerResponse
+			var toolServers []api.ToolServerResponse
 			err = json.Unmarshal(responseRecorder.Body.Bytes(), &toolServers)
 			require.NoError(t, err)
 			assert.Len(t, toolServers, 2)
@@ -150,7 +150,7 @@ func TestToolServersHandler(t *testing.T) {
 
 			assert.Equal(t, http.StatusOK, responseRecorder.Code)
 
-			var toolServers []client.ToolServerResponse
+			var toolServers []api.ToolServerResponse
 			err := json.Unmarshal(responseRecorder.Body.Bytes(), &toolServers)
 			require.NoError(t, err)
 			assert.Len(t, toolServers, 0)

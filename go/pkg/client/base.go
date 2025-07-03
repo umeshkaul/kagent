@@ -10,7 +10,37 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
+
+// ClientError represents a client-side error
+type ClientError struct {
+	StatusCode int
+	Message    string
+	Body       string
+}
+
+func (e *ClientError) Error() string {
+	return fmt.Sprintf("HTTP %d: %s", e.StatusCode, e.Message)
+}
+
+// ClientOption represents a configuration option for the client
+type ClientOption func(*BaseClient)
+
+// WithHTTPClient sets a custom HTTP client
+func WithHTTPClient(httpClient *http.Client) ClientOption {
+	return func(c *BaseClient) {
+		c.HTTPClient = httpClient
+	}
+}
+
+// WithUserID sets a default user ID for requests
+func WithUserID(userID string) ClientOption {
+	return func(c *BaseClient) {
+		c.UserID = userID
+	}
+}
 
 // BaseClient contains the shared HTTP functionality used by all sub-clients
 type BaseClient struct {
@@ -20,16 +50,20 @@ type BaseClient struct {
 }
 
 // NewBaseClient creates a new base client with the given configuration
-func NewBaseClient(baseURL string, httpClient *http.Client, userID string) *BaseClient {
-	if httpClient == nil {
-		httpClient = &http.Client{Timeout: 30 * time.Second}
+func NewBaseClient(baseURL string, options ...ClientOption) *BaseClient {
+	client := &BaseClient{
+		BaseURL: strings.TrimSuffix(baseURL, "/"),
 	}
 
-	return &BaseClient{
-		BaseURL:    strings.TrimSuffix(baseURL, "/"),
-		HTTPClient: httpClient,
-		UserID:     userID,
+	for _, option := range options {
+		option(client)
 	}
+
+	if client.HTTPClient == nil {
+		client.HTTPClient = &http.Client{Timeout: 30 * time.Second}
+	}
+
+	return client
 }
 
 // HTTP helper methods
@@ -92,7 +126,7 @@ func (c *BaseClient) doRequest(ctx context.Context, method, path string, body in
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		var apiErr APIError
+		var apiErr api.APIError
 		if json.Unmarshal(bodyBytes, &apiErr) == nil && apiErr.Error != "" {
 			return nil, &ClientError{
 				StatusCode: resp.StatusCode,

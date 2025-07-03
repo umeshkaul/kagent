@@ -10,10 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/kagent-dev/kagent/go/client"
 	"github.com/kagent-dev/kagent/go/controller/api/v1alpha1"
 	"github.com/kagent-dev/kagent/go/internal/httpserver/errors"
 	common "github.com/kagent-dev/kagent/go/internal/utils"
+	"github.com/kagent-dev/kagent/go/pkg/client/api"
 )
 
 // MemoryHandler handles Memory requests
@@ -37,7 +37,7 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 		return
 	}
 
-	memoryResponses := make([]client.MemoryResponse, len(memoryList.Items))
+	memoryResponses := make([]api.MemoryResponse, len(memoryList.Items))
 	for i, memory := range memoryList.Items {
 		memoryRef := common.GetObjectRef(&memory)
 		log.V(1).Info("Processing Memory", "memoryRef", memoryRef)
@@ -47,7 +47,7 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 			FlattenStructToMap(memory.Spec.Pinecone, memoryParams)
 		}
 
-		memoryResponses[i] = client.MemoryResponse{
+		memoryResponses[i] = api.MemoryResponse{
 			Ref:             memoryRef,
 			ProviderName:    string(memory.Spec.Provider),
 			APIKeySecretRef: memory.Spec.APIKeySecretRef,
@@ -57,7 +57,7 @@ func (h *MemoryHandler) HandleListMemories(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Successfully listed Memories", "count", len(memoryResponses))
-	data := client.NewResponse(memoryResponses, "Successfully listed Memories", false)
+	data := api.NewResponse(memoryResponses, "Successfully listed Memories", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -66,7 +66,7 @@ func (h *MemoryHandler) HandleCreateMemory(w ErrorResponseWriter, r *http.Reques
 	log := ctrllog.FromContext(r.Context()).WithName("memory-handler").WithValues("operation", "create")
 	log.Info("Received request to create Memory")
 
-	var req client.CreateMemoryRequest
+	var req api.CreateMemoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
@@ -149,7 +149,7 @@ func (h *MemoryHandler) HandleCreateMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory created successfully")
-	data := client.NewResponse(memory, "Successfully created Memory", false)
+	data := api.NewResponse(memory, "Successfully created Memory", false)
 	RespondWithJSON(w, http.StatusCreated, data)
 }
 
@@ -205,7 +205,7 @@ func (h *MemoryHandler) HandleDeleteMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory deleted successfully")
-	data := client.NewResponse(struct{}{}, "Memory deleted successfully", false)
+	data := api.NewResponse(struct{}{}, "Memory deleted successfully", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -265,7 +265,7 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 		return
 	}
 
-	memoryResponse := client.MemoryResponse{
+	memoryResponse := api.MemoryResponse{
 		Ref:             common.GetObjectRef(memory),
 		ProviderName:    string(memory.Spec.Provider),
 		APIKeySecretRef: apiKeySecretRef.String(),
@@ -274,7 +274,7 @@ func (h *MemoryHandler) HandleGetMemory(w ErrorResponseWriter, r *http.Request) 
 	}
 
 	log.Info("Memory retrieved successfully")
-	data := client.NewResponse(memoryResponse, "Successfully retrieved Memory", false)
+	data := api.NewResponse(memoryResponse, "Successfully retrieved Memory", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
 
@@ -302,7 +302,7 @@ func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Reques
 		"memoryName", memoryName,
 	)
 
-	var req client.UpdateMemoryRequest
+	var req api.UpdateMemoryRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Error(err, "Failed to decode request body")
 		w.RespondWithError(errors.NewBadRequestError("Invalid request body", err))
@@ -334,6 +334,6 @@ func (h *MemoryHandler) HandleUpdateMemory(w ErrorResponseWriter, r *http.Reques
 	}
 
 	log.Info("Memory updated successfully")
-	data := client.NewResponse(existingMemory, "Successfully updated Memory", false)
+	data := api.NewResponse(existingMemory, "Successfully updated Memory", false)
 	RespondWithJSON(w, http.StatusOK, data)
 }
