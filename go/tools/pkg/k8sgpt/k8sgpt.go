@@ -9,6 +9,10 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 )
 
+// TODO:
+// Extend support for additional k8sgpt options (e.g., --filter etc.) so users can customize the analysis.
+// Add corresponding tests.
+
 // k8sgptAnalyze handles the k8sgpt analyze command.
 func handleK8sgptAnalyze(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	namespace := mcp.ParseString(request, "namespace", "")
