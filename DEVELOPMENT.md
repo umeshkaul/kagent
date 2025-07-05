@@ -68,6 +68,7 @@ npm run dev
 
 3. Run the tool-server locally, from the `go` folder:
 
+
 ```bash
 make run/tool-server
 ```
